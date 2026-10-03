@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (QWidget,QDialog,QVBoxLayout,QHBoxLayout,QFormLayo
     QDoubleSpinBox,QSpinBox,QComboBox,QLabel,QPushButton,QPlainTextEdit,QToolBar,QTabWidget)
 from . import engine as E
 from . import structures as S
+from . import detailing as D
 
 PRESETS={'Footing':(.0,.0,-.4,1.2,1.2,.4),'Column':(0,0,0,.25,.25,3),
          'Beam':(0,0,3,3,.2,.4),'Slab':(0,0,3,4,3,.15)}
@@ -77,7 +78,7 @@ class AssemblyPreview(QWidget):
 
 class BuilderDialog(QDialog):
     def __init__(self,panel,title):
-        super().__init__(panel.app.window);self.panel=panel;self.setWindowTitle('Thai BIM 0.4 — '+title);self.setWindowIcon(icon(title if title in ('Stair','Rebar') else 'Roof'));self.resize(1080,800)
+        super().__init__(panel.app.window);self.panel=panel;self.setWindowTitle('Thai BIM 0.5 — '+title);self.setWindowIcon(icon(title if title in ('Stair','Rebar') else 'Roof'));self.resize(1080,800)
         lay=QVBoxLayout(self);row=QHBoxLayout();lay.addLayout(row,1)
         scroll=QScrollArea();scroll.setWidgetResizable(True);scroll.setMinimumWidth(355);scroll.setMaximumWidth(470);row.addWidget(scroll,4)
         content=QWidget();self.form=QFormLayout(content);scroll.setWidget(content)
@@ -161,7 +162,19 @@ class RebarDialog(BuilderDialog):
         self.field('count_x','จำนวนหลักตามด้านที่ 1',3,True,2,30)
         self.field('count_y','จำนวนหลักตามด้านที่ 2',3,True,2,30)
         self.field('layers','ชั้นตะแกรงฐาน/พื้น: 1 ล่าง / 2 บนล่าง',1,True,1,2)
-        self.note('สร้างรูปทรงตามค่าที่กรอก • ไม่มีการออกแบบรับแรง\nปลอกเป็นวงปิดมุม miter สำหรับโมเดล\nยังไม่รวมตะขอ/รัศมีดัด/ระยะทาบ/ฝังยึด; ปริมาณสุทธิไม่ใช่ BBS พร้อมผลิต\nคานวิ่งตาม X; บันไดตรงใช้เหล็กล่างหนึ่งชั้น')
+        for key,label,value,minimum,maximum in [
+            ('inside_radius','รัศมีด้านในเหล็กหลัก (mm)',24,2,250),
+            ('tie_inside_radius','รัศมีด้านในปลอก (mm)',12,2,250),
+            ('hook_length','ขาตะขอฐานราก หลังจุดสัมผัส (mm); 0 = ตรง',0,0,1000),
+            ('tie_hook_length','ขาปลอก 135° หลังจุดสัมผัส (mm)',40,10,500),
+            ('lap_length','ระยะทาบกลางเสา/คาน (mm); 0 = ไม่ทาบ',0,0,3000),
+            ('extension_start','ยื่นฝังยึดต้นเสา/คาน (mm)',0,0,3000),
+            ('extension_end','ยื่นฝังยึดปลายเสา/คาน (mm)',0,0,3000),
+            ('density','ความหนาแน่นตามวัสดุ (kg/m³)',7850,1000,20000)]:
+            self.field(key,label,value,False,minimum,maximum)
+        self.field('hook_ends','ตะขอฐานราก: 1 = L / 2 = U',2,True,1,2)
+        self.note('ฐานราก L/U • เสา/คานปลอกโค้ง 135° และทาบกลางชิ้น\nค่าทุกช่องมาจากผู้ใช้ ไม่มีการออกแบบรับแรง\nส่วนยื่นต้องตรวจร่วมกับคอนกรีตข้างเคียง; ไม่มีการตรวจชนทั้งโมเดล\nพื้น/บันไดยังคงรูปทรงเดิมและไม่รวมใน BBS รายละเอียด')
+        self.button('ตาราง BBS / ส่งออก Excel…',lambda:open_bbs(self.panel))
         self.button('สร้าง / อัปเดตเหล็กของ Host นี้',self.build)
     def read_host(self):
         from . import mesh_fingerprint
@@ -174,9 +187,14 @@ class RebarDialog(BuilderDialog):
         self.host_uid=host.uid;self.host_params=params;self.host_kind=rec['kind'];self.host_label.setText(host.name)
         for w in ('count_x','count_y','tie_diameter'):self.fields[w].setEnabled(self.host_kind in ('Beam','Column'))
         self.fields['layers'].setEnabled(self.host_kind in ('Footing','Slab'))
+        for key in ('hook_length','hook_ends'):self.fields[key].setEnabled(self.host_kind=='Footing')
+        for key in ('tie_inside_radius','tie_hook_length','lap_length','extension_start','extension_end'):
+            self.fields[key].setEnabled(self.host_kind in ('Beam','Column'))
+        for key in ('hook_length','lap_length','extension_start','extension_end'):self.fields[key].setValue(0)
         old=next(((g.ext or {}).get('thai_bim',{}) for g in scene.groups if (g.ext or {}).get('thai_bim',{}).get('host_uid')==host.uid),{})
         if old.get('rebar_params'):
-            for k,w in self.fields.items():w.setValue(old['rebar_params'][k])
+            for k,w in self.fields.items():
+                if k in old['rebar_params']:w.setValue(old['rebar_params'][k])
         self.preview()
     def host(self):
         from . import mesh_fingerprint
@@ -189,9 +207,9 @@ class RebarDialog(BuilderDialog):
     def params(self):return {k:w.value() for k,w in self.fields.items()}
     def specs(self):
         self.host();p=self.params()
-        for k in ('cover','diameter','tie_diameter','spacing'):p[k]/=1000
+        for k in ('cover','diameter','tie_diameter','spacing','inside_radius','tie_inside_radius','hook_length','tie_hook_length','lap_length','extension_start','extension_end'):p[k]/=1000
         if self.host_kind=='Stair':p['layers']=1
-        return S.reinforcement(self.host_kind,self.host_params,**p)
+        return D.reinforcement(self.host_kind,self.host_params,**p)
     def preview(self):
         super().preview()
         if not self.visual.error and self.host_params:
@@ -200,10 +218,56 @@ class RebarDialog(BuilderDialog):
     def build(self,update=False):
         from . import rebar_command
         host=self.host();command,count=rebar_command(self.panel.app.scene,host,self.specs(),self.params())
-        self.panel.execute(command);self.output.setPlainText(f'เหล็ก {count} เส้น • Host {host.name}\nกดซ้ำอัปเดตชุดเดิม • Undo ได้ • ปริมาณไม่รวมทาบ/ตะขอ')
+        self.panel.execute(command);self.output.setPlainText(f'เหล็ก {count} เส้น • Host {host.name}\nกดซ้ำอัปเดตชุดเดิม • Undo ได้ • BBS รวมส่วนโค้ง/ตะขอ/ทาบที่สร้างจริง')
+
+
+def open_bbs(panel):
+    from . import bbs_records
+    from PySide6.QtWidgets import QTableWidget,QTableWidgetItem,QFileDialog
+    records,issues=bbs_records(panel.app.scene);tables=D.tables(records,issues)
+    old=getattr(panel,'bbs_dialog',None)
+    if old is not None:old.close();old.deleteLater()
+    dialog=QDialog(panel.app.window);dialog.setWindowTitle('Thai BIM 0.5 — BBS / Bar bending schedule');dialog.resize(1280,780)
+    lay=QVBoxLayout(dialog);lay.addWidget(QLabel(f'เหล็กรายละเอียด {len(records)} เส้น • กลุ่มรูปดัด {len(tables[0][1])-1} • รายการต้องตรวจ {len(issues)}'))
+    tabs=QTabWidget();lay.addWidget(tabs)
+    preview=AssemblyPreview();preview.setMinimumSize(440,220);lay.addWidget(preview)
+    caption=QLabel('เลือกแถว BBS เพื่อดูรูปดัด • ชื่อ Shape เป็นรหัสภายใน Thai BIM');caption.setWordWrap(True);lay.addWidget(caption)
+    for title,rows in tables:
+        table=QTableWidget(len(rows)-1,len(rows[0]));table.setHorizontalHeaderLabels(rows[0]);table.setEditTriggers(QTableWidget.NoEditTriggers)
+        for i,row in enumerate(rows[1:]):
+            for j,value in enumerate(row):table.setItem(i,j,QTableWidgetItem(f'{value:.6f}' if isinstance(value,float) else str(value)))
+        table.resizeColumnsToContents();tabs.addTab(table,title)
+        if title=='BBS':
+            def pick(row,column=0,previous_row=-1,previous_column=-1):
+                if row<0:return
+                values=tables[0][1][row+1];host,mark=values[-1],values[1]
+                g=next((g for g in panel.app.scene.groups if (g.ext or {}).get('thai_bim',{}).get('host_uid')==host and (g.ext or {}).get('thai_bim',{}).get('bbs',{}).get('mark')==mark),None)
+                if g is None:preview.invalid('รายการเปลี่ยนแล้ว: กดรีเฟรช');return
+                r=g.ext['thai_bim'];faces=[[getattr(v,'position',v).toTuple() for v in f.vertices] for f in g.mesh.faces]
+                preview.display([dict(faces=faces,bar_path=r['bar_path'],kind='Rebar')])
+                b=r['bbs'];caption.setText(f"{mark} • {b['shape']} • D{b['diameter_mm']:g} • ความยาวตัด {b['length_m']*1000:.2f} mm\nขาตรง tangent {b['straight_mm']} mm • มุมดัด {b['bend_degrees']}° • รัศมีด้านใน {b['inside_radius_mm']:g} mm")
+            table.currentCellChanged.connect(pick)
+            if records:table.setCurrentCell(next((i for i,v in enumerate(tables[0][1][1:]) if v[2]=='Tie-135'),0),0)
+    def export():
+        # Re-read the current scene: a modeless dialog can outlive an edit or document switch.
+        live,problems=bbs_records(panel.app.scene)
+        if not live:raise ValueError('ไม่มีเหล็กรายละเอียดที่ตรวจสอบ Host ได้สำหรับส่งออก')
+        path,_=QFileDialog.getSaveFileName(dialog,'Export BBS','Thai-BIM-BBS.xlsx','Excel (*.xlsx)')
+        if path:
+            if not path.lower().endswith('.xlsx'):path+='.xlsx'
+            E.write_xlsx(path,tables=D.tables(live,problems))
+    button=QPushButton('ส่งออก BBS Excel จากโมเดลปัจจุบัน');button.clicked.connect(lambda:panel.guard(export));lay.addWidget(button)
+    refresh=QPushButton('รีเฟรชจากโมเดลปัจจุบัน');refresh.clicked.connect(lambda:panel.guard(lambda:open_bbs(panel)));lay.addWidget(refresh)
+    close=QPushButton('ปิด');close.clicked.connect(dialog.close);lay.addWidget(close)
+    panel.bbs_dialog=dialog;dialog.show();return dialog
 
 
 def add_tools(panel):
+    if not getattr(panel,'_v05_tools',False) and getattr(panel,'_v04_tools',False):
+        panel._v05_tools=True
+        action=panel.toolbar.addAction(icon('QTO'),'BBS / รูปดัดเหล็ก');action.setToolTip('ตารางรูปดัด ความยาวตัด และน้ำหนักเหล็ก')
+        action.triggered.connect(lambda checked=False:panel.guard(lambda:open_bbs(panel)))
+        panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.5 — รายละเอียดเหล็ก / BBS')
     if getattr(panel,'_v04_tools',False):return
     panel._v04_tools=True
     panel.builder_dialogs={}
@@ -239,7 +303,7 @@ def add_tools(panel):
     panel.button(panel.members,'เหล็กเสริมของชิ้นที่เลือก…',lambda:open_builder('Rebar'))
     panel.button(panel.members,'สร้างบันได RC ตรง…',lambda:open_builder('Stair'))
     panel.button(panel.roof,'หลังคาจั่ว / ปั้นหยา / เพิง…',lambda:open_builder('Roof'))
-    toolbar=QToolBar('Thai BIM 0.4',panel.app.window);toolbar.setObjectName('thai_bim_toolbar');toolbar.setIconSize(QSize(28,28));toolbar.setMovable(True);toolbar.setFloatable(True)
+    toolbar=QToolBar('Thai BIM 0.5',panel.app.window);toolbar.setObjectName('thai_bim_toolbar');toolbar.setIconSize(QSize(28,28));toolbar.setMovable(True);toolbar.setFloatable(True)
     panel.app.window.addToolBarBreak(Qt.TopToolBarArea)
     panel.app.window.addToolBar(Qt.TopToolBarArea,toolbar);panel.toolbar=toolbar
     actions=[('Project','โครงการ / Grid / Level',lambda:(tabs.setCurrentIndex(0),panel.open_workspace()))]
@@ -249,10 +313,11 @@ def add_tools(panel):
         ('QTO','ปริมาณ / Excel',lambda:(tabs.setCurrentIndex(3),panel.open_workspace())),('Cut','แผนตัดวัสดุ',panel.open_cuts)]
     for k,title,fn in actions:
         action=toolbar.addAction(icon(k),title);action.setToolTip(title);action.triggered.connect(lambda checked=False,fn=fn:panel.guard(fn))
-    panel.workspace_dialog.setWindowIcon(icon('Project'));panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.4 — โครงสร้าง / หลังคา / เหล็กเสริม')
+    panel.workspace_dialog.setWindowIcon(icon('Project'));panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.5 — โครงสร้าง / หลังคา / เหล็กเสริม')
     for label in panel.findChildren(QLabel):
-        if label.text().startswith('Thai BIM Toolkit'):label.setText('Thai BIM Toolkit 0.4 • โครงสร้าง / หลังคา / เหล็กเสริม')
+        if label.text().startswith('Thai BIM Toolkit'):label.setText('Thai BIM Toolkit 0.5 • โครงสร้าง / หลังคา / เหล็กเสริม')
     for action in panel.app.window.findChildren(type(toolbar.toggleViewAction())):
         if action.text()=='Thai BIM Toolkit…':action.setIcon(icon('Project'))
     # QToolBar has a native visibility action; no private host toolbar API needed.
     panel.app.add_menu_action('แสดงแถบไอคอน Thai BIM',lambda:toolbar.setVisible(True),tip='Thai BIM toolbar')
+    add_tools(panel)

@@ -8,7 +8,7 @@ from collections import defaultdict
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-VERSION = '0.4.0'
+VERSION = '0.5.0'
 
 
 def finite(value):

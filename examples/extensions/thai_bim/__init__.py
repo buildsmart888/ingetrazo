@@ -1,4 +1,4 @@
-"""IngeTrazo Extension: Thai BIM Toolkit 0.4.0 (API 2)."""
+"""IngeTrazo Extension: Thai BIM Toolkit 0.5.0 (API 2)."""
 import copy
 import json
 import math
@@ -21,7 +21,7 @@ from .visuals import launcher, decorate_multi, decorate_cut
 from .builders import add_tools
 
 KEY='thai_bim'
-TITLE='Thai BIM 0.4'
+TITLE='Thai BIM 0.5'
 
 
 class ExchangeGroups(Command):
@@ -105,7 +105,7 @@ def make_group(spec, assembly='', previous=None):
                axis=spec.get('axis'),roof_params=spec.get('roof_params'),plane_id=spec.get('plane_id'),
                plane_vertices=spec.get('plane_vertices'),fingerprint=mesh_fingerprint(g))
     g.ext={KEY:rec}
-    for k in ('stair_params','bar_path','bar_diameter','bar_closed'):
+    for k in ('stair_params','bar_path','bar_diameter','bar_closed','bbs'):
         if k in spec:rec[k]=copy.deepcopy(spec[k])
     if previous is not None:
         g.uid=previous.uid
@@ -131,6 +131,26 @@ def identity_issues(scene):
     return issues
 
 
+def bbs_records(scene):
+    """Only trusted detailed bars with their original, unchanged host."""
+    records=[];issues=identity_issues(scene)
+    if issues:return [],issues
+    byuid={g.uid:g for g in scene.groups}
+    for g in scene.groups:
+        r=(g.ext or {}).get(KEY,{})
+        if r.get('kind')!='Rebar':continue
+        if not r.get('bbs'):
+            issues.append('Legacy / undetailed bar excluded: '+g.name);continue
+        host=byuid.get(r.get('host_uid'))
+        if g.xform is not None or mesh_fingerprint(g)!=r.get('fingerprint') or host is None or host.xform is not None or mesh_fingerprint(host)!=r.get('host_hash'):
+            issues.append('Changed geometry / missing host excluded: '+g.name);continue
+        b=r['bbs']
+        if abs(E.finite(b['length_m'])-E.finite(r['quantity']))>1e-8:
+            issues.append('Inconsistent bar length excluded: '+g.name);continue
+        records.append(dict(id=g.uid,host_uid=host.uid,host_name=host.name,bbs=copy.deepcopy(b)))
+    return records,issues
+
+
 def quantity_rows(scene):
     rows=[]; issues=identity_issues(scene)
     byuid={g.uid:g for g in scene.groups}
@@ -154,7 +174,7 @@ def quantity_rows(scene):
                 else:
                     q=None;basis='Recheck transformed roof area';issues.append('Recheck roof area: '+g.name)
             elif r['unit']=='m2': basis='Gross slope area from parameters'
-            if r.get('bar_path') and unchanged and g.xform is None:basis='Net model bar path; hooks/laps excluded'
+            if r.get('bar_path') and unchanged and g.xform is None:basis='Analytic detailed bar cut length' if r.get('bbs') else 'Net model bar path; hooks/laps excluded'
             if r.get('host_uid'):
                 host=byuid.get(r['host_uid'])
                 if host is None or g.xform is not None or host.xform is not None or mesh_fingerprint(host)!=r.get('host_hash'):

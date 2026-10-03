@@ -1,4 +1,4 @@
-# Thai BIM Toolkit 0.4.0
+# Thai BIM Toolkit 0.5.0
 
 An optional Thai-language extension for IngeTrazo Extension API 2. It adds an
 11-button toolbar and illustrated, modeless dialogs for concrete members,
@@ -6,17 +6,17 @@ roof framing, straight concrete stairs, reinforcement and quantity takeoff.
 It runs locally without an AI service or API key.
 
 [ภาษาไทย / detailed Thai guide](README-th.md) ·
-[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.4.0)
+[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.5.0)
 
 ## Install
 
-1. Download `Thai-BIM-Toolkit-0.4.0.zip` from the release and extract it.
+1. Download `Thai-BIM-Toolkit-0.5.0.zip` from the release and extract it.
 2. Copy the complete `thai_bim` folder into IngeTrazo's **user plugins folder**.
    On Windows this is `%APPDATA%\ingetrazo\plugins\thai_bim`.
    Alternatively, copy this directory from the repository and name it `thai_bim`.
 3. Restart IngeTrazo. Open **Extensions → Thai BIM Toolkit…** or use the new toolbar.
 
-Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py` and `builders.py`
+Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py` and `detailing.py`
 together. PySide6 and NumPy are provided by the host application. The plugin
 does not require `openpyxl`; that library is used only by the tests.
 
@@ -34,6 +34,7 @@ for discovery and platform-specific plugin locations. The 0.x host API may chang
 | Multi-plane roof | Read actual `IfcRoof` faces, preview clipped rafters/battens, inspect cross-sections and advanced JSON |
 | Stair | Straight RC flight with user-set riser count, going and waist thickness; selected-flight updates |
 | Reinforcement | Footing/slab meshes, column/beam cages and straight-stair bottom meshes, associated with the selected Thai BIM concrete host |
+| BBS | Per-host shape marks, exact cut lengths, counts, nominal masses, selected-row shape preview and three-sheet Excel export |
 | QTO | Excel/CSV with measurement basis and issues; invalidates reinforcement quantities when its host is changed/missing |
 | Stock cutting | Material-separated stock plans with net lengths, lap allowances, kerf and reusable offcuts |
 
@@ -46,16 +47,18 @@ support Undo. Manually edited/transformed assemblies and hosts are blocked.
 
 ![Hip-roof assembly preview](docs/images/hip-roof-dialog.png)
 
-![Reinforcement associated with a straight RC stair](docs/images/stair-rebar-dialog.png)
+![Footing U hooks with real curved bends](docs/images/footing-detail-dialog.png)
+
+![BBS with individual shape preview](docs/images/bbs-dialog.png)
 
 ## Modeling limits
 
 These tools model **user-specified dimensions**, not structural strength designs.
 Default dimensions are editable examples, not engineered sizes.
 
-- Ties are closed geometric loops with miter corners. Hooks, bend radii, laps,
-  development lengths and anchorage are not modeled. Bar quantities are net
-  model centreline lengths, **not fabrication-ready BBS or procurement totals**.
+- Footing L/U hooks, curved ties with two 135-degree tails, centre splices and straight anchorage extensions use explicit user input. Bend radius is measured at the inside face. These internal shape names are not standard shape codes or certified structural designs.
+- BBS includes analytic arc lengths and nominal circular diameter mass at user-supplied density. Legacy, edited/transformed bars, and bars with changed/missing hosts are excluded. Slab and stair bars retain the earlier geometry and do not enter the detailed BBS.
+- Main laps are modeled as two parallel bars offset inward by 1.5 diameters. Nearby parallel main-bar collisions are rejected; whole-model clashes and adjacent concrete embedment are not checked.
 - Concrete quantities are gross solids; intersections are not deducted.
 - The stair tool currently supports straight flights, without landings or rails.
   The waist extends below the lower-floor datum at the start; support interfaces
@@ -73,8 +76,8 @@ in isolated test scenes; they are modeling examples, not construction designs.
 
 ## Verification
 
-The original installed implementation passed **17 pure engine tests** and
-**64 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
+The original installed implementation passed **22 pure engine tests** and
+**34 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
 host association, QTO invalidation, IGZ persistence and GLB export. Native checks
 left the user's document geometry unchanged. Evidence is in
 [RELEASE.json](RELEASE.json) and [evidence/live-checks.json](evidence/live-checks.json).
@@ -86,6 +89,8 @@ python -m pip install -r examples/extensions/thai_bim/tests/requirements.txt
 python -m unittest discover -s examples/extensions/thai_bim/tests -p "test_*.py"
 ```
 
+Current detailed reinforcement examples are `examples/detailed-rebar-test.igz`, `examples/detailed-rebar-test.glb` and `examples/detailed-BBS.xlsx`. Older stair examples remain unchanged.
+
 The native test script requires the plugin to be installed and enabled. Run it
 in IngeTrazo's Python Console/AI bridge, where `scene` and `viewport` are supplied:
 
@@ -93,7 +98,7 @@ in IngeTrazo's Python Console/AI bridge, where `scene` and `viewport` are suppli
 import runpy
 from core.extensions import user_plugins_dir
 runpy.run_path(
-    str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_thai_bim_v04.py'),
+    str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_thai_bim_v05.py'),
     init_globals={'scene': scene, 'viewport': viewport},
 )
 ```
