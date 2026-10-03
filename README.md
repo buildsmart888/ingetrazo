@@ -175,7 +175,7 @@ the document), **import STL (with principal-plane or advanced all-surface
 [Thai BIM Toolkit](examples/extensions/thai_bim/README.md) is an optional
 Thai-language plugin with a toolbar, illustrated RC/roof/stair tools,
 Grid/Level click placement, explicit host review, detailed footing/column/beam reinforcement, BBS and quantity takeoff. Download the
-[Thai BIM 0.7.0 extension release](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.7.0)
+[Thai BIM 0.7.1 extension release](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.7.1)
 or read the [Thai guide](examples/extensions/thai_bim/README-th.md).
 It models user-specified geometry and detailing. Slab/stair detailing and construction sheets remain future work. It is not a structural design or LOD 350 certification tool.
 

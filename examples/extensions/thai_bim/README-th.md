@@ -1,11 +1,11 @@
-# Thai BIM Toolkit 0.7.0
+# Thai BIM Toolkit 0.7.1
 
 Extension สำหรับ IngeTrazo Extension API 2 พัฒนาจากงาน Family10
 ใช้ Python/PySide6 และไลบรารีของ IngeTrazo ไม่มี API key และไม่มีการเรียก AI ในคำสั่งรุ่นนี้
 
 ## ติดตั้งและเปิด
 
-นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py` ไปไว้ใน
+นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py` ไปไว้ใน
 `%APPDATA%\ingetrazo\plugins\thai_bim` แล้วเปิด IngeTrazo ใหม่
 เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.7
 การติดตั้งในครั้งนี้จะเปิดแผงให้ใน session ปัจจุบันด้วย จึงไม่จำเป็นต้องปิดไฟล์ที่ยังไม่บันทึก
@@ -346,3 +346,26 @@ Move/Rotate, Undo/Redo, Grid priority, Host/BBS invalidation, IGZ และ GLB
 ความยาวตัด น้ำหนัก Mark และ UID ของชุดเดิมตรงกันทุกโหมด ผลนี้เป็นชุดตัวอย่าง ไม่ใช่ผลวัด FPS หรือการรับประกันโมเดลทั้งบ้านไม่ค้าง
 
 ดูหลักฐานล่าสุด `evidence/live-checks.json`, `evidence/performance-v07.json` และ `RELEASE.json`; ข้อความผลทดสอบรุ่นก่อนหน้าในคู่มือนี้เป็นหลักฐานย้อนหลัง
+
+
+## เพิ่มใน 0.7.1: ตรวจทั้งโครงการและ Family10 รุ่นเดิม
+
+แถบไอคอน 16 ปุ่ม เพิ่ม **ตรวจทั้งโครงการ / Family10** พร้อมภาพรวม Layer ปริมาณแยกงาน และ Issues เป็นตารางอ่านอย่างเดียว ส่งออก Excel ได้ รายงานเป็น snapshot ตอนเปิดหน้าต่าง เปิดใหม่หลังแก้โมเดล
+
+Layer dialog เพิ่มช่องรวม Family10 รุ่นเดิม โดยจัดตาม IFC class/discipline และอ่าน Host ID ที่บันทึกใน note ของเหล็ก ไม่สร้าง geometry หรือเปลี่ยน metadata ปริมาณ สถานะ visible/locked/hidden เดิมคงอยู่ เลื่อนรายการเลเยอร์ได้เมื่อโมเดลมีหลายหมวด
+
+เหล็ก Family10 รุ่นเดิมจะแสดงจำนวนที่ถูกตัดออกจาก fabrication BBS อย่างชัดเจน ใช้ quantity metadata เดิมใน QTO ต่อไป คำสั่งอัปเดตกรงเหล็กของ Host ยังรองรับเฉพาะ Host ของ Thai BIM ไม่อนุมานตะขอ ระยะทาบ หรือชนิดเหล็กให้ชิ้นเก่า
+
+การทดสอบไฟล์ Family10 R03 จริง:
+- 3980 groups ทั้งหมด / 3962 source-tagged elements / 17 footings / 3178 legacy bars
+- 175925 mesh faces และ 362762 mesh edges
+- ID geometry hidden state และ quantity metadata คงเดิมหลังจัดเลเยอร์; Undo คืน tag เดิมได้
+- เปิดสำเนา IGZ กลับแล้ว UID Layer visibility และ QTO ตรงกัน; ไม่เขียนทับไฟล์ต้นฉบับ
+- ต้นฉบับ 8679685 bytes เป็น IGZ ที่บีบอัดแล้ว สำเนาเพิ่ม Layer เป็น 8702136 bytes จึงไม่ได้ลดไฟล์ด้วยการบีบอัดซ้ำ
+- การจับ framebuffer ระหว่างหมุน 8 ครั้ง: median hidden-rebar 242.154 ms / visible-rebar 722.703 ms; รวม event dispatch และ GPU readback ไม่ใช่ interactive FPS
+- โหลดต้นฉบับ 21.70s; บันทึกสำเนา 44.71s; เปิดสำเนากลับ 16.02s บนเครื่องทดสอบนี้ ยังมีต้นทุนการโหลด/บันทึกโมเดลใหญ่
+
+34 pure tests + 74 native checks (58 regression + 14 full-project checks + audit/layer UI checks).
+ไฟล์บ้านและรายงาน QTO จริงเก็บใน workspace ของผู้ใช้ ไม่รวมไว้ใน ZIP ปลั๊กอินสาธารณะ; เผยแพร่เฉพาะผลตรวจ/เวลาโดยไม่มี geometry บ้าน
+
+ขั้นนี้เป็นการทดสอบและจัดข้อมูลของโมเดลที่มีอยู่ ไม่รับรองว่าชิ้นงานทุกชิ้นตรงแบบครบ LOD350 ยังต้องพัฒนา slab/stair detailed BBS, construction drawing และตรวจแบบ/รายละเอียดที่ยังขาด

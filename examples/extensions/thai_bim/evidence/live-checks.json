@@ -1,8 +1,8 @@
 {
-  "version": "0.7.0",
+  "version": "0.7.1",
   "passed": [
-    "15 actual toolbar actions with nonempty icons",
-    "fresh setup has 15 icons",
+    "16 actual toolbar actions with nonempty icons",
+    "fresh setup has 16 icons",
     "layer manager install idempotent",
     "create Footing retains all prior members",
     "create Column retains all prior members",
@@ -58,6 +58,22 @@
     "Stair wire-to-light conversion preserves RC",
     "floor stair footing bars have valid QTO lengths",
     "slab stair remain excluded from detailed BBS",
-    "actual user scene unchanged"
+    "actual user scene unchanged",
+    "Family10 3962 source-tagged elements loaded",
+    "Family10 17 footings retained",
+    "Family10 identity and layer audit",
+    "Family10 original rebar explicitly excluded from detailed BBS",
+    "Family10 migration retains all group UIDs geometry hidden states",
+    "Family10 source project metadata unchanged",
+    "Family10 QTO identical after migration",
+    "Family10 rebar host layers all assigned",
+    "Family10 layer Undo restores every original tag",
+    "whole Family10 compact IGZ reopens all identities",
+    "whole Family10 reopened QTO unchanged",
+    "whole Family10 reopened layer visibility retained",
+    "Family10 source file untouched",
+    "actual active document untouched by full-project tests",
+    "native audit dialog has four readable report tabs",
+    "whole-project layer dialog scrolls long layer list"
   ]
 }

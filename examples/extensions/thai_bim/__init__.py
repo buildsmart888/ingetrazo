@@ -1,4 +1,4 @@
-"""IngeTrazo Extension: Thai BIM Toolkit 0.7.0 (API 2)."""
+"""IngeTrazo Extension: Thai BIM Toolkit 0.7.1 (API 2)."""
 import copy
 import json
 import math
@@ -150,6 +150,8 @@ def bbs_records(scene):
     from .workflow import host_matches
     records=[];issues=identity_issues(scene)
     if issues:return [],issues
+    legacy=sum((g.ext or {}).get('family10',{}).get('class')=='IfcReinforcingBar' for g in scene.groups)
+    if legacy:issues.append(f'Family10 legacy bars excluded from fabrication BBS: {legacy}; source metadata / nominal paths lack verified hooks, laps and anchorage')
     byuid={g.uid:g for g in scene.groups}
     for g in scene.groups:
         r=(g.ext or {}).get(KEY,{})
@@ -457,6 +459,8 @@ def setup(app):
     install(panel)
     from .management import install as install_management
     install_management(panel)
+    from .audit import install as install_audit
+    install_audit(panel)
     return panel
 
 

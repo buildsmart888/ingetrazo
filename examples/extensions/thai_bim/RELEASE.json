@@ -1,12 +1,12 @@
 {
   "name": "Thai BIM Toolkit",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "api_version": 2,
   "license": "GPL-3.0-or-later",
-  "pure_tests": 32,
+  "pure_tests": 34,
   "native_checks": [
-    "15 actual toolbar actions with nonempty icons",
-    "fresh setup has 15 icons",
+    "16 actual toolbar actions with nonempty icons",
+    "fresh setup has 16 icons",
     "layer manager install idempotent",
     "create Footing retains all prior members",
     "create Column retains all prior members",
@@ -62,11 +62,27 @@
     "Stair wire-to-light conversion preserves RC",
     "floor stair footing bars have valid QTO lengths",
     "slab stair remain excluded from detailed BBS",
-    "actual user scene unchanged"
+    "actual user scene unchanged",
+    "Family10 3962 source-tagged elements loaded",
+    "Family10 17 footings retained",
+    "Family10 identity and layer audit",
+    "Family10 original rebar explicitly excluded from detailed BBS",
+    "Family10 migration retains all group UIDs geometry hidden states",
+    "Family10 source project metadata unchanged",
+    "Family10 QTO identical after migration",
+    "Family10 rebar host layers all assigned",
+    "Family10 layer Undo restores every original tag",
+    "whole Family10 compact IGZ reopens all identities",
+    "whole Family10 reopened QTO unchanged",
+    "whole Family10 reopened layer visibility retained",
+    "Family10 source file untouched",
+    "actual active document untouched by full-project tests",
+    "native audit dialog has four readable report tabs",
+    "whole-project layer dialog scrolls long layer list"
   ],
   "source_sha256": {
-    "__init__.py": "fb6d3b9aec4213e3bb08438d76ffb889073703769cd57183035034c5283983ed",
-    "engine.py": "7c212dc4ffb91fcf06f1b0feaffc324c1a2e4ee04f3b601f12c14e2a8679feda",
+    "__init__.py": "ffaefb667ea5841e13c51401105f56c55ce0d0dfe717ec493c078bf8736ffe55",
+    "engine.py": "95643f17fbb6f4e2ea26f3b3cf4ffb9204077efb3cf1569916030698835001f1",
     "visuals.py": "d886e061ab2ad9d6f0b208a0ff082637a59d08694aa4eb24c8c8e880b0c4284e",
     "structures.py": "812651feb2c1c1341a6099005cbee76070a2db8032070c07fe59b001f9b265ef",
     "builders.py": "d5c5e9675ac958d3676ea0298e48479a0c12eeab9f6ca20475bbc5f777ff86da",
@@ -74,9 +90,10 @@
     "placement.py": "0917cff0ad9db53c8d65b7a3a5a9c41bf2e6024c8ec560fec2e148e2e7b75632",
     "workflow.py": "fe7d885d91702301c411f69aed0adf04f5a407f149e4052a371f3510805ae48c",
     "steel.py": "680d13139e0677a1a015b15d8b93afdc390075abcaec04e921a6cecc97623114",
-    "management.py": "629e3e399fb8edfd49b0212947e20d532ca0276ecb2bc0fdc57f2aa86e84a432"
+    "management.py": "e48756eed4dce432536a607112159ab3c379cd51930be60dd1cc31a8c88b33f2",
+    "audit.py": "09bf169302cee47f1896a688097c7d9a4abacae4a1ec58eb0fcb378068ab2e8b"
   },
-  "native_checks_context": "Windows IngeTrazo API 2, synthetic scenes, live dialogs; actual user geometry unchanged",
+  "native_checks_context": "Windows IngeTrazo API2; regression and isolated saved Family10 project; original file untouched; reviewed copy subsequently opened for user",
   "limitations": [
     "User dimensions; no strength design or code certification",
     "Footing / Column / Beam detailed BBS only",
@@ -87,12 +104,12 @@
     "Old baked host transforms require reconstruction; adopt untouched old hosts through placement first",
     "Centreline bars are edges, not solids; surface-only export/render requires solid mode",
     "RB/DB/ASTM grades are specified metadata; no physical ribs or certification",
-    "Performance results are synthetic 29-bar fixture, not a whole-house FPS benchmark",
+    "Navigation measurements include framebuffer readback and event dispatch, not raw FPS",
     "Detailed slabs/stairs, drawing sheets, architecture/MEP and PDF/OCR remain future work"
   ],
   "native_tested_source_sha256": {
-    "__init__.py": "0b2014d377e481d82b1f4a1d79c22b48cbca8b8e1c64b24495410030c15b317e",
-    "engine.py": "9081f35222d2ffcfe65b0c3e53df0799fe649f2e7513607f4368a7090969b70e",
+    "__init__.py": "80fc51f8d6fb4196b54fb561d29e85c887c780e1060bd6038122d81198ba5356",
+    "engine.py": "49f4bb99665d844cb168db9aa5e6e468a6c50684485efbf37bef22119951853a",
     "visuals.py": "d886e061ab2ad9d6f0b208a0ff082637a59d08694aa4eb24c8c8e880b0c4284e",
     "structures.py": "812651feb2c1c1341a6099005cbee76070a2db8032070c07fe59b001f9b265ef",
     "builders.py": "3eb1aedbb7b181d5160a67a7dddd89f3ef707b9405203c9051133832f351ee4d",
@@ -100,7 +117,8 @@
     "placement.py": "0917cff0ad9db53c8d65b7a3a5a9c41bf2e6024c8ec560fec2e148e2e7b75632",
     "workflow.py": "fe7d885d91702301c411f69aed0adf04f5a407f149e4052a371f3510805ae48c",
     "steel.py": "680d13139e0677a1a015b15d8b93afdc390075abcaec04e921a6cecc97623114",
-    "management.py": "629e3e399fb8edfd49b0212947e20d532ca0276ecb2bc0fdc57f2aa86e84a432"
+    "management.py": "a39618820d84af2525f232e0da8180dd69569954d7b6f7fbe39b468eecac5dbc",
+    "audit.py": "33cd59ddaa46e18ac4a260fc768c34c2efe166a0cb170b96392d5bad4c8ecdf5"
   },
   "publication_note": "Source line endings normalized to LF; original installed/native-tested source hashes retained."
 }

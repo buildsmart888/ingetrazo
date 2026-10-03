@@ -1,22 +1,22 @@
-# Thai BIM Toolkit 0.7.0
+# Thai BIM Toolkit 0.7.1
 
 An optional Thai-language extension for IngeTrazo Extension API 2. It adds an
-15-button toolbar and illustrated, modeless dialogs for concrete members,
+16-button toolbar and illustrated, modeless dialogs for concrete members,
 roof framing, straight concrete stairs, reinforcement and quantity takeoff.
 It runs locally without an AI service or API key.
 
 [ภาษาไทย / detailed Thai guide](README-th.md) ·
-[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.7.0)
+[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.7.1)
 
 ## Install
 
-1. Download `Thai-BIM-Toolkit-0.7.0.zip` from the release and extract it.
+1. Download `Thai-BIM-Toolkit-0.7.1.zip` from the release and extract it.
 2. Copy the complete `thai_bim` folder into IngeTrazo's **user plugins folder**.
    On Windows this is `%APPDATA%\ingetrazo\plugins\thai_bim`.
    Alternatively, copy this directory from the repository and name it `thai_bim`.
 3. Restart IngeTrazo. Open **Extensions → Thai BIM Toolkit…** or use the new toolbar.
 
-Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` and `management.py`
+Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` and `audit.py`
 together. PySide6 and NumPy are provided by the host application. The plugin
 does not require `openpyxl`; that library is used only by the tests.
 
@@ -82,8 +82,8 @@ in isolated test scenes; they are modeling examples, not construction designs.
 
 ## Verification
 
-The original installed implementation passed **32 pure engine tests** and
-**58 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
+The original installed implementation passed **34 pure engine tests** and
+**74 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
 host association, QTO invalidation, IGZ persistence and GLB export. Native checks
 left the user's document geometry unchanged. Evidence is in
 [RELEASE.json](RELEASE.json) and [evidence/live-checks.json](evidence/live-checks.json).
@@ -158,3 +158,31 @@ Sources: [TIS20](https://www.tisi.go.th/data/standard/fulltext/TIS-20-2559p.pdf)
 [CRSI nominal inch diameters](https://www.crsi.org/wp-content/uploads/CRSI_MSP_29th_Ed_Errata-Nov2019.pdf),
 [ASTM scope](https://store.astm.org/a0615_a0615m-26.html).
 See `evidence/performance-v07.json` and the current `RELEASE.json`.
+
+
+## 0.7.1: complete-project review
+
+Adds a read-only, four-tab project report with Excel export (overview, layers,
+quantity summary and issues). The layer dialog can include legacy Family10
+metadata, preserving geometry, IDs, hidden flags and quantity metadata; long
+layer lists scroll. Original Family10 bars are explicitly excluded from detailed
+fabrication BBS rather than silently appearing as zero. Their source quantity
+metadata is retained in QTO. They are not adopted into toolkit regeneration.
+
+Full saved Family10 R03 verification: 3,980 groups / 3,962 tagged elements,
+17 footings and 3,178 legacy bars; 175,925 mesh faces. Migration/Undo and saved
+IGZ reopening retained IDs and QTO. Original file SHA256 stayed unchanged.
+The source was already compressed (8,679,685 bytes); the retagged copy was
+8,702,136 bytes, so repeating compression provides no whole-project size saving.
+
+Median synchronous rotating framebuffer readback across eight samples was
+242.154 ms with reinforcement hidden and 722.703 ms visible. This includes event
+processing and GPU readback, not interactive FPS. Source load took 21.70 s,
+save 44.71 s and reopen 16.02 s on the test machine. Loading/saving remains costly.
+See `evidence/family10-performance-v071.json`. The private house geometry and
+QTO workbook are not included in the public extension package.
+
+Current checks: 34 pure tests and 74 native checks, including 58 regression
+checks, 14 whole-project checks and two audit/layer UI checks. Full-project
+checks validate file/metadata preservation, not drawing completeness or LOD350.
+Detailed floor/stair BBS and construction sheets remain next development stages.
