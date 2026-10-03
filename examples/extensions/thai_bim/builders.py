@@ -27,6 +27,8 @@ def icon(kind):
             'Roof':[[(7,43),(32,14),(57,43)],[(14,37),(14,56),(50,56),(50,37)]],
             'Multi':[[(7,44),(22,12),(44,12),(57,44),(7,44)],[(22,12),(32,32),(44,12)],[(7,44),(32,32),(57,44)]],
             'QTO':[[(13,8),(51,8),(51,56),(13,56),(13,8)],[(21,22),(44,22)],[(21,33),(44,33)],[(21,44),(44,44)]],
+            'Place':[[(8,32),(56,32)],[(32,8),(32,56)],[(18,20),(46,20),(46,46),(18,46),(18,20)]],
+            'Host':[[(10,10),(44,10),(44,44),(10,44),(10,10)],[(50,26),(56,34),(50,42)],[(56,34),(38,34)]],
             'Cut':[[(7,17),(57,17),(57,29),(7,29),(7,17)],[(27,9),(27,36)],[(7,45),(26,45)],[(38,45),(57,45)]],
         }
         for path in paths[kind]:p.drawPolyline(QPolygonF([QPointF(*v) for v in path]))
@@ -78,7 +80,7 @@ class AssemblyPreview(QWidget):
 
 class BuilderDialog(QDialog):
     def __init__(self,panel,title):
-        super().__init__(panel.app.window);self.panel=panel;self.setWindowTitle('Thai BIM 0.5 — '+title);self.setWindowIcon(icon(title if title in ('Stair','Rebar') else 'Roof'));self.resize(1080,800)
+        super().__init__(panel.app.window);self.panel=panel;self.setWindowTitle('Thai BIM 0.6 — '+title);self.setWindowIcon(icon(title if title in ('Stair','Rebar') else 'Roof'));self.resize(1080,800)
         lay=QVBoxLayout(self);row=QHBoxLayout();lay.addLayout(row,1)
         scroll=QScrollArea();scroll.setWidgetResizable(True);scroll.setMinimumWidth(355);scroll.setMaximumWidth(470);row.addWidget(scroll,4)
         content=QWidget();self.form=QFormLayout(content);scroll.setWidget(content)
@@ -152,7 +154,7 @@ class StairDialog(BuilderDialog):
 
 class RebarDialog(BuilderDialog):
     def __init__(self,panel):
-        super().__init__(panel,'Rebar');self.host_uid=None;self.host_params=None;self.host_kind=None
+        super().__init__(panel,'Rebar');self.host_uid=None;self.host_params=None;self.host_kind=None;self.bound_scene=None;self.reviewed_key=None;self.reviewed_specs=None
         self.host_label=QLabel('เลือก RC หนึ่งชิ้น แล้วกดอ่าน Host');self.host_label.setWordWrap(True);self.form.addRow(self.host_label)
         self.button('อ่านฐานราก / คาน / เสา / พื้น / บันไดที่เลือก',self.read_host)
         self.field('cover','Cover ถึงผิวนอกเหล็ก (mm)',40,False,15,150)
@@ -175,15 +177,16 @@ class RebarDialog(BuilderDialog):
         self.field('hook_ends','ตะขอฐานราก: 1 = L / 2 = U',2,True,1,2)
         self.note('ฐานราก L/U • เสา/คานปลอกโค้ง 135° และทาบกลางชิ้น\nค่าทุกช่องมาจากผู้ใช้ ไม่มีการออกแบบรับแรง\nส่วนยื่นต้องตรวจร่วมกับคอนกรีตข้างเคียง; ไม่มีการตรวจชนทั้งโมเดล\nพื้น/บันไดยังคงรูปทรงเดิมและไม่รวมใน BBS รายละเอียด')
         self.button('ตาราง BBS / ส่งออก Excel…',lambda:open_bbs(self.panel))
-        self.button('สร้าง / อัปเดตเหล็กของ Host นี้',self.build)
+        self.button('ตรวจพรีวิวและข้อมูล Host ล่าสุด',self.review)
+        self.button('สร้าง / อัปเดตเหล็กที่ตรวจพรีวิวแล้ว',self.build)
     def read_host(self):
-        from . import mesh_fingerprint
+        from .workflow import host_token
         scene=self.panel.app.scene;selected=[g for g in scene.selection if g in scene.groups]
         if len(selected)!=1:raise ValueError('เลือกชิ้นคอนกรีต Thai BIM หนึ่งชิ้น')
         host=selected[0];rec=(host.ext or {}).get('thai_bim',{})
         params=rec.get('params') or rec.get('stair_params')
         if not params or rec.get('kind') not in ('Footing','Column','Beam','Slab','Stair'):raise ValueError('รองรับ RC และบันไดตรงที่สร้างด้วย Thai BIM')
-        if host.xform is not None or mesh_fingerprint(host)!=rec.get('fingerprint'):raise ValueError('Host ถูก Transform/แก้ผิว: รุ่นนี้ต้องใช้ geometry ตามพารามิเตอร์เดิม')
+        host_token(host);self.bound_scene=scene;self.reviewed_key=None;self.reviewed_specs=None
         self.host_uid=host.uid;self.host_params=params;self.host_kind=rec['kind'];self.host_label.setText(host.name)
         for w in ('count_x','count_y','tie_diameter'):self.fields[w].setEnabled(self.host_kind in ('Beam','Column'))
         self.fields['layers'].setEnabled(self.host_kind in ('Footing','Slab'))
@@ -195,30 +198,44 @@ class RebarDialog(BuilderDialog):
         if old.get('rebar_params'):
             for k,w in self.fields.items():
                 if k in old['rebar_params']:w.setValue(old['rebar_params'][k])
-        self.preview()
+        self.review()
     def host(self):
-        from . import mesh_fingerprint
+        from .workflow import host_token
+        if self.panel.app.scene is not self.bound_scene:raise ValueError('เอกสารเปลี่ยน: อ่าน Host ในเอกสารนี้ใหม่')
         host=next((g for g in self.panel.app.scene.groups if g.uid==self.host_uid),None)
         if host is None:raise ValueError('กรุณาอ่าน Host ในเอกสารปัจจุบันก่อน')
         rec=host.ext['thai_bim']
-        if host.xform is not None or mesh_fingerprint(host)!=rec['fingerprint']:raise ValueError('Host เปลี่ยนแล้ว: อ่าน/ตรวจ Host ใหม่')
+        host_token(host)
         if rec['kind']!=self.host_kind:raise ValueError('Host เปลี่ยนชนิด: กดอ่าน Host ใหม่')
         self.host_params=rec.get('params') or rec.get('stair_params');return host
     def params(self):return {k:w.value() for k,w in self.fields.items()}
     def specs(self):
-        self.host();p=self.params()
-        for k in ('cover','diameter','tie_diameter','spacing','inside_radius','tie_inside_radius','hook_length','tie_hook_length','lap_length','extension_start','extension_end'):p[k]/=1000
-        if self.host_kind=='Stair':p['layers']=1
-        return D.reinforcement(self.host_kind,self.host_params,**p)
+        from .workflow import review_specs
+        host=self.host();return review_specs(self.panel.app.scene,host,self.params())[0]
     def preview(self):
-        super().preview()
-        if not self.visual.error and self.host_params:
+        from . import workflow as W
+        try:
+            host=self.host();specs,token,summary=W.review_specs(self.panel.app.scene,host,self.params())
             hostspec=S.stair_spec(**self.host_params) if self.host_kind=='Stair' else E.box_spec(**self.host_params)
-            self.visual.display(self.visual.specs,[hostspec])
+            self.visual.display(W.P.world_specs(specs,W.pose(host)),W.P.world_specs([hostspec],W.pose(host)))
+            self._preview_specs=specs;self._preview_token=token
+            ready=self.reviewed_key==W.review_key(host,self.params())
+            self.output.setPlainText(f"Host {host.name} • เหล็ก {summary['old_count']} → {summary['new_count']} เส้น\nความยาว {summary['old_m']:.3f} → {summary['new_m']:.3f} m\n"+('ตรวจพรีวิวแล้ว พร้อมสร้าง/อัปเดต' if ready else 'กดตรวจพรีวิวและข้อมูล Host ล่าสุดก่อนสร้าง/อัปเดต')+'\nรองรับย้าย/หมุนแบบ rigid; ไม่รองรับ Scale / mirror / แก้ผิวด้วยมือ')
+        except Exception as error:
+            self._preview_specs=None;self.visual.invalid(error);self.output.setPlainText(str(error))
+    def review(self):
+        from .workflow import review_key
+        self.preview()
+        if self.visual.error:raise ValueError(self.visual.error)
+        self.reviewed_key=review_key(self.host(),self.params());self.reviewed_specs=self._preview_specs
+        self.output.appendPlainText('ตรวจพรีวิวแล้ว • หาก Host/ค่าเปลี่ยน ต้องตรวจใหม่ • ยังไม่ได้แก้โมเดล')
     def build(self,update=False):
         from . import rebar_command
-        host=self.host();command,count=rebar_command(self.panel.app.scene,host,self.specs(),self.params())
-        self.panel.execute(command);self.output.setPlainText(f'เหล็ก {count} เส้น • Host {host.name}\nกดซ้ำอัปเดตชุดเดิม • Undo ได้ • BBS รวมส่วนโค้ง/ตะขอ/ทาบที่สร้างจริง')
+        from .workflow import review_key
+        host=self.host();key=review_key(host,self.params())
+        if key!=self.reviewed_key or self.reviewed_specs is None:raise ValueError('Host หรือค่าเปลี่ยนหลังพรีวิว: กดตรวจพรีวิวและข้อมูล Host ล่าสุดก่อนสร้าง')
+        command,count=rebar_command(self.panel.app.scene,host,self.reviewed_specs,self.params(),expected=key[0])
+        self.panel.execute(command);self.output.setPlainText(f'เหล็ก {count} เส้น • Host {host.name}\nกดซ้ำอัปเดตชุดเดิม • Undo ได้ • BBS ใช้รายละเอียดและตำแหน่งที่ตรวจแล้ว')
 
 
 def open_bbs(panel):
@@ -227,7 +244,7 @@ def open_bbs(panel):
     records,issues=bbs_records(panel.app.scene);tables=D.tables(records,issues)
     old=getattr(panel,'bbs_dialog',None)
     if old is not None:old.close();old.deleteLater()
-    dialog=QDialog(panel.app.window);dialog.setWindowTitle('Thai BIM 0.5 — BBS / Bar bending schedule');dialog.resize(1280,780)
+    dialog=QDialog(panel.app.window);dialog.setWindowTitle('Thai BIM 0.6 — BBS / Bar bending schedule');dialog.resize(1280,780)
     lay=QVBoxLayout(dialog);lay.addWidget(QLabel(f'เหล็กรายละเอียด {len(records)} เส้น • กลุ่มรูปดัด {len(tables[0][1])-1} • รายการต้องตรวจ {len(issues)}'))
     tabs=QTabWidget();lay.addWidget(tabs)
     preview=AssemblyPreview();preview.setMinimumSize(440,220);lay.addWidget(preview)
@@ -267,7 +284,7 @@ def add_tools(panel):
         panel._v05_tools=True
         action=panel.toolbar.addAction(icon('QTO'),'BBS / รูปดัดเหล็ก');action.setToolTip('ตารางรูปดัด ความยาวตัด และน้ำหนักเหล็ก')
         action.triggered.connect(lambda checked=False:panel.guard(lambda:open_bbs(panel)))
-        panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.5 — รายละเอียดเหล็ก / BBS')
+        panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.6 — รายละเอียดเหล็ก / BBS')
     if getattr(panel,'_v04_tools',False):return
     panel._v04_tools=True
     panel.builder_dialogs={}
@@ -303,7 +320,7 @@ def add_tools(panel):
     panel.button(panel.members,'เหล็กเสริมของชิ้นที่เลือก…',lambda:open_builder('Rebar'))
     panel.button(panel.members,'สร้างบันได RC ตรง…',lambda:open_builder('Stair'))
     panel.button(panel.roof,'หลังคาจั่ว / ปั้นหยา / เพิง…',lambda:open_builder('Roof'))
-    toolbar=QToolBar('Thai BIM 0.5',panel.app.window);toolbar.setObjectName('thai_bim_toolbar');toolbar.setIconSize(QSize(28,28));toolbar.setMovable(True);toolbar.setFloatable(True)
+    toolbar=QToolBar('Thai BIM 0.6',panel.app.window);toolbar.setObjectName('thai_bim_toolbar');toolbar.setIconSize(QSize(28,28));toolbar.setMovable(True);toolbar.setFloatable(True)
     panel.app.window.addToolBarBreak(Qt.TopToolBarArea)
     panel.app.window.addToolBar(Qt.TopToolBarArea,toolbar);panel.toolbar=toolbar
     actions=[('Project','โครงการ / Grid / Level',lambda:(tabs.setCurrentIndex(0),panel.open_workspace()))]
@@ -313,9 +330,9 @@ def add_tools(panel):
         ('QTO','ปริมาณ / Excel',lambda:(tabs.setCurrentIndex(3),panel.open_workspace())),('Cut','แผนตัดวัสดุ',panel.open_cuts)]
     for k,title,fn in actions:
         action=toolbar.addAction(icon(k),title);action.setToolTip(title);action.triggered.connect(lambda checked=False,fn=fn:panel.guard(fn))
-    panel.workspace_dialog.setWindowIcon(icon('Project'));panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.5 — โครงสร้าง / หลังคา / เหล็กเสริม')
+    panel.workspace_dialog.setWindowIcon(icon('Project'));panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.6 — โครงสร้าง / หลังคา / เหล็กเสริม')
     for label in panel.findChildren(QLabel):
-        if label.text().startswith('Thai BIM Toolkit'):label.setText('Thai BIM Toolkit 0.5 • โครงสร้าง / หลังคา / เหล็กเสริม')
+        if label.text().startswith('Thai BIM Toolkit'):label.setText('Thai BIM Toolkit 0.6 • โครงสร้าง / หลังคา / เหล็กเสริม')
     for action in panel.app.window.findChildren(type(toolbar.toggleViewAction())):
         if action.text()=='Thai BIM Toolkit…':action.setIcon(icon('Project'))
     # QToolBar has a native visibility action; no private host toolbar API needed.

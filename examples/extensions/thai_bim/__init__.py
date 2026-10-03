@@ -1,4 +1,4 @@
-"""IngeTrazo Extension: Thai BIM Toolkit 0.5.0 (API 2)."""
+"""IngeTrazo Extension: Thai BIM Toolkit 0.6.0 (API 2)."""
 import copy
 import json
 import math
@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 from PySide6.QtCore import Qt, QPointF, QUrl
-from PySide6.QtGui import QColor, QPen, QDesktopServices, QVector3D
+from PySide6.QtGui import QColor, QPen, QDesktopServices, QVector3D,QMatrix4x4
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QFormLayout,QLineEdit,QPlainTextEdit,
     QTabWidget,QComboBox,QDoubleSpinBox,QPushButton,QLabel,QCheckBox,QScrollArea,
     QMessageBox,QFileDialog,QDialog)
@@ -21,7 +21,7 @@ from .visuals import launcher, decorate_multi, decorate_cut
 from .builders import add_tools
 
 KEY='thai_bim'
-TITLE='Thai BIM 0.5'
+TITLE='Thai BIM 0.6'
 
 
 class ExchangeGroups(Command):
@@ -97,6 +97,9 @@ def make_group(spec, assembly='', previous=None):
     if measured is None or measured <= 1e-9:
         raise ValueError('ชิ้นงานไม่เป็น solid ปิด: '+spec['slot'])
     g=Group(mesh,name='TBIM '+spec['kind']+' '+spec['slot'])
+    if spec.get('params') and spec['kind'] in ('Footing','Column','Beam','Slab'):
+        # Native Move/Rotate composes a pose instead of baking vertices for these hosts.
+        g.xform=QMatrix4x4()
     g.layer='TBIM '+spec['discipline']
     bim.tag_group(g,spec['ifc'],g.name)
     rec={k:copy.deepcopy(spec[k]) for k in ('slot','kind','discipline','item','unit','quantity','note')}
@@ -133,6 +136,7 @@ def identity_issues(scene):
 
 def bbs_records(scene):
     """Only trusted detailed bars with their original, unchanged host."""
+    from .workflow import host_matches
     records=[];issues=identity_issues(scene)
     if issues:return [],issues
     byuid={g.uid:g for g in scene.groups}
@@ -142,7 +146,7 @@ def bbs_records(scene):
         if not r.get('bbs'):
             issues.append('Legacy / undetailed bar excluded: '+g.name);continue
         host=byuid.get(r.get('host_uid'))
-        if g.xform is not None or mesh_fingerprint(g)!=r.get('fingerprint') or host is None or host.xform is not None or mesh_fingerprint(host)!=r.get('host_hash'):
+        if not host_matches(g,host):
             issues.append('Changed geometry / missing host excluded: '+g.name);continue
         b=r['bbs']
         if abs(E.finite(b['length_m'])-E.finite(r['quantity']))>1e-8:
@@ -152,6 +156,7 @@ def bbs_records(scene):
 
 
 def quantity_rows(scene):
+    from .workflow import bar_unchanged,host_matches
     rows=[]; issues=identity_issues(scene)
     byuid={g.uid:g for g in scene.groups}
     for g in scene.groups:
@@ -168,16 +173,17 @@ def quantity_rows(scene):
             elif r['unit']=='m3':
                 q=bim.face_set_volume(list(world_mesh(g).faces));basis='Measured gross solid volume'
             elif g.xform is not None:
-                if r.get('axis'):
+                if r.get('bar_path') and bar_unchanged(g):basis='Analytic bar cut length under tracked rigid placement'
+                elif r.get('axis'):
                     a,b=(g.xform.map(QVector3D(*p)) for p in r['axis'])
                     q=(b-a).length();basis='Transformed net centreline'
                 else:
                     q=None;basis='Recheck transformed roof area';issues.append('Recheck roof area: '+g.name)
             elif r['unit']=='m2': basis='Gross slope area from parameters'
-            if r.get('bar_path') and unchanged and g.xform is None:basis='Analytic detailed bar cut length' if r.get('bbs') else 'Net model bar path; hooks/laps excluded'
+            if r.get('bar_path') and unchanged and (g.xform is None or bar_unchanged(g)):basis='Analytic detailed bar cut length' if r.get('bbs') else 'Net model bar path; hooks/laps excluded'
             if r.get('host_uid'):
                 host=byuid.get(r['host_uid'])
-                if host is None or g.xform is not None or host.xform is not None or mesh_fingerprint(host)!=r.get('host_hash'):
+                if not host_matches(g,host):
                     q=None;basis='Unverified changed/missing rebar host';issues.append('Recheck reinforcement host: '+g.name)
         if q is not None:
             q=E.finite(q)
@@ -341,7 +347,8 @@ class Panel(QWidget):
         byslot={g.ext[KEY]['slot']:g for g in old};replacements=[];additions=[];slots=set()
         if len(byslot)!=len(old): raise ValueError('Grid column slot ซ้ำ')
         for g in old:
-            if mesh_fingerprint(g)!=g.ext[KEY]['fingerprint'] or g.xform is not None:
+            from .workflow import pose,P
+            if mesh_fingerprint(g)!=g.ext[KEY]['fingerprint'] or not P.same_pose(pose(g),None):
                 raise ValueError('เสาตาม Grid มีชิ้นที่แก้ด้วยมือ; ตรวจทานก่อนสร้างใหม่')
         for i,x in enumerate(data['grid_x']):
             for j,y in enumerate(data['grid_y']):
@@ -432,6 +439,8 @@ def setup(app):
     # Keep the Python object alive together with its host widget.
     app.window._thai_bim_panel=panel
     add_tools(panel)
+    from .workflow import install
+    install(panel)
     return panel
 
 
@@ -449,28 +458,35 @@ def assembly_command(scene,specs,kind,params,selected=None):
     return reconcile_specs(scene,specs,assembly,dict(assembly_kind=kind,assembly_params=params))
 
 
-def reconcile_specs(scene,specs,assembly,metadata):
+def reconcile_specs(scene,specs,assembly,metadata,rebar_host=None):
     old=[g for g in scene.groups if (g.ext or {}).get(KEY,{}).get('assembly')==assembly]
     byslot={g.ext[KEY]['slot']:g for g in old}
     if len(byslot)!=len(old):raise ValueError('slot ชุดซ้ำ')
     for g in old:
-        if g.xform is not None or mesh_fingerprint(g)!=g.ext[KEY]['fingerprint']:
+        from .workflow import bar_unchanged
+        valid=bar_unchanged(g) if rebar_host is not None else g.xform is None and mesh_fingerprint(g)==g.ext[KEY]['fingerprint']
+        if not valid:
             raise ValueError('ชิ้นในชุดถูกแก้ด้วยมือ/Transform: '+g.name)
     replacements=[];additions=[]
     for spec in specs:
         prev=byslot.get(spec['slot']);new=make_group(spec,assembly,prev)
         new.ext[KEY].update(copy.deepcopy(metadata))
+        if rebar_host is not None:
+            from .workflow import pose,matrix
+            new.xform=matrix(pose(rebar_host))
         (replacements if prev is not None else additions).append((prev,new) if prev is not None else new)
     slots={s['slot'] for s in specs}
     if len(slots)!=len(specs):raise ValueError('พารามิเตอร์ให้ slot ซ้ำ')
     return ExchangeGroups(scene,replacements,additions,[g for g in old if g.ext[KEY]['slot'] not in slots]),len(specs)
 
 
-def rebar_command(scene,host,specs,params):
+def rebar_command(scene,host,specs,params,expected=None):
     if host not in scene.groups or identity_issues(scene):raise ValueError('Host ไม่อยู่ในไฟล์/พบรหัสซ้ำ')
-    rec=(host.ext or {}).get(KEY,{})
-    if host.xform is not None or mesh_fingerprint(host)!=rec.get('fingerprint'):raise ValueError('Host ถูกแก้/Transform')
-    return reconcile_specs(scene,specs,'rebar-'+host.uid,dict(host_uid=host.uid,host_hash=mesh_fingerprint(host),rebar_params=params))
+    from .workflow import host_token,pose
+    token=host_token(host);rec=host.ext[KEY]
+    if expected is not None and token!=expected:raise ValueError('Host changed after preview; review the current host again')
+    return reconcile_specs(scene,specs,'rebar-'+host.uid,dict(host_uid=host.uid,host_hash=token[2],host_pose=pose(host),bar_pose=pose(host),
+        host_params=copy.deepcopy(rec.get('params') or rec.get('stair_params')),host_kind=rec['kind'],rebar_params=params),rebar_host=host)
 
 
 def roof_planes_from_groups(groups, underside=True):
