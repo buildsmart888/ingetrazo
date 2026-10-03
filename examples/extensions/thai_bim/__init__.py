@@ -1,4 +1,4 @@
-"""IngeTrazo Extension: Thai BIM Toolkit 0.7.1 (API 2)."""
+"""IngeTrazo Extension: Thai BIM Toolkit 0.8.0 (API 2)."""
 import copy
 import json
 import math
@@ -21,7 +21,7 @@ from .visuals import launcher, decorate_multi, decorate_cut
 from .builders import add_tools
 
 KEY='thai_bim'
-TITLE='Thai BIM 0.7'
+TITLE='Thai BIM 0.8'
 
 
 class ExchangeGroups(Command):

@@ -63,16 +63,18 @@ def reinforcement(kind,host,cover=.04,diameter=.012,tie_diameter=.006,spacing=.1
     main_steel=C.validate(main_steel,diameter*1000) if main_steel else None
     tie_steel=C.validate(tie_steel,tie_diameter*1000) if tie_steel else None
     # Only paths are needed for detailed hosts; never build a cage twice.
-    detailed=kind in ('Footing','Column','Beam')
+    detailed=kind in ('Footing','Column','Beam','Slab','Stair')
     base=S.reinforcement(kind,host,cover,diameter,tie_diameter,spacing,count_x,count_y,layers,'Centreline' if detailed else representation)
     hook,lap,e0,e1,tail=map(E.finite,(hook_length,lap_length,extension_start,extension_end,tie_hook_length))
     if min(hook,lap,e0,e1)<0 or max(hook,lap,e0,e1)>3 or not .01<=tail<=.5 or hook_ends not in (1,2):
         raise ValueError('Hook / lap / extension 0–3000 mm; tie tail 10–500 mm; hook ends 1 or 2')
-    if kind not in ('Footing','Column','Beam'):
+    if not detailed:
         if hook or lap or e0 or e1:raise ValueError('Detailed hooks / splices currently support Footing, Column and Beam')
         return [C.tag(s,main_steel) for s in base]
-    if kind=='Footing' and (lap or e0 or e1):raise ValueError('Footing: use end hooks; longitudinal lap / extension is for Column and Beam')
-    if kind!='Footing' and hook:raise ValueError('Main L / U hooks currently support Footing; Column / Beam use straight anchorage extensions')
+    if kind in ('Footing','Slab') and (lap or e0 or e1):raise ValueError('Footing / Slab: use end hooks; anchorage extensions are for Column, Beam and stair main bars')
+    if kind=='Stair' and lap:raise ValueError('Stair lap is not supported; specify a continuous main bar')
+    if kind=='Stair' and hook and (e0 or e1):raise ValueError('Stair: choose in-flight hooks or sloping anchorage extensions, not both')
+    if kind in ('Column','Beam') and hook:raise ValueError('Column / Beam use straight anchorage extensions')
     out=[];main=[]
     for source in base:
         pts=source['bar_path'];db=source['bar_diameter'];slot=source['slot']
@@ -86,13 +88,24 @@ def reinforcement(kind,host,cover=.04,diameter=.012,tie_diameter=.006,spacing=.1
             C.tag(sp,tie_steel)
             out.append(sp)
         else:
-            a,b=pts;direction=E.unit(E.sub(b,a));a=E.sub(a,E.mul(direction,e0));b=E.add(b,E.mul(direction,e1))
-            if kind=='Footing' and hook:
+            a,b=pts;direction=E.unit(E.sub(b,a));stair_main=kind=='Stair' and abs(direction[0])>1e-8
+            if kind!='Stair' or stair_main:
+                a=E.sub(a,E.mul(direction,e0));b=E.add(b,E.mul(direction,e1))
+            if kind in ('Footing','Slab') and hook:
                 centre_z=host['z']+host['height']/2;sign=1 if (a[2]+b[2])/2<centre_z else -1
                 r=inside_radius+db/2;leg=hook+r;offset=(0,0,sign*leg)
                 shape='U-90' if hook_ends==2 else 'L-90'
                 path=[E.add(a,offset),a,b]+([E.add(b,offset)] if hook_ends==2 else [])
                 main.append(bent_bar(slot,path,db,inside_radius,shape,density,representation))
+            elif stair_main and hook:
+                # Vertical end legs; unequal bend angles follow the actual flight slope.
+                # Hook length is the straight tail AFTER each tangent point.
+                angle=math.acos(max(-1,min(1,direction[2])))
+                r=inside_radius+db/2
+                leg0=hook+r*math.tan((math.pi-angle)/2)
+                leg1=hook+r*math.tan(angle/2)
+                path=[E.add(a,(0,0,leg0)),a,b]+([E.add(b,(0,0,leg1))] if hook_ends==2 else [])
+                main.append(bent_bar(slot,path,db,inside_radius,'Stair-U' if hook_ends==2 else 'Stair-L',density,representation))
             elif lap:
                 length=E.norm(E.sub(b,a))
                 if lap>=length-4*db:raise ValueError('Lap is too long for the available longitudinal bar')
@@ -115,8 +128,21 @@ def reinforcement(kind,host,cover=.04,diameter=.012,tie_diameter=.006,spacing=.1
                 transverse=E.norm(E.sub(E.sub(b0,a0),E.mul(direction,along0)))
                 if transverse<diameter-1e-8:raise ValueError('Offset lap collides with another main bar: reduce count / enlarge section')
     # Reject detailing that escapes cover in transverse directions. Extensions deliberately cross host ends.
-    axes=(0,1,2) if kind=='Footing' else ((0,1) if kind=='Column' else (1,2))
-    bounds=[(host['x'],host['width']),(host['y'],host['depth']),(host['z'],host['height'])]
+    axes=(0,1,2) if kind in ('Footing','Slab') else ((0,1) if kind=='Column' else (1,2))
+    bounds=[(host['x'],host.get('width',0)),(host['y'],host.get('depth',0)),(host['z'],host['height'])]
+    if kind=='Stair':
+        axes=(1,);bounds[1]=(host['y'],host['width'])
+        slope=host['height']/host['risers']/host['going'];cos=1/math.sqrt(1+slope*slope)
+        length=(host['risers']-1)*host['going']
+        for sp in out:
+            for p in sp['bar_path']:
+                # End extensions outside the flight require adjacent landing review.
+                distance=(p[2]-host['z']-slope*(p[0]-host['x']))*cos+host['waist']
+                radius=sp['bar_diameter']/2
+                if not cover+radius-1e-7<=distance<=host['waist']-cover-radius+1e-7:
+                    raise ValueError('Stair bar / hook does not fit normal soffit cover and waist thickness')
+                if not (e0 or e1) and not host['x']+cover+radius-1e-7<=p[0]<=host['x']+length-cover-radius+1e-7:
+                    raise ValueError('Stair hook does not fit flight end cover')
     for sp in out:
         if sp.get('representation')=='Centreline':
             for p in sp['bar_path']:

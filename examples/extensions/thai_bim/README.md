@@ -1,4 +1,4 @@
-# Thai BIM Toolkit 0.7.1
+# Thai BIM Toolkit 0.8.0
 
 An optional Thai-language extension for IngeTrazo Extension API 2. It adds an
 16-button toolbar and illustrated, modeless dialogs for concrete members,
@@ -6,11 +6,11 @@ roof framing, straight concrete stairs, reinforcement and quantity takeoff.
 It runs locally without an AI service or API key.
 
 [ภาษาไทย / detailed Thai guide](README-th.md) ·
-[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.7.1)
+[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.8.0)
 
 ## Install
 
-1. Download `Thai-BIM-Toolkit-0.7.1.zip` from the release and extract it.
+1. Download `Thai-BIM-Toolkit-0.8.0.zip` from the release and extract it.
 2. Copy the complete `thai_bim` folder into IngeTrazo's **user plugins folder**.
    On Windows this is `%APPDATA%\ingetrazo\plugins\thai_bim`.
    Alternatively, copy this directory from the repository and name it `thai_bim`.
@@ -61,7 +61,7 @@ These tools model **user-specified dimensions**, not structural strength designs
 Default dimensions are editable examples, not engineered sizes.
 
 - Footing L/U hooks, curved ties with two 135-degree tails, centre splices and straight anchorage extensions use explicit user input. Bend radius is measured at the inside face. These internal shape names are not standard shape codes or certified structural designs.
-- BBS includes analytic arc lengths and nominal circular diameter mass at user-supplied density. Legacy, edited or independently transformed bars, and bars with changed/missing hosts are excluded. Slab and stair bars retain the earlier geometry and do not enter the detailed BBS.
+- BBS includes analytic arc lengths and nominal circular diameter mass at user-supplied density. Legacy, edited or independently transformed bars, and bars with changed/missing hosts are excluded. Rectangular slab and straight-stair bars now have detailed BBS. Legacy cages upgrade only after explicit host review and regeneration.
 - Main laps are modeled as two parallel bars offset inward by 1.5 diameters. Nearby parallel main-bar collisions are rejected; whole-model clashes and adjacent concrete embedment are not checked.
 - Concrete quantities are gross solids; intersections are not deducted.
 - The stair tool currently supports straight flights, without landings or rails.
@@ -82,8 +82,8 @@ in isolated test scenes; they are modeling examples, not construction designs.
 
 ## Verification
 
-The original installed implementation passed **34 pure engine tests** and
-**74 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
+The original installed implementation passed **40 pure engine tests** and
+**79 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
 host association, QTO invalidation, IGZ persistence and GLB export. Native checks
 left the user's document geometry unchanged. Evidence is in
 [RELEASE.json](RELEASE.json) and [evidence/live-checks.json](evidence/live-checks.json).
@@ -104,7 +104,7 @@ in IngeTrazo's Python Console/AI bridge, where `scene` and `viewport` are suppli
 import runpy
 from core.extensions import user_plugins_dir
 runpy.run_path(
-    str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_thai_bim_v06.py'),
+    str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_thai_bim_v08.py'),
     init_globals={'scene': scene, 'viewport': viewport},
 )
 ```
@@ -182,7 +182,40 @@ save 44.71 s and reopen 16.02 s on the test machine. Loading/saving remains cost
 See `evidence/family10-performance-v071.json`. The private house geometry and
 QTO workbook are not included in the public extension package.
 
-Current checks: 34 pure tests and 74 native checks, including 58 regression
+Historical 0.7.1 checks: 34 pure tests and 74 native checks, including 58 regression
 checks, 14 whole-project checks and two audit/layer UI checks. Full-project
 checks validate file/metadata preservation, not drawing completeness or LOD350.
-Detailed floor/stair BBS and construction sheets remain next development stages.
+At that release, detailed floor/stair BBS and construction sheets were future development stages.
+
+
+## 0.8.0: slab and straight-stair detailing
+
+Rectangular slab bars support one bottom mat or two top/bottom mats and optional
+L/U 90-degree end hooks directed toward the slab midplane. Straight-stair bars
+support vertical main-bar end legs with actual slope-dependent bend angles, or
+straight extensions measured along the main-bar slope. Transverse distribution
+bars are never extended with the main bars. Stair cover is checked normal to the
+soffit, within the nominal waist thickness.
+
+Hook input is the straight tail after the tangent point; radius input is the
+inside radius. Impossible hooks are rejected before geometry changes. Stair
+hooks and extensions are alternative detailing options. Slab/stair lap splices,
+stair upper reinforcement, landings and L/U flights are not implemented.
+Extensions require review against the adjacent landing/beam concrete.
+
+Select the concrete host, read it in Reinforcement Host, set detailing, explicitly
+review the preview, then create/update. Existing toolkit cages gain BBS only when
+regenerated. Family10 legacy bars are not automatically adopted. The BBS row
+preview now resolves the correct host despite the added steel catalogue columns.
+
+![Rectangular slab cage](docs/images/slab-detailing.png)
+![Straight stair detailing](docs/images/stair-detailing.png)
+![BBS with selected shape](docs/images/bbs-detailing.png)
+
+Synthetic examples: `examples/slab-stair-compact.igz` and
+`examples/slab-stair-BBS.xlsx`. Current validation: 40 pure tests and 79 native
+checks covering regressions, positive stair-hook solids, stable IDs and BBS across
+display modes, exact Undo/Redo and native save/reopen. Whole-project Family10
+evidence remains from 0.7.1 and was not rerun for 0.8.0. See `RELEASE.json` and
+`evidence/live-checks.json`. Construction sheets at 1:50 are the next development
+stage. User-supplied detailing is not structural design or LOD350 certification.

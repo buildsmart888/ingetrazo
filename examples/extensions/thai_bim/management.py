@@ -76,7 +76,7 @@ def compact_save(scene,path):
 def open_manager(panel):
     old=getattr(panel,'layer_dialog',None)
     if old is not None:old.close();old.deleteLater()
-    dialog=QDialog(panel.app.window);dialog.setWindowTitle('Thai BIM 0.7 — Layer / โมเดลเบา');dialog.resize(680,650)
+    dialog=QDialog(panel.app.window);dialog.setWindowTitle('Thai BIM 0.8 — Layer / โมเดลเบา');dialog.resize(680,650)
     layout=QVBoxLayout(dialog);label=QLabel('แยกฐานราก เสา คาน พื้น บันได และเหล็กตาม Host\nเปิด/ปิดเลเยอร์มีผลต่อการมองเห็นและการส่งออกภาพ/geometry; QTO/BBS ยังคงนับชิ้นที่ตรวจแล้ว')
     label.setWordWrap(True);layout.addWidget(label);checks={};bound=panel.app.scene
     def button(text,fn):

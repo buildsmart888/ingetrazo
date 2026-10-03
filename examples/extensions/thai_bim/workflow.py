@@ -238,7 +238,7 @@ class Workflow:
     def open_hosts(self):
         self.refresh()
         if self.dialog is not None:self.dialog.close();self.dialog.deleteLater()
-        dialog=QDialog(self.panel.app.window);dialog.setWindowTitle('Thai BIM 0.6 — Host / ตรวจเหล็กก่อนอัปเดต');dialog.resize(1080,570)
+        dialog=QDialog(self.panel.app.window);dialog.setWindowTitle('Thai BIM 0.8 — Host / ตรวจเหล็กก่อนอัปเดต');dialog.resize(1080,570)
         lay=QVBoxLayout(dialog);lay.addWidget(QLabel('เลือก Host → เปิดพรีวิว → ตรวจรายละเอียด → อัปเดตเหล็ก • ไม่มีการสร้างใหม่อัตโนมัติ'))
         table=QTableWidget(len(self.rows),4);table.setHorizontalHeaderLabels(['Host','State','Reason','Bars']);table.setEditTriggers(QTableWidget.NoEditTriggers)
         rows=copy.deepcopy(self.rows);bound_scene=self.panel.app.scene
@@ -265,5 +265,5 @@ def install(panel):
     panel.button(panel.members,'ตรวจ Host และพรีวิวเหล็กที่เปลี่ยน…',controller.open_hosts)
     for key,text,fn in [('Place','วาง RC แบบคลิกซ้ำ / Grid / Level',controller.open_placement),('Host','ตรวจ Host / อัปเดตเหล็กหลังย้ายหรือปรับขนาด',controller.open_hosts)]:
         action=panel.toolbar.addAction(icon(key),text);action.setToolTip(text);action.triggered.connect(lambda checked=False,fn=fn:panel.guard(fn))
-    panel.toolbar.setWindowTitle('Thai BIM 0.6');panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.6 — Placement / Host review / BBS')
+    panel.toolbar.setWindowTitle('Thai BIM 0.8');panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.8 — Placement / Host review / BBS')
     controller.refresh();return controller
