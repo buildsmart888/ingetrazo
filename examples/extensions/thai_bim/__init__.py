@@ -1,4 +1,4 @@
-"""IngeTrazo Extension: Thai BIM Toolkit 0.6.0 (API 2)."""
+"""IngeTrazo Extension: Thai BIM Toolkit 0.7.0 (API 2)."""
 import copy
 import json
 import math
@@ -21,12 +21,13 @@ from .visuals import launcher, decorate_multi, decorate_cut
 from .builders import add_tools
 
 KEY='thai_bim'
-TITLE='Thai BIM 0.6'
+TITLE='Thai BIM 0.7'
 
 
 class ExchangeGroups(Command):
     """Prepare all geometry before committing. Preserve exact references on Undo."""
     def __init__(self, scene, replacements=(), additions=(), removals=()):
+        self.scene=scene
         self.before=list(scene.groups)
         self.selection=set(scene.selection)
         self.old_layers=list(scene.layers)
@@ -38,6 +39,8 @@ class ExchangeGroups(Command):
         self.new_layers=self.old_layers+[Layer(n) for n in sorted(names-{l.name for l in self.old_layers})]
 
     def do(self, scene):
+        if scene is not self.scene or len(scene.groups)!=len(self.before) or any(a is not b for a,b in zip(scene.groups,self.before)):
+            raise ValueError('เอกสารหรือชิ้นงานเปลี่ยนหลังเตรียมคำสั่ง กรุณาสร้างคำสั่งใหม่')
         scene.groups[:]=self.after
         scene.layers[:]=self.new_layers
         scene.selection=set(self.after_selection)
@@ -84,7 +87,9 @@ class NormalizeColors(Command):
 
 def mesh_fingerprint(group):
     # Installed 0.x builds expose either vectors or Vertex objects on faces.
-    return E.fingerprint([[getattr(v,'position',v).toTuple() for v in f.vertices] for f in group.mesh.faces])
+    faces=[[getattr(v,'position',v).toTuple() for v in f.vertices] for f in group.mesh.faces]
+    if faces:return E.fingerprint(faces)
+    return E.fingerprint([[getattr(v,'position',v).toTuple() for v in (e.a,e.b)] for e in group.mesh.edges])
 
 
 def make_group(spec, assembly='', previous=None):
@@ -93,14 +98,20 @@ def make_group(spec, assembly='', previous=None):
         face=mesh.add_face([QVector3D(*p) for p in ring])
         if face is None: raise ValueError('สร้างผิวชิ้นงานไม่ได้')
         face.attrs['color']=tuple(spec['color'])
-    measured=bim.face_set_volume(list(mesh.faces))
-    if measured is None or measured <= 1e-9:
+    wire=spec.get('representation')=='Centreline' and spec['kind']=='Rebar'
+    if wire:
+        pts=spec['bar_path'];pairs=list(zip(pts,pts[1:]))
+        if spec.get('bar_closed'):pairs.append((pts[-1],pts[0]))
+        for a,b in pairs:mesh.add_edge(QVector3D(*a),QVector3D(*b))
+    measured=None if wire else bim.face_set_volume(list(mesh.faces))
+    if not wire and (measured is None or measured <= 1e-9):
         raise ValueError('ชิ้นงานไม่เป็น solid ปิด: '+spec['slot'])
     g=Group(mesh,name='TBIM '+spec['kind']+' '+spec['slot'])
     if spec.get('params') and spec['kind'] in ('Footing','Column','Beam','Slab'):
         # Native Move/Rotate composes a pose instead of baking vertices for these hosts.
         g.xform=QMatrix4x4()
-    g.layer='TBIM '+spec['discipline']
+    from .management import layer_name
+    g.layer=layer_name(spec)
     bim.tag_group(g,spec['ifc'],g.name)
     rec={k:copy.deepcopy(spec[k]) for k in ('slot','kind','discipline','item','unit','quantity','note')}
     rec.update(id=str(uuid.uuid4()),schema=1,version=E.VERSION,assembly=assembly,
@@ -108,7 +119,7 @@ def make_group(spec, assembly='', previous=None):
                axis=spec.get('axis'),roof_params=spec.get('roof_params'),plane_id=spec.get('plane_id'),
                plane_vertices=spec.get('plane_vertices'),fingerprint=mesh_fingerprint(g))
     g.ext={KEY:rec}
-    for k in ('stair_params','bar_path','bar_diameter','bar_closed','bbs'):
+    for k in ('stair_params','bar_path','bar_diameter','bar_closed','bbs','representation','steel'):
         if k in spec:rec[k]=copy.deepcopy(spec[k])
     if previous is not None:
         g.uid=previous.uid
@@ -311,6 +322,7 @@ class Panel(QWidget):
         if self.app.scene.mesh is not self.app.scene.loose_mesh:
             raise ValueError('ออกจากการแก้ไขภายใน Group ก่อนใช้คำสั่ง Thai BIM')
         self.app.viewport.history.execute(command)
+        if self.app.viewport.history.last_error:raise ValueError(self.app.viewport.history.last_error)
         self.app.viewport.notify_scene_changed();self.app.viewport.update()
 
     def spec(self):
@@ -333,6 +345,8 @@ class Panel(QWidget):
 
     def update_member(self):
         old=self.selected()
+        if old.ext[KEY]['kind']!=self.kind.currentText():
+            raise ValueError('ชนิดที่เลือกไม่ตรงกับชิ้นเดิม ใช้สร้างชิ้นใหม่เพื่อเพิ่มชนิดอื่น; อัปเดตใช้ได้เฉพาะชนิดเดิม')
         if identity_issues(self.app.scene): raise ValueError('พบรหัสชิ้นงานซ้ำจาก Copy; ต้องแก้รหัสก่อนอัปเดต')
         new=make_group(self.spec(),old.ext[KEY].get('assembly',''),old)
         self.execute(ExchangeGroups(self.app.scene,replacements=[(old,new)]))
@@ -441,6 +455,8 @@ def setup(app):
     add_tools(panel)
     from .workflow import install
     install(panel)
+    from .management import install as install_management
+    install_management(panel)
     return panel
 
 
@@ -471,6 +487,8 @@ def reconcile_specs(scene,specs,assembly,metadata,rebar_host=None):
     for spec in specs:
         prev=byslot.get(spec['slot']);new=make_group(spec,assembly,prev)
         new.ext[KEY].update(copy.deepcopy(metadata))
+        from .management import layer_name
+        new.layer=layer_name(new.ext[KEY])
         if rebar_host is not None:
             from .workflow import pose,matrix
             new.xform=matrix(pose(rebar_host))

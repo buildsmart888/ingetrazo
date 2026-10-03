@@ -51,7 +51,7 @@ class AssemblyPreview(QWidget):
             specs=self.host+self.specs
             if not specs:p.drawText(QPointF(20,65),'เลือกชิ้นงาน / กรอกค่าเพื่อดูพรีวิว');return
             def raw(v):return (v[0]-.65*v[1],-.35*v[0]-.25*v[1]-v[2])
-            points=[raw(v) for s in specs for f in s['faces'] for v in f]
+            points=[raw(v) for s in specs for v in (s['bar_path'] if s.get('bar_path') else [v for f in s['faces'] for v in f])]
             xmin=min(v[0] for v in points);xmax=max(v[0] for v in points);ymin=min(v[1] for v in points);ymax=max(v[1] for v in points)
             scale=min((self.width()-70)/max(xmax-xmin,.01),(self.height()-100)/max(ymax-ymin,.01))
             ox=(self.width()-(xmax-xmin)*scale)/2;oy=50+(self.height()-100-(ymax-ymin)*scale)/2
@@ -80,7 +80,7 @@ class AssemblyPreview(QWidget):
 
 class BuilderDialog(QDialog):
     def __init__(self,panel,title):
-        super().__init__(panel.app.window);self.panel=panel;self.setWindowTitle('Thai BIM 0.6 — '+title);self.setWindowIcon(icon(title if title in ('Stair','Rebar') else 'Roof'));self.resize(1080,800)
+        super().__init__(panel.app.window);self.panel=panel;self.setWindowTitle('Thai BIM 0.7 — '+title);self.setWindowIcon(icon(title if title in ('Stair','Rebar') else 'Roof'));self.resize(1080,800)
         lay=QVBoxLayout(self);row=QHBoxLayout();lay.addLayout(row,1)
         scroll=QScrollArea();scroll.setWidgetResizable(True);scroll.setMinimumWidth(355);scroll.setMaximumWidth(470);row.addWidget(scroll,4)
         content=QWidget();self.form=QFormLayout(content);scroll.setWidget(content)
@@ -158,8 +158,16 @@ class RebarDialog(BuilderDialog):
         self.host_label=QLabel('เลือก RC หนึ่งชิ้น แล้วกดอ่าน Host');self.host_label.setWordWrap(True);self.form.addRow(self.host_label)
         self.button('อ่านฐานราก / คาน / เสา / พื้น / บันไดที่เลือก',self.read_host)
         self.field('cover','Cover ถึงผิวนอกเหล็ก (mm)',40,False,15,150)
-        self.field('diameter','เหล็กหลัก / ตะแกรง (mm)',12,False,4,50)
-        self.field('tie_diameter','เหล็กปลอก (mm)',6,False,4,25)
+        self.field('diameter','เหล็กหลัก / ตะแกรง (mm)',12,False,4,60)
+        self.field('tie_diameter','เหล็กปลอก (mm)',6,False,4,60)
+        for key in ('diameter','tie_diameter'):self.fields[key].setDecimals(6)
+        self.steel_controls={}
+        self.steel_picker('main_steel','เหล็กหลัก', 'diameter','DB12')
+        self.steel_picker('tie_steel','เหล็กปลอก', 'tie_diameter','RB6')
+        self.representation=QComboBox();self.representation.addItems(['Lightweight','Centreline','Full'])
+        self.form.addRow('แสดงผล: เบา / เส้นแกน / เต็ม',self.representation)
+        self.representation.currentTextChanged.connect(lambda _:self.timer.start())
+        self.note('Lightweight: 6 ด้าน / โค้ง 30° • Full: 12 ด้าน / โค้ง 10°\nCentreline: เส้นแกน ไม่มีผิว solid; ใช้ถอดความยาวเดิม\nRB ผิวเรียบ / DB และ ASTM เป็นข้อมูลชนิด ไม่สร้างบั้งนูน\nขนาด #9 ขึ้นไปใช้ตาราง ไม่หาร 8; SI และ inch เป็นคนละชุดหน่วย')
         self.field('spacing','ระยะปลอก / ตะแกรงสูงสุด (mm)',150,False,40,1000)
         self.field('count_x','จำนวนหลักตามด้านที่ 1',3,True,2,30)
         self.field('count_y','จำนวนหลักตามด้านที่ 2',3,True,2,30)
@@ -196,6 +204,12 @@ class RebarDialog(BuilderDialog):
         for key in ('hook_length','lap_length','extension_start','extension_end'):self.fields[key].setValue(0)
         old=next(((g.ext or {}).get('thai_bim',{}) for g in scene.groups if (g.ext or {}).get('thai_bim',{}).get('host_uid')==host.uid),{})
         if old.get('rebar_params'):
+            saved=old['rebar_params']
+            for key,controls in self.steel_controls.items():
+                record=saved.get(key)
+                controls[0].setCurrentText(record['catalogue'] if record else 'Custom / unspecified')
+                if record:controls[1].setCurrentText(record['size']);controls[2].setCurrentText(record['grade'])
+            self.representation.setCurrentText(saved.get('representation','Full'))
             for k,w in self.fields.items():
                 if k in old['rebar_params']:w.setValue(old['rebar_params'][k])
         self.review()
@@ -208,7 +222,29 @@ class RebarDialog(BuilderDialog):
         host_token(host)
         if rec['kind']!=self.host_kind:raise ValueError('Host เปลี่ยนชนิด: กดอ่าน Host ใหม่')
         self.host_params=rec.get('params') or rec.get('stair_params');return host
-    def params(self):return {k:w.value() for k,w in self.fields.items()}
+    def steel_picker(self,key,label,field,default):
+        from . import steel as C
+        catalogue=QComboBox();catalogue.addItems(C.CATALOGUES);size=QComboBox();grade=QComboBox()
+        self.steel_controls[key]=(catalogue,size,grade)
+        self.form.addRow(label+' มาตรฐาน / ผิว',catalogue);self.form.addRow(label+' ขนาด',size);self.form.addRow(label+' ชั้นคุณภาพ',grade)
+        def sync():
+            rows=C.entries(catalogue.currentText());size.blockSignals(True);size.clear()
+            for row in rows:size.addItem(row['size'],row)
+            size.blockSignals(False);grade.clear()
+            grade.addItems(['SR24'] if catalogue.currentText()==C.TIS_RB else (['SD30','SD40','SD50'] if catalogue.currentText()==C.TIS_DB else ['Grade 60 [420]','Grade 80 [550]','Grade 100 [690]','Grade 40 [280]']))
+            if catalogue.currentText()==C.TIS_DB:grade.setCurrentText('SD40')
+            custom=catalogue.currentText()==C.CUSTOM;self.fields[field].setEnabled(custom);size.setEnabled(not custom);grade.setEnabled(not custom);apply()
+        def apply():
+            if size.currentData():self.fields[field].setValue(size.currentData()['diameter_mm'])
+            self.timer.start()
+        catalogue.currentTextChanged.connect(sync);size.currentIndexChanged.connect(apply);grade.currentTextChanged.connect(lambda _:self.timer.start())
+        catalogue.setCurrentText(C.TIS_RB if default.startswith('RB') else C.TIS_DB);sync();size.setCurrentText(default)
+    def params(self):
+        from . import steel as C
+        p={k:w.value() for k,w in self.fields.items()};p['representation']=self.representation.currentText()
+        for key,(catalogue,size,grade) in self.steel_controls.items():
+            p[key]=None if catalogue.currentText()==C.CUSTOM else C.selection(catalogue.currentText(),size.currentText(),grade.currentText())
+        return p
     def specs(self):
         from .workflow import review_specs
         host=self.host();return review_specs(self.panel.app.scene,host,self.params())[0]
@@ -244,7 +280,7 @@ def open_bbs(panel):
     records,issues=bbs_records(panel.app.scene);tables=D.tables(records,issues)
     old=getattr(panel,'bbs_dialog',None)
     if old is not None:old.close();old.deleteLater()
-    dialog=QDialog(panel.app.window);dialog.setWindowTitle('Thai BIM 0.6 — BBS / Bar bending schedule');dialog.resize(1280,780)
+    dialog=QDialog(panel.app.window);dialog.setWindowTitle('Thai BIM 0.7 — BBS / Bar bending schedule');dialog.resize(1280,780)
     lay=QVBoxLayout(dialog);lay.addWidget(QLabel(f'เหล็กรายละเอียด {len(records)} เส้น • กลุ่มรูปดัด {len(tables[0][1])-1} • รายการต้องตรวจ {len(issues)}'))
     tabs=QTabWidget();lay.addWidget(tabs)
     preview=AssemblyPreview();preview.setMinimumSize(440,220);lay.addWidget(preview)
@@ -284,7 +320,7 @@ def add_tools(panel):
         panel._v05_tools=True
         action=panel.toolbar.addAction(icon('QTO'),'BBS / รูปดัดเหล็ก');action.setToolTip('ตารางรูปดัด ความยาวตัด และน้ำหนักเหล็ก')
         action.triggered.connect(lambda checked=False:panel.guard(lambda:open_bbs(panel)))
-        panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.6 — รายละเอียดเหล็ก / BBS')
+        panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.7 — รายละเอียดเหล็ก / BBS')
     if getattr(panel,'_v04_tools',False):return
     panel._v04_tools=True
     panel.builder_dialogs={}
@@ -320,7 +356,7 @@ def add_tools(panel):
     panel.button(panel.members,'เหล็กเสริมของชิ้นที่เลือก…',lambda:open_builder('Rebar'))
     panel.button(panel.members,'สร้างบันได RC ตรง…',lambda:open_builder('Stair'))
     panel.button(panel.roof,'หลังคาจั่ว / ปั้นหยา / เพิง…',lambda:open_builder('Roof'))
-    toolbar=QToolBar('Thai BIM 0.6',panel.app.window);toolbar.setObjectName('thai_bim_toolbar');toolbar.setIconSize(QSize(28,28));toolbar.setMovable(True);toolbar.setFloatable(True)
+    toolbar=QToolBar('Thai BIM 0.7',panel.app.window);toolbar.setObjectName('thai_bim_toolbar');toolbar.setIconSize(QSize(28,28));toolbar.setMovable(True);toolbar.setFloatable(True)
     panel.app.window.addToolBarBreak(Qt.TopToolBarArea)
     panel.app.window.addToolBar(Qt.TopToolBarArea,toolbar);panel.toolbar=toolbar
     actions=[('Project','โครงการ / Grid / Level',lambda:(tabs.setCurrentIndex(0),panel.open_workspace()))]
@@ -330,9 +366,9 @@ def add_tools(panel):
         ('QTO','ปริมาณ / Excel',lambda:(tabs.setCurrentIndex(3),panel.open_workspace())),('Cut','แผนตัดวัสดุ',panel.open_cuts)]
     for k,title,fn in actions:
         action=toolbar.addAction(icon(k),title);action.setToolTip(title);action.triggered.connect(lambda checked=False,fn=fn:panel.guard(fn))
-    panel.workspace_dialog.setWindowIcon(icon('Project'));panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.6 — โครงสร้าง / หลังคา / เหล็กเสริม')
+    panel.workspace_dialog.setWindowIcon(icon('Project'));panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.7 — โครงสร้าง / หลังคา / เหล็กเสริม')
     for label in panel.findChildren(QLabel):
-        if label.text().startswith('Thai BIM Toolkit'):label.setText('Thai BIM Toolkit 0.6 • โครงสร้าง / หลังคา / เหล็กเสริม')
+        if label.text().startswith('Thai BIM Toolkit'):label.setText('Thai BIM Toolkit 0.7 • โครงสร้าง / หลังคา / เหล็กเสริม')
     for action in panel.app.window.findChildren(type(toolbar.toggleViewAction())):
         if action.text()=='Thai BIM Toolkit…':action.setIcon(icon('Project'))
     # QToolBar has a native visibility action; no private host toolbar API needed.

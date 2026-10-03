@@ -1,22 +1,22 @@
-# Thai BIM Toolkit 0.6.0
+# Thai BIM Toolkit 0.7.0
 
 An optional Thai-language extension for IngeTrazo Extension API 2. It adds an
-11-button toolbar and illustrated, modeless dialogs for concrete members,
+15-button toolbar and illustrated, modeless dialogs for concrete members,
 roof framing, straight concrete stairs, reinforcement and quantity takeoff.
 It runs locally without an AI service or API key.
 
 [ภาษาไทย / detailed Thai guide](README-th.md) ·
-[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.6.0)
+[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.7.0)
 
 ## Install
 
-1. Download `Thai-BIM-Toolkit-0.6.0.zip` from the release and extract it.
+1. Download `Thai-BIM-Toolkit-0.7.0.zip` from the release and extract it.
 2. Copy the complete `thai_bim` folder into IngeTrazo's **user plugins folder**.
    On Windows this is `%APPDATA%\ingetrazo\plugins\thai_bim`.
    Alternatively, copy this directory from the repository and name it `thai_bim`.
 3. Restart IngeTrazo. Open **Extensions → Thai BIM Toolkit…** or use the new toolbar.
 
-Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` and `workflow.py`
+Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` and `management.py`
 together. PySide6 and NumPy are provided by the host application. The plugin
 does not require `openpyxl`; that library is used only by the tests.
 
@@ -82,8 +82,8 @@ in isolated test scenes; they are modeling examples, not construction designs.
 
 ## Verification
 
-The original installed implementation passed **27 pure engine tests** and
-**60 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
+The original installed implementation passed **32 pure engine tests** and
+**58 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
 host association, QTO invalidation, IGZ persistence and GLB export. Native checks
 left the user's document geometry unchanged. Evidence is in
 [RELEASE.json](RELEASE.json) and [evidence/live-checks.json](evidence/live-checks.json).
@@ -119,3 +119,42 @@ GPL-3.0-or-later; see [LICENSE](LICENSE). Icons and illustrations are drawn in Q
 by this extension. No third-party logos or API credentials are bundled.
 The dialog/toolbar patterns were studied from IngeTrazo's Windowizer example
 and the public [Stair Maker / Kitchen Maker examples](https://github.com/aashishzharbade-arch/ingetrazo-extensions).
+
+
+## 0.7: layers and lighter reinforcement
+
+New members use kind-specific structural layers; bars use host-kind layers.
+The Layer / lightweight-model dialog migrates existing Thai BIM tags without replacing geometry, toggles visibility, converts one selected host cage, and saves a compressed native IGZ copy. Creation preserves existing members; selected updates cannot silently change kind. Stale prepared scene snapshots are rejected before replacing geometry.
+
+New cages default to Lightweight (6-sided sections / 30-degree arc sampling).
+Full uses 12 sides / 10-degree arcs. Centreline uses edges without solid faces;
+use Full/Lightweight for surface-only exporters or renderers. All modes retain
+analytic detailed cut lengths, masses and stable bar identities. Hiding bar layers
+helps navigation; QTO/BBS still counts trusted hidden bars. Compression reduces
+disk size, while display mode reduces mesh complexity in memory.
+
+Independent main/tie selectors include TIS20-2559 RB/SR24, TIS24-2559 DB/SD30/40/50,
+and ASTM A615/A615M numbered bars #3–#11, #14 and #18 in separate SI/inch sets.
+Nominal dimensions come from published tables, including #9–#18 exceptions.
+DB ribs are metadata rather than modeled geometry. Grade is a user specification;
+no material certificate or strength design is generated. A706 presets are not included.
+Old unclassified bars retain Custom/unspecified unless the user chooses a catalogue.
+BBS adds specified catalogue, size, surface and grade columns; mass remains nominal
+circular diameter times input density, not a rounded standard-mass lookup.
+
+Verified 29-bar comparison: Full 15,526 faces / 21,088,108 bytes native IGZ;
+Lightweight 3,256 faces / 4,678,153 bytes; Centreline 0 faces / 827,391 bytes.
+Compressed copies were 756,288 / 152,456 / 32,752 bytes respectively.
+All reopened in the installed host with valid BBS. This is a synthetic fixture,
+not a whole-house navigation/FPS benchmark. Floor/stair paths remain net-path
+QTO and are excluded from detailed fabrication BBS.
+
+![Rebar catalogues and display modes](docs/images/rebar-catalogue.png)
+![Layers and light model controls](docs/images/layer-manager.png)
+
+Sources: [TIS20](https://www.tisi.go.th/data/standard/fulltext/TIS-20-2559p.pdf),
+[TIS24](https://www.tisi.go.th/data/standard/fulltext/TIS-24-2559p.pdf),
+[NYSDOT dimensions](https://www.dot.ny.gov/divisions/engineering/technical-services/technical-services-repository/alme/pages/850-1b.html),
+[CRSI nominal inch diameters](https://www.crsi.org/wp-content/uploads/CRSI_MSP_29th_Ed_Errata-Nov2019.pdf),
+[ASTM scope](https://store.astm.org/a0615_a0615m-26.html).
+See `evidence/performance-v07.json` and the current `RELEASE.json`.

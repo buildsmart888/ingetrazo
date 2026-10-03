@@ -1,13 +1,13 @@
-# Thai BIM Toolkit 0.6.0
+# Thai BIM Toolkit 0.7.0
 
 Extension สำหรับ IngeTrazo Extension API 2 พัฒนาจากงาน Family10
 ใช้ Python/PySide6 และไลบรารีของ IngeTrazo ไม่มี API key และไม่มีการเรียก AI ในคำสั่งรุ่นนี้
 
 ## ติดตั้งและเปิด
 
-นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py` ไปไว้ใน
+นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py` ไปไว้ใน
 `%APPDATA%\ingetrazo\plugins\thai_bim` แล้วเปิด IngeTrazo ใหม่
-เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.6
+เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.7
 การติดตั้งในครั้งนี้จะเปิดแผงให้ใน session ปัจจุบันด้วย จึงไม่จำเป็นต้องปิดไฟล์ที่ยังไม่บันทึก
 
 API ของ IngeTrazo ช่วง 0.x ยังเปลี่ยนได้ โดยเฉพาะการเชื่อมแผง Render ซึ่งใช้รายละเอียดภายใน
@@ -291,3 +291,58 @@ Move/Rotate, Undo/Redo, Grid priority, Host/BBS invalidation, IGZ และ GLB
 หลักฐาน `verification-v06/live-checks.json`; ตัวอย่าง `placed-host-rebar.igz`, `.glb`, `placed-host-BBS.xlsx`
 สคริปต์ native รุ่น 0.4/0.5 เป็นหลักฐานย้อนหลัง ต้องใช้ร่วมกับปลั๊กอินรุ่นที่ตรงกัน
 ระยะถัดไป: เหล็กพื้นและบันไดรายละเอียด/BBS, บันได L/U และชานพัก แล้ว construction sheets 1:50
+
+
+## เพิ่มในรุ่น 0.7: Layer / ชิ้นงานเดิม / เหล็กเบา / RB DB ASTM
+
+แถบไอคอน 15 ปุ่ม เพิ่ม **Layer / โมเดลเบา**
+
+- ชิ้นใหม่แยก `TBIM S Footing`, `Column`, `Beam`, `Slab`, `Stair`; เหล็กแยก `TBIM S Rebar <ชนิด Host>` และหลังคาแยกตามชนิดชิ้น
+- เปิด Layer / โมเดลเบา แล้วกดจัดเลเยอร์ชิ้น Thai BIM เดิม เพื่อจัดชิ้นก่อนหน้า; เก็บ geometry, UID, hidden และ Undo ได้
+- การสร้างชิ้นใหม่เพิ่มชิ้น; อัปเดตชิ้นที่เลือกใช้ได้เฉพาะชนิดเดิม ป้องกันฐานรากกลายเป็นเสาโดยไม่ตั้งใจ
+- คำสั่งที่เตรียมไว้ก่อนเอกสาร/รายการชิ้นเปลี่ยนจะหยุดก่อนเขียนทับชิ้นอื่น
+- เลือก Host แล้วเปลี่ยนโหมดแสดงผลได้ใน Layer dialog; ใช้พารามิเตอร์ชุดเดิม ตรวจ Host แล้วสร้างชุดนั้นใหม่ รหัสเหล็กและ BBS คงเดิมเมื่อเปลี่ยนเฉพาะโหมด
+- Lightweight เป็นค่าเริ่มต้นสำหรับชุดใหม่: หน้าตัด 6 ด้าน และโค้งช่วงละไม่เกิน 30°
+- Full: 12 ด้าน โค้ง 10°; ใช้เมื่อต้องการผิวละเอียดสำหรับ geometry export/render
+- Centreline: เส้นแกน ไม่มีผิว solid; เก็บขนาด ชนิดและความยาวตัดใน metadata ใช้ทำงาน/ถอดปริมาณ ชิ้นนี้ไม่ใช่ solid LOD350 และการส่งออกที่รองรับเฉพาะผิวจะไม่เห็นเส้น
+- ทุกโหมดคำนวณ BBS จากความยาว tangent และส่วนโค้งจริง ไม่ใช้ความยาว chord / จำนวนผิวแทน
+- ซ่อนเลเยอร์เหล็กก่อนหมุนภาพ; ซ่อนมีผลต่อ picking และ geometry export/render แต่ QTO/BBS ยังนับชิ้นที่ตรวจแล้ว
+- บันทึกสำเนา IGZ แบบบีบอัดลดขนาดบนดิสก์ เก็บ native document.json/embedded assets เปิดกลับผ่าน IngeTrazo ได้; การบีบอัดไม่ได้ลด geometry ใน RAM
+
+### ตัวเลือกเหล็ก
+
+เหล็กหลักและปลอกเลือกมาตรฐาน ขนาด และเกรดแยกกันได้
+
+- RB ผิวเรียบ: มอก.20-2559, SR24, ขนาดจาก RB6 ถึง RB34 ตามตารางมาตรฐาน
+- DB ข้ออ้อย: มอก.24-2559, SD30/SD40/SD50, DB6 ถึง DB40 ตามตาราง; availability ต้องตรวจผู้ผลิต
+- ASTM A615/A615M: #3–#11, #14, #18; มีชุด SI และ inch แยกกัน ไม่สร้าง #12/#13/#15–#17 ด้วยสูตร
+- #3–#8 ใช้เบอร์หาร 8 นิ้วได้; #9=1.128, #10=1.270, #11=1.410, #14=1.693 และ #18=2.257 นิ้ว เป็นค่าตาราง
+- #18 SI=57.3 mm; inch 2.257×25.4=57.3278 mm เป็นการแปลงหน่วยของชุดนิ้ว ไม่แทนค่ามาตรฐาน SI
+- DB และ ASTM เก็บชนิด Deformed เป็นข้อมูล; ไม่สร้างบั้ง/ครีบจริงเพื่อประหยัด geometry
+- Custom / unspecified สำหรับขนาดเดิมที่ไม่ได้ระบุชนิด ไม่มีการอนุมาน RB/DB ให้ชิ้นเก่า
+- BBS แยกรหัสตามมาตรฐาน ขนาด ผิว และเกรด พร้อมคอลัมน์ข้อมูลเหล่านี้ใน Excel
+- น้ำหนักเป็น nominal circular diameter × input density (เริ่มต้น 7850 kg/m³); ไม่ใช่ค่าตารางมวลที่ปัดเศษหรือใบรับรองเหล็กจริง
+- รุ่นนี้มี preset ASTM A615/A615M; ยังไม่มี preset A706/A706M, tensile tests หรือ automatic code design
+
+แหล่งอ้างอิงขนาด:
+[มอก.20-2559 รวมฉบับแก้ไข](https://www.tisi.go.th/data/standard/fulltext/TIS-20-2559p.pdf),
+[มอก.24-2559 รวมฉบับแก้ไข](https://www.tisi.go.th/data/standard/fulltext/TIS-24-2559p.pdf),
+[NYSDOT ตารางขนาด US / SI](https://www.dot.ny.gov/divisions/engineering/technical-services/technical-services-repository/alme/pages/850-1b.html),
+[CRSI nominal inch diameters](https://www.crsi.org/wp-content/uploads/CRSI_MSP_29th_Ed_Errata-Nov2019.pdf),
+[ASTM A615/A615M-26 scope](https://store.astm.org/a0615_a0615m-26.html).
+
+### ผลทดสอบ 0.7
+
+32 pure tests + 58 native checks ผ่านบน Windows IngeTrazo API2 รวมสร้างสมาชิก 5 ชนิดต่อเนื่อง, ป้องกันอัปเดตผิดชนิด/คำสั่งเก่า, layer migration/visibility/Undo, RB DB ASTM dialog, steel mode conversion และ IGZ บีบอัดเปิดกลับ
+
+ชุดทดสอบเสาเดียว 29 เส้น (มีชิ้นคอนกรีตตัวอย่าง 5 ชนิดในไฟล์):
+
+| โหมด | ผิวเหล็ก | IGZ ปกติ bytes | IGZ บีบอัด bytes |
+|---|---:|---:|---:|
+| Full | 15526 | 21088108 | 756288 |
+| Lightweight | 3256 | 4678153 | 152456 |
+| Centreline | 0 | 827391 | 32752 |
+
+ความยาวตัด น้ำหนัก Mark และ UID ของชุดเดิมตรงกันทุกโหมด ผลนี้เป็นชุดตัวอย่าง ไม่ใช่ผลวัด FPS หรือการรับประกันโมเดลทั้งบ้านไม่ค้าง
+
+ดูหลักฐานล่าสุด `evidence/live-checks.json`, `evidence/performance-v07.json` และ `RELEASE.json`; ข้อความผลทดสอบรุ่นก่อนหน้าในคู่มือนี้เป็นหลักฐานย้อนหลัง

@@ -73,10 +73,10 @@ def stair_spec(x=0,y=0,z=0,width=1,height=3,going=.28,risers=18,waist=.15):
         stair_params=p,note='Straight RC flight; upper floor is last riser; waist normal to slope; supports/landings excluded')
 
 
-def bar_spec(slot, points, diameter, closed=False, note=''):
+def bar_spec(slot, points, diameter, closed=False, note='', representation='Full'):
     """Miter sweep of a centreline. Closed polygon ties have no hooks/lap."""
     pts=[tuple(map(E.finite,p)) for p in points];dia=E.finite(diameter)
-    if not .004<=dia<=.05 or len(pts)<2:raise ValueError('เหล็กเส้น 4–50 mm และแนวอย่างน้อย 2 จุด')
+    if not .004<=dia<=.06 or len(pts)<2:raise ValueError('เหล็กเส้น 4–60 mm และแนวอย่างน้อย 2 จุด')
     if closed and len(pts)<3:raise ValueError('ปลอกต้องอย่างน้อย 3 จุด')
     pairs=list(zip(pts,pts[1:]+pts[:1])) if closed else list(zip(pts,pts[1:]))
     lengths=[E.norm(E.sub(b,a)) for a,b in pairs]
@@ -84,8 +84,9 @@ def bar_spec(slot, points, diameter, closed=False, note=''):
     directions=[E.unit(E.sub(b,a)) for a,b in pairs]
     # All supported bent paths are planar rectangular ties.
     plane_normal=E.unit(E.cross(directions[0],directions[1])) if closed else E.unit(E.cross(directions[0],(0,0,1) if abs(directions[0][2])<.9 else (0,1,0)))
-    rings=[];radius=dia/2;segments=12
-    for i,p in enumerate(pts):
+    if representation not in ('Full','Lightweight','Centreline'):raise ValueError('Unknown bar representation')
+    rings=[];radius=dia/2;segments=6 if representation=='Lightweight' else 12
+    for i,p in enumerate(pts if representation!='Centreline' else []):
         incoming=directions[i-1] if i or closed else directions[0]
         outgoing=directions[i] if i<len(directions) else directions[-1]
         tangent=E.unit(E.add(incoming,outgoing));side=E.unit(E.cross(plane_normal,tangent))
@@ -96,26 +97,26 @@ def bar_spec(slot, points, diameter, closed=False, note=''):
     for i in range(len(rings) if closed else len(rings)-1):
         a,b=rings[i],rings[(i+1)%len(rings)]
         faces.extend([[a[j],a[(j+1)%segments],b[(j+1)%segments],b[j]] for j in range(segments)])
-    if not closed:faces=[list(reversed(rings[0]))]+faces+[rings[-1]]
+    if not closed and rings:faces=[list(reversed(rings[0]))]+faces+[rings[-1]]
     length=sum(lengths)
     return dict(slot=slot,kind='Rebar',ifc='IfcReinforcingBar',faces=faces,color=(.68,.26,.16),
         discipline='Structure',item=f'Rebar D{dia*1000:g}'+(' geometric tie' if closed else ''),unit='m',quantity=length,
-        bar_path=pts,bar_diameter=dia,bar_closed=closed,axis=[pts[0],pts[-1]] if not closed else None,
+        bar_path=pts,bar_diameter=dia,bar_closed=closed,representation=representation,axis=[pts[0],pts[-1]] if not closed else None,
         note=note or 'Net model centreline; no hooks/laps/anchorage, no strength design')
 
 
-def reinforcement(kind, host, cover=.04, diameter=.012, tie_diameter=.006, spacing=.15, count_x=3,count_y=3, layers=1):
+def reinforcement(kind, host, cover=.04, diameter=.012, tie_diameter=.006, spacing=.15, count_x=3,count_y=3, layers=1, representation='Full'):
     """RC cages from dimensions in the host's original local coordinates."""
     c,db,dt,spacing=map(E.finite,(cover,diameter,tie_diameter,spacing))
     nx,ny,layer=map(E.finite,(count_x,count_y,layers))
-    if not .015<=c<=.15 or not .004<=db<=.05 or not .004<=dt<=.025 or not .04<=spacing<=1:
+    if not .015<=c<=.15 or not .004<=db<=.06 or not .004<=dt<=.06 or not .04<=spacing<=1:
         raise ValueError('cover/ขนาดเหล็ก/ระยะ อยู่นอกช่วงรองรับ')
     if int(nx)!=nx or int(ny)!=ny or not 2<=nx<=30 or not 2<=ny<=30 or layer not in (1,2):
         raise ValueError('จำนวนเหล็กตามด้านเป็นจำนวนเต็ม 2–30; ชั้นตะแกรง 1 หรือ 2')
     nx,ny,layer=int(nx),int(ny),int(layer);specs=[]
     x,y,z=[E.finite(host[k]) for k in ('x','y','z')]
     w=E.finite(host['width']);h=E.finite(host['height']);d=E.finite(host.get('depth',0))
-    def bars(a,b):specs.append(bar_spec('bar-'+str(len(specs)),[a,b],db))
+    def bars(a,b):specs.append(bar_spec('bar-'+str(len(specs)),[a,b],db,representation=representation))
     def between(lo,hi,n):return [lo+(hi-lo)*i/(n-1) for i in range(n)]
     def spaced(lo,hi,diameter=db):
         values=between(lo,hi,max(2,math.ceil((hi-lo)/spacing)+1))
@@ -143,7 +144,7 @@ def reinforcement(kind, host, cover=.04, diameter=.012, tie_diameter=.006, spaci
         for l in spaced(c+dt/2,sizes[2]-c-dt/2,dt):
             path=[point(u,v,l) for u,v in [(outer,outer),(sizes[0]-outer,outer),(sizes[0]-outer,sizes[1]-outer),(outer,sizes[1]-outer)]]
             specs.append(bar_spec('tie-'+str(len(specs)),path,dt,True,
-                'Geometric closed tie with miter bends; hooks, bend radii, laps excluded; not a fabrication shape'))
+                'Geometric closed tie with miter bends; hooks, bend radii, laps excluded; not a fabrication shape',representation))
     elif kind=='Stair':
         n=int(host['risers']);going=E.finite(host['going']);waist=E.finite(host['waist']);r=h/n;L=(n-1)*going
         slope=r/going;cos=1/math.sqrt(1+slope*slope);q=c+db/2
