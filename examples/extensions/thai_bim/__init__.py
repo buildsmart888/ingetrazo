@@ -21,7 +21,7 @@ from .visuals import launcher, decorate_multi, decorate_cut
 from .builders import add_tools
 
 KEY='thai_bim'
-TITLE='Thai BIM 0.10'
+TITLE='Thai BIM 0.11'
 
 
 class ExchangeGroups(Command):
@@ -522,13 +522,14 @@ def reconcile_specs(scene,specs,assembly,metadata,rebar_host=None):
     return ExchangeGroups(scene,replacements,additions,[g for g in old if g.ext[KEY]['slot'] not in slots]),len(specs)
 
 
-def rebar_command(scene,host,specs,params,expected=None):
+def rebar_command(scene,host,specs,params,expected=None,recipe_source=None):
     if host not in scene.groups or identity_issues(scene):raise ValueError('Host ไม่อยู่ในไฟล์/พบรหัสซ้ำ')
     from .workflow import host_token,pose
     token=host_token(host);rec=host.ext[KEY]
     if expected is not None and token!=expected:raise ValueError('Host changed after preview; review the current host again')
     return reconcile_specs(scene,specs,'rebar-'+host.uid,dict(host_uid=host.uid,host_hash=token[2],host_pose=pose(host),bar_pose=pose(host),
-        host_params=copy.deepcopy(rec.get('params') or rec.get('stair_params')),host_kind=rec['kind'],rebar_params=params),rebar_host=host)
+        host_params=copy.deepcopy(rec.get('params') or rec.get('stair_params')),host_kind=rec['kind'],rebar_params=params,
+        rebar_recipe_source=__import__(__package__+'.rebar_recipe',fromlist=['provenance']).provenance(rec['kind'],recipe_source,params)),rebar_host=host)
 
 
 def roof_planes_from_groups(groups, underside=True):

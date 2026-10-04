@@ -16,8 +16,8 @@ from core.snap import SnapResult
 from views.viewport import Viewport
 
 root07=Path(__file__).resolve().parents[1]
-out07=root07/'thai_bim/verification-v101';out07.mkdir(exist_ok=True)
-for suffix in ('engine','visuals','structures','builders','detailing','placement','workflow','steel','management','audit','drawings','drawing_layout','catalogue','path_geometry','type_ui','multi_place','identity_data','copy_identity'):sys.modules.pop('ingetrazo_plugin_thai_bim.'+suffix,None)
+out07=root07/'verification-local';out07.mkdir(exist_ok=True)
+for suffix in ('engine','visuals','structures','builders','detailing','placement','workflow','steel','management','audit','drawings','drawing_layout','catalogue','path_geometry','type_ui','multi_place','identity_data','copy_identity','rebar_recipe'):sys.modules.pop('ingetrazo_plugin_thai_bim.'+suffix,None)
 tb07=_import_by_path('thai_bim',user_plugins_dir()/'thai_bim/__init__.py')
 from ingetrazo_plugin_thai_bim import workflow as W07,builders as B07,management as M07,steel as C07,audit as A071
 checks07=[];actual07=(list(scene.groups),scene.version,set(scene.selection))

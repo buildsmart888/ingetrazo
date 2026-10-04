@@ -20,8 +20,10 @@ def member_type(kind,code,name,params,uid=None,revision=1,rebar=None):
     else:E.box_spec(kind,0,0,0,**p)
     identity=str(uid or uuid.uuid4());uuid.UUID(identity)
     if isinstance(revision,bool) or int(revision)!=revision or revision<1:raise ValueError('Invalid type revision')
-    if rebar is not None:raise ValueError('Reinforcement type recipes are reserved for a later release; use explicit Host review')
-    return dict(id=identity,kind=kind,code=code,name=name,revision=int(revision),params=p,rebar=None)
+    if rebar is not None:
+        from .rebar_recipe import validate as recipe_validate
+        rebar=recipe_validate(kind,rebar)
+    return dict(id=identity,kind=kind,code=code,name=name,revision=int(revision),params=p,rebar=copy.deepcopy(rebar))
 
 def validate(data):
     if not isinstance(data,dict) or data.get('schema')!=1 or not isinstance(data.get('types'),list):raise ValueError('Invalid type library schema')
@@ -54,4 +56,4 @@ def write(path,data):
     finally:
         if Path(temp).exists():Path(temp).unlink()
 
-def snapshot(row):return copy.deepcopy(member_type(row['kind'],row['code'],row['name'],row['params'],row['id'],row['revision']))
+def snapshot(row):return copy.deepcopy(member_type(row['kind'],row['code'],row['name'],row['params'],row['id'],row['revision'],row.get('rebar')))

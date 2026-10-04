@@ -1,5 +1,5 @@
 """Assembly dialogs and tool icons, drawn locally with Qt."""
-import math
+import math,copy,json
 from PySide6.QtCore import Qt,QPointF,QSize,QTimer
 from PySide6.QtGui import QPixmap,QIcon,QPainter,QPen,QColor,QPolygonF
 from PySide6.QtWidgets import (QWidget,QDialog,QVBoxLayout,QHBoxLayout,QFormLayout,QScrollArea,
@@ -81,7 +81,7 @@ class AssemblyPreview(QWidget):
 
 class BuilderDialog(QDialog):
     def __init__(self,panel,title):
-        super().__init__(panel.app.window);self.panel=panel;self.setWindowTitle('Thai BIM 0.10 — '+title);self.setWindowIcon(icon(title if title in ('Stair','Rebar') else 'Roof'));self.resize(1080,800)
+        super().__init__(panel.app.window);self.panel=panel;self.setWindowTitle('Thai BIM 0.11 — '+title);self.setWindowIcon(icon(title if title in ('Stair','Rebar') else 'Roof'));self.resize(1080,800)
         lay=QVBoxLayout(self);row=QHBoxLayout();lay.addLayout(row,1)
         scroll=QScrollArea();scroll.setWidgetResizable(True);scroll.setMinimumWidth(355);scroll.setMaximumWidth(470);row.addWidget(scroll,4)
         content=QWidget();self.form=QFormLayout(content);scroll.setWidget(content)
@@ -154,10 +154,14 @@ class StairDialog(BuilderDialog):
 
 
 class RebarDialog(BuilderDialog):
-    def __init__(self,panel):
+    def __init__(self,panel,recipe_type=None,accept_recipe=None):
         super().__init__(panel,'Rebar');self.host_uid=None;self.host_params=None;self.host_kind=None;self.bound_scene=None;self.reviewed_key=None;self.reviewed_specs=None
+        self.recipe_type=copy.deepcopy(recipe_type);self.accept_recipe=accept_recipe;self.recipe_source=None
         self.host_label=QLabel('เลือก RC หนึ่งชิ้น แล้วกดอ่าน Host');self.host_label.setWordWrap(True);self.form.addRow(self.host_label)
-        self.button('อ่านฐานราก / คาน / เสา / พื้น / บันไดที่เลือก',self.read_host)
+        self.read_button=self.button('อ่านฐานราก / คาน / เสา / พื้น / บันไดที่เลือก',self.read_host)
+        self.recipe_label=QLabel('รายละเอียดผู้ใช้ • ยังไม่ได้เลือกจากชนิด');self.recipe_label.setWordWrap(True);self.form.addRow(self.recipe_label)
+        if recipe_type is None:
+            self.button('เรียกเหล็กจากรุ่นชนิดที่ติดกับ Host',self.load_host_recipe)
         self.field('cover','Cover ถึงผิวนอกเหล็ก (mm)',40,False,15,150)
         self.field('diameter','เหล็กหลัก / ตะแกรง (mm)',12,False,4,60)
         self.field('tie_diameter','เหล็กปลอก (mm)',6,False,4,60)
@@ -185,9 +189,56 @@ class RebarDialog(BuilderDialog):
             self.field(key,label,value,False,minimum,maximum)
         self.field('hook_ends','ตะขอ: 1 = ปลายต้น / 2 = สองปลาย',2,True,1,2)
         self.note('ฐาน/พื้น L/U 90° พับเข้ากลางความหนา • บันไดตรง: ขาตะขอตั้งขึ้น\nบันได: Cover ตั้งฉากท้องพื้น; เหล็กขวางไม่ยื่นตามเหล็กหลัก\nเลือกตะขอหรือยื่นตามลาดบันได; ไม่มีทาบพื้น/บันได\nทุกชนิดรวม BBS; ค่ามาจากผู้ใช้ ไม่มีการออกแบบรับแรง\nส่วนยื่นต้องตรวจคอนกรีตข้างเคียง; ไม่มีตรวจชนทั้งโมเดล')
-        self.button('ตาราง BBS / ส่งออก Excel…',lambda:open_bbs(self.panel))
-        self.button('ตรวจพรีวิวและข้อมูล Host ล่าสุด',self.review)
-        self.button('สร้าง / อัปเดตเหล็กที่ตรวจพรีวิวแล้ว',self.build)
+        if recipe_type is None:
+            self.button('ตาราง BBS / ส่งออก Excel…',lambda:open_bbs(self.panel))
+            self.button('ตรวจพรีวิวและข้อมูล Host ล่าสุด',self.review)
+            self.button('สร้าง / อัปเดตเหล็กที่ตรวจพรีวิวแล้ว',self.build)
+        else:
+            self.read_button.hide();self.host_kind=recipe_type['kind'];self.bound_scene=panel.app.scene
+            self.setWindowTitle('Thai BIM — รายละเอียดเหล็ก '+recipe_type['code'])
+            from . import placement as P,rebar_recipe as R
+            sp=S.stair_spec(**recipe_type['params']) if self.host_kind=='Stair' else P.member_spec(self.host_kind,**recipe_type['params'])
+            self.host_params=sp.get('params') or sp.get('stair_params')
+            self.host_label.setText('พรีวิวชนิด '+recipe_type['code']+' • ขนาดตัวอย่างของชนิด • หน่วยเหล็ก mm')
+            self.configure_kind();self.set_params(recipe_type.get('rebar') or R.defaults())
+            self.recipe_label.setText('แก้ค่าชั่วคราว → ใช้รายละเอียดนี้ → บันทึกชนิดในโครงการ\nขนาดคาน/พื้นจริงอาจต่างจากตัวอย่าง; ต้องตรวจ Host ก่อนสร้าง')
+            # Keep the commit action visible even when the parameter form scrolls.
+            commit=self.button('ใช้รายละเอียดนี้ในชนิด (ยังไม่สร้างเหล็ก)',self.accept_type_recipe)
+            self.form.removeWidget(commit);self.layout().addWidget(commit)
+    def configure_kind(self):
+        for key in ('count_x','count_y','tie_inside_radius','tie_hook_length','lap_length'):
+            self.fields[key].setEnabled(self.host_kind in ('Beam','Column'))
+        self.fields['layers'].setEnabled(self.host_kind in ('Footing','Slab'))
+        for key in ('hook_length','hook_ends'):self.fields[key].setEnabled(self.host_kind in ('Footing','Slab','Stair'))
+        for key in ('extension_start','extension_end'):self.fields[key].setEnabled(self.host_kind in ('Beam','Column','Stair'))
+        for control in self.steel_controls['tie_steel']:control.setEnabled(self.host_kind in ('Beam','Column'))
+    def set_params(self,saved):
+        from . import steel as C
+        for key,controls in self.steel_controls.items():
+            record=saved.get(key);controls[0].setCurrentText(record['catalogue'] if record else C.CUSTOM)
+            if record:controls[1].setCurrentText(record['size']);controls[2].setCurrentText(record['grade'])
+        self.representation.setCurrentText(saved.get('representation','Full'))
+        for key,w in self.fields.items():
+            if key in saved:w.setValue(saved[key])
+        self.timer.stop();self.reviewed_key=None;self.reviewed_specs=None
+    def accept_type_recipe(self):
+        from . import rebar_recipe as R
+        if self.panel.app.scene is not self.bound_scene:raise ValueError('Document changed; reopen the type editor')
+        recipe=R.validate(self.host_kind,self.params());self.preview()
+        if self.visual.error:raise ValueError(self.visual.error)
+        self.accept_recipe(recipe);self.close()
+    def load_host_recipe(self):
+        from . import rebar_recipe as R,catalogue as C
+        row=self.host().ext['thai_bim'].get('member_type')
+        if not row or row.get('rebar') is None:raise ValueError('Host has no saved recipe; edit its type and apply that type to this selected host first')
+        row=C.snapshot(row);self.set_params(row['rebar']);self.recipe_source=R.source(row)
+        self.recipe_label.setText('ชนิด '+row['code']+' revision '+str(row['revision'])+' • รุ่นที่ติดกับ Host • ต้องตรวจพรีวิวก่อนสร้าง')
+        self.preview()
+    def current_key(self):
+        from .workflow import review_key
+        # Track the exact host type snapshot too: recipe-only selected updates invalidate review.
+        host=self.host()
+        return (review_key(host,self.params()),json.dumps(host.ext['thai_bim'].get('member_type'),sort_keys=True),json.dumps(self.recipe_source,sort_keys=True))
     def read_host(self):
         from .workflow import host_token
         scene=self.panel.app.scene;selected=[g for g in scene.selection if g in scene.groups]
@@ -198,24 +249,16 @@ class RebarDialog(BuilderDialog):
         if params.get('shape')=='polygon':raise ValueError('เหล็กพื้นหลายจุดยังไม่รองรับ; ไม่ใช้ตะแกรงสี่เหลี่ยมแทนขอบเขตจริง')
         host_token(host);self.bound_scene=scene;self.reviewed_key=None;self.reviewed_specs=None
         self.host_uid=host.uid;self.host_params=params;self.host_kind=rec['kind'];self.host_label.setText(host.name)
-        for w in ('count_x','count_y','tie_diameter'):self.fields[w].setEnabled(self.host_kind in ('Beam','Column'))
-        self.fields['layers'].setEnabled(self.host_kind in ('Footing','Slab'))
-        for key in ('hook_length','hook_ends'):self.fields[key].setEnabled(self.host_kind in ('Footing','Slab','Stair'))
-        for key in ('tie_inside_radius','tie_hook_length','lap_length'):
-            self.fields[key].setEnabled(self.host_kind in ('Beam','Column'))
-        for key in ('extension_start','extension_end'):
-            self.fields[key].setEnabled(self.host_kind in ('Beam','Column','Stair'))
-        for key in ('hook_length','lap_length','extension_start','extension_end'):self.fields[key].setValue(0)
+        from . import rebar_recipe as R
+        self.recipe_source=None;self.set_params(R.defaults());self.configure_kind()
+        self.recipe_label.setText('รายละเอียดผู้ใช้ • ยังไม่ได้เลือกจากชนิด')
         old=next(((g.ext or {}).get('thai_bim',{}) for g in scene.groups if (g.ext or {}).get('thai_bim',{}).get('host_uid')==host.uid),{})
         if old.get('rebar_params'):
-            saved=old['rebar_params']
-            for key,controls in self.steel_controls.items():
-                record=saved.get(key)
-                controls[0].setCurrentText(record['catalogue'] if record else 'Custom / unspecified')
-                if record:controls[1].setCurrentText(record['size']);controls[2].setCurrentText(record['grade'])
-            self.representation.setCurrentText(saved.get('representation','Full'))
-            for k,w in self.fields.items():
-                if k in old['rebar_params']:w.setValue(old['rebar_params'][k])
+            self.set_params(old['rebar_params']);self.recipe_source=copy.deepcopy(old.get('rebar_recipe_source'))
+            self.recipe_label.setText('อ่านรายละเอียดเหล็กเดิมของ Host • '+('ชนิด '+str(self.recipe_source['type_code'])+' revision '+str(self.recipe_source['type_revision']) if self.recipe_source else 'ค่าผู้ใช้'))
+        elif (rec.get('member_type') or {}).get('rebar') is not None:
+            self.load_host_recipe()
+            return
         self.review()
     def host(self):
         from .workflow import host_token
@@ -255,11 +298,21 @@ class RebarDialog(BuilderDialog):
     def preview(self):
         from . import workflow as W
         try:
+            if self.recipe_type is not None:
+                from . import rebar_recipe as R
+                params=R.validate(self.host_kind,self.params());specs=W.bar_specs(self.host_kind,self.host_params,params)
+                hostspec=S.stair_spec(**self.host_params) if self.host_kind=='Stair' else E.box_spec(**self.host_params)
+                self.visual.display(specs,[hostspec]);self.output.setPlainText('พรีวิวขนาดตัวอย่าง • '+str(len(specs))+' เส้น • ยังไม่สร้างโมเดล\nต้องตรวจขนาดและตำแหน่ง Host จริงอีกครั้งก่อนสร้างเหล็ก')
+                return
             host=self.host();specs,token,summary=W.review_specs(self.panel.app.scene,host,self.params())
+            if self.recipe_source:
+                from . import rebar_recipe as R
+                source=R.provenance(self.host_kind,self.recipe_source,self.params())
+                self.recipe_label.setText('ชนิด '+source['type_code']+' revision '+str(source['type_revision'])+' • รุ่นที่เรียกมา'+(' • แก้ค่าจากชนิดแล้ว' if source['overridden'] else ' • ค่าตรงกับชนิด'))
             hostspec=S.stair_spec(**self.host_params) if self.host_kind=='Stair' else E.box_spec(**self.host_params)
             self.visual.display(W.P.world_specs(specs,W.pose(host)),W.P.world_specs([hostspec],W.pose(host)))
             self._preview_specs=specs;self._preview_token=token
-            ready=self.reviewed_key==W.review_key(host,self.params())
+            ready=self.reviewed_key==self.current_key()
             self.output.setPlainText(f"Host {host.name} • เหล็ก {summary['old_count']} → {summary['new_count']} เส้น\nความยาว {summary['old_m']:.3f} → {summary['new_m']:.3f} m\n"+('ตรวจพรีวิวแล้ว พร้อมสร้าง/อัปเดต' if ready else 'กดตรวจพรีวิวและข้อมูล Host ล่าสุดก่อนสร้าง/อัปเดต')+'\nรองรับย้าย/หมุนแบบ rigid; ไม่รองรับ Scale / mirror / แก้ผิวด้วยมือ')
         except Exception as error:
             self._preview_specs=None;self.visual.invalid(error);self.output.setPlainText(str(error))
@@ -267,14 +320,14 @@ class RebarDialog(BuilderDialog):
         from .workflow import review_key
         self.preview()
         if self.visual.error:raise ValueError(self.visual.error)
-        self.reviewed_key=review_key(self.host(),self.params());self.reviewed_specs=self._preview_specs
+        self.reviewed_key=self.current_key();self.reviewed_specs=self._preview_specs
         self.output.appendPlainText('ตรวจพรีวิวแล้ว • หาก Host/ค่าเปลี่ยน ต้องตรวจใหม่ • ยังไม่ได้แก้โมเดล')
     def build(self,update=False):
         from . import rebar_command
         from .workflow import review_key
-        host=self.host();key=review_key(host,self.params())
+        host=self.host();key=self.current_key()
         if key!=self.reviewed_key or self.reviewed_specs is None:raise ValueError('Host หรือค่าเปลี่ยนหลังพรีวิว: กดตรวจพรีวิวและข้อมูล Host ล่าสุดก่อนสร้าง')
-        command,count=rebar_command(self.panel.app.scene,host,self.reviewed_specs,self.params(),expected=key[0])
+        command,count=rebar_command(self.panel.app.scene,host,self.reviewed_specs,self.params(),expected=key[0][0],recipe_source=self.recipe_source)
         self.panel.execute(command);self.output.setPlainText(f'เหล็ก {count} เส้น • Host {host.name}\nกดซ้ำอัปเดตชุดเดิม • Undo ได้ • BBS ใช้รายละเอียดและตำแหน่งที่ตรวจแล้ว')
 
 
@@ -284,7 +337,7 @@ def open_bbs(panel):
     records,issues=bbs_records(panel.app.scene);tables=D.tables(records,issues)
     old=getattr(panel,'bbs_dialog',None)
     if old is not None:old.close();old.deleteLater()
-    dialog=QDialog(panel.app.window);dialog.setWindowTitle('Thai BIM 0.10 — BBS / Bar bending schedule');dialog.resize(1280,780)
+    dialog=QDialog(panel.app.window);dialog.setWindowTitle('Thai BIM 0.11 — BBS / Bar bending schedule');dialog.resize(1280,780)
     lay=QVBoxLayout(dialog);lay.addWidget(QLabel(f'เหล็กรายละเอียด {len(records)} เส้น • กลุ่มรูปดัด {len(tables[0][1])-1} • รายการต้องตรวจ {len(issues)}'))
     tabs=QTabWidget();lay.addWidget(tabs)
     preview=AssemblyPreview();preview.setMinimumSize(440,220);lay.addWidget(preview)
@@ -360,7 +413,7 @@ def add_tools(panel):
     panel.button(panel.members,'เหล็กเสริมของชิ้นที่เลือก…',lambda:open_builder('Rebar'))
     panel.button(panel.members,'สร้างบันได RC ตรง…',lambda:open_builder('Stair'))
     panel.button(panel.roof,'หลังคาจั่ว / ปั้นหยา / เพิง…',lambda:open_builder('Roof'))
-    toolbar=QToolBar('Thai BIM 0.10',panel.app.window);toolbar.setObjectName('thai_bim_toolbar');toolbar.setIconSize(QSize(28,28));toolbar.setMovable(True);toolbar.setFloatable(True)
+    toolbar=QToolBar('Thai BIM 0.11',panel.app.window);toolbar.setObjectName('thai_bim_toolbar');toolbar.setIconSize(QSize(28,28));toolbar.setMovable(True);toolbar.setFloatable(True)
     panel.app.window.addToolBarBreak(Qt.TopToolBarArea)
     panel.app.window.addToolBar(Qt.TopToolBarArea,toolbar);panel.toolbar=toolbar
     actions=[('Project','โครงการ / Grid / Level',lambda:(tabs.setCurrentIndex(0),panel.open_workspace()))]

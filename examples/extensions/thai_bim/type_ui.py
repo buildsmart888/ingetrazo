@@ -62,7 +62,7 @@ def update_selected(scene,row):
 
 class TypeDialog(QDialog):
     def __init__(self,panel):
-        super().__init__(panel.app.window);self.panel=panel;self.bound_scene=panel.app.scene;self.uid=None;self.revision=0
+        super().__init__(panel.app.window);self.panel=panel;self.bound_scene=panel.app.scene;self.uid=None;self.revision=0;self.recipe=None
         self.setWindowTitle('Thai BIM — คลังชนิดชิ้นงาน');self.resize(1120,720)
         main=QVBoxLayout(self);row=QHBoxLayout();main.addLayout(row)
         self.table=QTableWidget(0,4);self.table.setHorizontalHeaderLabels(['ชนิด','รหัส','ชื่อ','Revision']);self.table.setEditTriggers(QTableWidget.NoEditTriggers);self.table.setSelectionBehavior(QTableWidget.SelectRows)
@@ -72,7 +72,11 @@ class TypeDialog(QDialog):
         self.params_form=QFormLayout();right.addLayout(self.params_form);self.fields={}
         from .builders import AssemblyPreview
         self.visual=AssemblyPreview();self.visual.setMinimumSize(380,240);right.addWidget(self.visual,1)
-        self.info=QLabel('ค่าหน่วยเมตร • รหัสชนิดแยกจาก ID ของแต่ละชิ้น\nคานใช้ความยาวจากสองจุด; พื้นใช้ขอบเขตที่คลิก\nแก้คลังไม่เปลี่ยนชิ้นเดิม; ใช้ปุ่มอัปเดตเฉพาะชิ้นที่เลือก\nเหล็กเสริมสร้างแยกผ่าน Host review; ยังไม่มีสูตรเหล็กในคลัง');self.info.setWordWrap(True);main.addWidget(self.info)
+        self.info=QLabel('ค่าหน่วยเมตร • รหัสชนิดแยกจาก ID ของแต่ละชิ้น\nคานใช้ความยาวจากสองจุด; พื้นใช้ขอบเขตที่คลิก\nแก้คลังไม่เปลี่ยนชิ้นเดิม; ใช้ปุ่มอัปเดตเฉพาะชิ้นที่เลือก\nรายละเอียดเหล็กประจำชนิด → บันทึกชนิด → อ่าน Host → ตรวจพรีวิวก่อนสร้าง');self.info.setWordWrap(True);main.addWidget(self.info)
+        recipes=QHBoxLayout();main.addLayout(recipes)
+        self.recipe_info=QLabel();recipes.addWidget(self.recipe_info)
+        self.button(recipes,'แก้รายละเอียดเหล็ก / ดูพรีวิว…',self.edit_recipe)
+        self.button(recipes,'ล้างรายละเอียดเหล็กจากชนิด',self.clear_recipe)
         buttons=QHBoxLayout();main.addLayout(buttons)
         for label,fn in [('ใหม่',self.new),('ทำสำเนา',self.duplicate),('บันทึกชนิดในโครงการ',self.save),('ลบจากคลัง',self.remove),('วางชนิดนี้…',self.place),('อัปเดตเฉพาะชิ้นที่เลือก',self.apply)]:self.button(buttons,label,fn)
         files=QHBoxLayout();main.addLayout(files)
@@ -87,6 +91,9 @@ class TypeDialog(QDialog):
     def configure(self):
         while self.params_form.rowCount():self.params_form.removeRow(0)
         self.fields={};kind=self.kind.currentText()
+        if self.recipe is not None and getattr(self,'recipe_kind',kind)!=kind:self.recipe=None
+        self.recipe_kind=kind
+        if hasattr(self,'recipe_info'):self.recipe_status()
         labels={'width':'กว้าง X / ระยะวิ่งตัวอย่าง (m)','depth':'กว้าง Y (m)','height':'สูง / ความหนา / สูงระหว่างชั้น (m)','going':'ลูกนอน (m)','risers':'จำนวนลูกตั้ง','waist':'ความหนาท้องบันได (m)'}
         for key,value in C.DEFAULTS[kind].items():
             w=QSpinBox() if key=='risers' else QDoubleSpinBox()
@@ -95,7 +102,7 @@ class TypeDialog(QDialog):
             w.setValue(value);w.valueChanged.connect(self.preview);self.fields[key]=w;self.params_form.addRow(labels[key],w)
         self.preview()
     def row(self):
-        return C.member_type(self.kind.currentText(),self.code.text(),self.name.text(),{k:w.value() for k,w in self.fields.items()},self.uid,self.revision+1)
+        return C.member_type(self.kind.currentText(),self.code.text(),self.name.text(),{k:w.value() for k,w in self.fields.items()},self.uid,self.revision+1,self.recipe)
     def preview(self,*args):
         try:
             row=self.row();p=row['params'];kind=row['kind']
@@ -109,9 +116,9 @@ class TypeDialog(QDialog):
             for j,k in enumerate(('kind','code','name','revision')):self.table.setItem(i,j,QTableWidgetItem(str(r[k])))
         self.table.resizeColumnsToContents()
     def new(self):
-        self.uid=None;self.revision=0;self.kind.setEnabled(True);self.code.clear();self.name.clear();self.configure()
+        self.uid=None;self.revision=0;self.recipe=None;self.recipe_status();self.kind.setEnabled(True);self.code.clear();self.name.clear();self.configure()
     def load_row(self,index):
-        self.check_scene();r=self.rows[index];self.uid=r['id'];self.revision=r['revision'];self.kind.setCurrentText(r['kind']);self.kind.setEnabled(False)
+        self.check_scene();r=self.rows[index];self.uid=r['id'];self.revision=r['revision'];self.recipe=copy.deepcopy(r.get('rebar'));self.recipe_kind=r['kind'];self.recipe_status();self.kind.setCurrentText(r['kind']);self.kind.setEnabled(False)
         self.code.setText(r['code']);self.name.setText(r['name'])
         for k,w in self.fields.items():w.setValue(r['params'][k])
         self.preview()
@@ -128,8 +135,25 @@ class TypeDialog(QDialog):
         data['types']=[r for r in data['types'] if r['id']!=self.uid];self.panel.execute(LibraryChange(self.bound_scene,data));self.refresh();self.new()
     def saved(self):
         self.check_scene();r=next((r for r in library(self.bound_scene)['types'] if r['id']==self.uid),None)
-        if not r or C.member_type(r['kind'],r['code'],r['name'],r['params'],r['id'],r['revision'])!=C.member_type(self.kind.currentText(),self.code.text(),self.name.text(),{k:w.value() for k,w in self.fields.items()},self.uid,self.revision):raise ValueError('Save this type before use; or select its saved row again')
+        if not r or C.member_type(r['kind'],r['code'],r['name'],r['params'],r['id'],r['revision'],r.get('rebar'))!=C.member_type(self.kind.currentText(),self.code.text(),self.name.text(),{k:w.value() for k,w in self.fields.items()},self.uid,self.revision,self.recipe):raise ValueError('Save this type before use; or select its saved row again')
         return r
+    def recipe_status(self):
+        self.recipe_info.setText('มีรายละเอียดเหล็ก • ยังไม่สร้างโมเดล' if self.recipe is not None else 'ยังไม่มีรายละเอียดเหล็ก')
+    def clear_recipe(self):
+        self.check_scene();self.recipe=None;self.recipe_status();self.preview()
+    def edit_recipe(self):
+        self.check_scene();row=self.row()
+        from .builders import RebarDialog
+        # Bind to the exact edit form. A modeless editor cannot overwrite another row.
+        expected=copy.deepcopy(row);bound=self.bound_scene
+        def accept(recipe):
+            self.check_scene()
+            current=self.row();current['id']=expected['id'] if self.uid is None else current['id']
+            if self.bound_scene is not bound or current!=expected:raise ValueError('Type form changed; reopen its reinforcement editor')
+            self.recipe=copy.deepcopy(recipe);self.recipe_status();self.preview()
+        old=getattr(self,'recipe_dialog',None)
+        if old:old.close();old.deleteLater()
+        self.recipe_dialog=RebarDialog(self.panel,recipe_type=row,accept_recipe=accept);self.recipe_dialog.show()
     def place(self):
         row=self.saved();from .multi_place import open_placement
         open_placement(self.panel,row);self.hide()
