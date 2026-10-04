@@ -1,5 +1,5 @@
 {
-  "version": "0.12.0",
+  "version": "0.13.0",
   "pages": [
     {
       "sheet": "A101",
@@ -82,6 +82,6 @@
       "measured_grid_dimension_paper_mm": 80
     }
   ],
-  "pdf_sha256": "7d1f43a52fdab640d800fc3f0a9580cfe837b8c1d1021f4e4a305f0a15dfed5d",
+  "pdf_sha256": "3bb762d826bca97c416503c63086c0ddf858421ab64ce8ba50db1713f075ba05",
   "visual_review": "All five Poppler-rendered pages inspected; explicit levels separated with leaders; synthetic coordination fixture, not construction design"
 }

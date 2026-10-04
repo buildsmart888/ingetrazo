@@ -16,8 +16,8 @@ from core.snap import SnapResult
 from views.viewport import Viewport
 
 root07=Path(__file__).resolve().parents[1]
-out07=root07/'thai_bim/verification-v12';out07.mkdir(exist_ok=True)
-for suffix in ('engine','visuals','structures','builders','detailing','placement','workflow','steel','management','audit','drawings','drawing_layout','catalogue','path_geometry','type_ui','multi_place','identity_data','copy_identity','rebar_recipe','analytical','analytical_ui'):sys.modules.pop('ingetrazo_plugin_thai_bim.'+suffix,None)
+out07=root07/'verification-local';out07.mkdir(exist_ok=True)
+for suffix in ('engine','visuals','structures','builders','detailing','placement','workflow','steel','management','audit','drawings','drawing_layout','catalogue','path_geometry','type_ui','multi_place','identity_data','copy_identity','rebar_recipe','analytical','analytical_ui','selected_edit'):sys.modules.pop('ingetrazo_plugin_thai_bim.'+suffix,None)
 tb07=_import_by_path('thai_bim',user_plugins_dir()/'thai_bim/__init__.py')
 from ingetrazo_plugin_thai_bim import workflow as W07,builders as B07,management as M07,steel as C07,audit as A071
 checks07=[];actual07=(list(scene.groups),scene.version,set(scene.selection))
@@ -52,12 +52,12 @@ bg07=panel07.open_builder.__globals__
 for name in ('RoofDialog','StairDialog','RebarDialog'):bg07[name]=getattr(B07,name)
 bg07.update(S=B07.S,D=B07.D,E=tb07.E,open_bbs=B07.open_bbs)
 for dialog07 in panel07.builder_dialogs.values():dialog07.hide();dialog07.deleteLater()
-panel07.builder_dialogs={};B07.add_tools(panel07);W07.install(panel07);M07.install(panel07);A071.install(panel07);__import__('ingetrazo_plugin_thai_bim.type_ui',fromlist=['install']).install(panel07);panel07.dock.setWindowTitle(tb07.TITLE);__import__('ingetrazo_plugin_thai_bim.analytical_ui',fromlist=['install']).install(panel07)
+panel07.builder_dialogs={};B07.add_tools(panel07);W07.install(panel07);M07.install(panel07);A071.install(panel07);__import__('ingetrazo_plugin_thai_bim.type_ui',fromlist=['install']).install(panel07);panel07.dock.setWindowTitle(tb07.TITLE);__import__('ingetrazo_plugin_thai_bim.analytical_ui',fromlist=['install']).install(panel07);__import__('ingetrazo_plugin_thai_bim.selected_edit',fromlist=['install']).install(panel07)
 panel07.grid_columns.__func__.__code__=tb07.Panel.grid_columns.__code__
 wg07=panel07.workflow.refresh.__func__.__globals__
 for name in ('E','P','D','S','host_token','host_notices','bar_unchanged','host_matches','bar_specs','review_specs','placement_of','placed_member_command','PlacementDialog','PlacementTool'):
     wg07[name]=getattr(W07,name)
-check07('20 actual toolbar actions with nonempty icons',len(panel07.toolbar.actions())==20 and all(not a.icon().isNull() for a in panel07.toolbar.actions()))
+check07('21 actual toolbar actions with nonempty icons',len(panel07.toolbar.actions())==21 and all(not a.icon().isNull() for a in panel07.toolbar.actions()))
 
 class App07:
     api_version=2
@@ -75,8 +75,8 @@ class App07:
     def world_to_pixels(self,points):return self.viewport.world_to_pixels(points)
 app07=App07();fp07=tb07.setup(app07);ss07=app07.scene;hh07=app07.viewport.history
 fp07.guard=lambda fn:fn()
-check07('fresh setup has 20 icons',len(fp07.toolbar.actions())==20)
-M07.install(fp07);check07('layer manager install idempotent',len(fp07.toolbar.actions())==20)
+check07('fresh setup has 21 icons',len(fp07.toolbar.actions())==21)
+M07.install(fp07);check07('layer manager install idempotent',len(fp07.toolbar.actions())==21)
 created07=[]
 for kind,values in B07.PRESETS.items():
     fp07.kind.setCurrentText(kind)

@@ -1,13 +1,13 @@
-# Thai BIM Toolkit 0.12.0
+# Thai BIM Toolkit 0.13.0
 
 Extension สำหรับ IngeTrazo Extension API 2 พัฒนาจากงาน Family10
 ใช้ Python/PySide6 และไลบรารีของ IngeTrazo ไม่มี API key และไม่มีการเรียก AI ในคำสั่งรุ่นนี้
 
 ## ติดตั้งและเปิด
 
-นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py` ไปไว้ใน
+นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py` ไปไว้ใน
 `%APPDATA%\ingetrazo\plugins\thai_bim` แล้วเปิด IngeTrazo ใหม่
-เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.12
+เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.13
 การติดตั้งในครั้งนี้จะเปิดแผงให้ใน session ปัจจุบันด้วย จึงไม่จำเป็นต้องปิดไฟล์ที่ยังไม่บันทึก
 
 API ของ IngeTrazo ช่วง 0.x ยังเปลี่ยนได้ โดยเฉพาะการเชื่อมแผง Render ซึ่งใช้รายละเอียดภายใน
@@ -585,3 +585,34 @@ JSON รุ่น 1 เป็น snapshot ที่สร้างโดย conv
 ตรวจรุ่นนี้: **75 pure tests / 246 native checks** รวม 223 จุดตรวจเดิม + 23 analytical
 ตรวจ rigid axis, internal joint splitting, near gap, Undo/Redo, source guards, Unicode JSON,
 IGZ reopen, viewport pixel overlay และการไฮไลต์รายการตรวจ; โมเดลผู้ใช้ไม่เปลี่ยน geometry
+
+
+## รุ่น 0.13.0 — แก้ไขขนาดเฉพาะชิ้นที่เลือก
+
+เพิ่มปุ่มที่ 21 **แก้ไขเฉพาะชิ้นที่เลือก / Instance dimensions**
+เลือกคอนกรีต Thai BIM หนึ่งชิ้น → เปิดเครื่องมือ → แก้ขนาด → ดูรูปและปริมาณก่อน/หลัง
+→ **บันทึกขนาดเฉพาะชิ้นจากพรีวิว (Undo ได้)**
+ถ้าเลือกชิ้นใหม่หรือใช้ Undo/Move/Rotate ระหว่างเปิด ให้กด **อ่านชิ้นงานที่เลือก / โหลดค่าใหม่**
+ไม่แก้คลังชนิดหรือชิ้นที่ใช้ชนิดเดียวกัน; ชิ้นเดิมยังเก็บ type snapshot และ overrides
+
+- ฐานราก/เสา: แก้ width/depth/height โดยคงศูนย์กลางหน้าตัดและระดับฐาน
+- คาน: แก้หน้าตัด depth/height โดยคงความยาวและแนววางเดิม ระดับล่างคานคงเดิม
+  แนว centroid สำหรับ analytical จะเปลี่ยนตามความสูงคาน; ไม่ปรับ node/offset ให้เอง
+- พื้นสี่เหลี่ยม/หลายจุด: แก้ความหนาโดยคงขอบเขตและระดับฐาน ไม่แทน polygon ด้วยสี่เหลี่ยม
+- บันไดตรง: แก้กว้าง สูงระหว่างชั้น ลูกนอน ลูกตั้ง และ waist โดยคงจุดเริ่มกับทิศขึ้น
+  จำนวนขั้น/ลูกนอนเปลี่ยนความยาวระยะวิ่ง จึงต้องตรวจจุดปลายและช่องบันไดใหม่
+
+คง native/business ID, placement transform, ชื่อ, layer, material, hidden state และ assembly binding
+สร้าง mesh ใหม่เฉพาะชิ้น จึงแก้ native Copy ที่ซ่อม ID แล้วได้โดยไม่เปลี่ยน shared mesh ต้นฉบับ
+มี guard สำหรับเปลี่ยน selection, เอกสาร, host/type/geometry และรหัสที่คัดลอกซ้ำ
+บันทึกค่าที่แก้ใน `instance_dimensions` พร้อม IGZ; params/stair_params เป็นค่ารูปทรงจริง
+
+เหล็กเดิมไม่ถูกลบหรือสร้างใหม่อัตโนมัติ; Host review ต้องตรวจหลังแก้คอนกรีต
+กด **อ่านชิ้นนี้ในหน้าต่างเหล็ก / Host review** เพื่อตรวจและอัปเดตชุดเดิมตามค่าที่เลือก
+เหล็กพื้น polygon ยังไม่รองรับ ส่วน Analytical Snapshot เก่าจะไม่ผ่าน source guard หลังแก้
+ไม่รองรับหลายชิ้นพร้อมกัน การลากแก้ปลายคาน/ขอบเขตพื้น หรือบันได L/U ในรุ่นนี้
+
+ตรวจรุ่นนี้: **81 pure tests / 298 native checks** รวม 246 เดิม + 52 selected edit checks
+ตรวจทุกชนิด, polygon เว้าพร้อมพิกัด local ติดลบ, native Qt save button, Undo/Redo,
+stale selection/document/pose, เหล็กเดิมและ analytical stale, copy shared mesh และ IGZ reopen
+ใช้โมเดลทดสอบแยก; geometry ในไฟล์ผู้ใช้ไม่เปลี่ยน

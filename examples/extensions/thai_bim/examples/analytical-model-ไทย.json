@@ -1,6 +1,6 @@
 {
   "schema": "thai-bim-analytical/1",
-  "id": "e1950e17-e56a-4cb8-86d2-c46d5f48f1d4",
+  "id": "6976c8f8-e344-4db4-8f88-edfc67555083",
   "revision": 2,
   "units": {
     "length": "m",
@@ -8,45 +8,11 @@
     "mass": "tonne",
     "stress": "kN/m2"
   },
-  "source_digest": "cd08f6da8444dff6c236d3e107be8ab5835c549afa53e9f5eec2056247958c9b",
+  "source_digest": "51bf2fcbfcd47d6bedd5aef669f36beef1da65d52410bfc9ea4a5133104eb761",
   "sources": [
     {
-      "id": "8b1c7163-8fa2-4af0-9c29-9d2c8935a7c3",
-      "native_uid": "810ec53f658e4090",
-      "name": "TBIM Beam member",
-      "kind": "Beam",
-      "params": {
-        "kind": "Beam",
-        "x": 0.0,
-        "y": -0.1,
-        "z": 1.3,
-        "width": 4.0,
-        "depth": 0.2,
-        "height": 0.4
-      },
-      "pose": [
-        1.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        1.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        1.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        1.0
-      ],
-      "geometry_hash": "a64b821447dcf7b79ceaaa006675ecd8f8b11a5f486c7ba1728f64b4c9b26b9c"
-    },
-    {
-      "id": "96175eb8-976a-4f62-bb0f-8641eed0218c",
-      "native_uid": "f1586bd1597b4db9",
+      "id": "141f1c3e-3ebc-48ca-b8db-f40aee73e0d5",
+      "native_uid": "dbe29f78d77a4e7a",
       "name": "TBIM Column member",
       "kind": "Column",
       "params": {
@@ -77,6 +43,40 @@
         1.0
       ],
       "geometry_hash": "0dd12968985521fb7c7ff4253a4e26d8d910b32f40500af57e40eedeb6e881f3"
+    },
+    {
+      "id": "8e7fd3ab-5fcb-4a77-aa78-faa2cfc0d532",
+      "native_uid": "b9413b42bea34cba",
+      "name": "TBIM Beam member",
+      "kind": "Beam",
+      "params": {
+        "kind": "Beam",
+        "x": 0.0,
+        "y": -0.1,
+        "z": 1.3,
+        "width": 4.0,
+        "depth": 0.2,
+        "height": 0.4
+      },
+      "pose": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "geometry_hash": "a64b821447dcf7b79ceaaa006675ecd8f8b11a5f486c7ba1728f64b4c9b26b9c"
     }
   ],
   "inspection_tolerance_m": 0.02,
@@ -116,58 +116,9 @@
   ],
   "members": [
     {
-      "id": "member-922c98b81b4c859b2d50ff48",
-      "source_id": "8b1c7163-8fa2-4af0-9c29-9d2c8935a7c3",
-      "source_native_uid": "810ec53f658e4090",
-      "name": "TBIM Beam member",
-      "kind": "Beam",
-      "axis": [
-        [
-          0.0,
-          0.0,
-          1.5
-        ],
-        [
-          4.0,
-          0.0,
-          1.5
-        ]
-      ],
-      "local_axes": {
-        "x": [
-          1.0,
-          0.0,
-          0.0
-        ],
-        "y": [
-          0.0,
-          1.0,
-          0.0
-        ],
-        "z": [
-          0.0,
-          0.0,
-          1.0
-        ]
-      },
-      "section": {
-        "shape": "rectangle",
-        "width_m": 0.2,
-        "depth_m": 0.4,
-        "area_m2": 0.08000000000000002,
-        "iy_m4": 0.001066666666666667,
-        "iz_m4": 0.00026666666666666673,
-        "torsion_m4": null
-      },
-      "material_id": null,
-      "releases": null,
-      "offsets": null,
-      "basis": "Geometric centroid; verify connection offsets and modelling assumptions"
-    },
-    {
-      "id": "member-5aa55e456d7054e659a329f9",
-      "source_id": "96175eb8-976a-4f62-bb0f-8641eed0218c",
-      "source_native_uid": "f1586bd1597b4db9",
+      "id": "member-de0ad96d84db4709309db83b",
+      "source_id": "141f1c3e-3ebc-48ca-b8db-f40aee73e0d5",
+      "source_native_uid": "dbe29f78d77a4e7a",
       "name": "TBIM Column member",
       "kind": "Column",
       "axis": [
@@ -212,23 +163,61 @@
       "releases": null,
       "offsets": null,
       "basis": "Geometric centroid; verify connection offsets and modelling assumptions"
+    },
+    {
+      "id": "member-7cfd582acc68c709edd7e734",
+      "source_id": "8e7fd3ab-5fcb-4a77-aa78-faa2cfc0d532",
+      "source_native_uid": "b9413b42bea34cba",
+      "name": "TBIM Beam member",
+      "kind": "Beam",
+      "axis": [
+        [
+          0.0,
+          0.0,
+          1.5
+        ],
+        [
+          4.0,
+          0.0,
+          1.5
+        ]
+      ],
+      "local_axes": {
+        "x": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "z": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "section": {
+        "shape": "rectangle",
+        "width_m": 0.2,
+        "depth_m": 0.4,
+        "area_m2": 0.08000000000000002,
+        "iy_m4": 0.001066666666666667,
+        "iz_m4": 0.00026666666666666673,
+        "torsion_m4": null
+      },
+      "material_id": null,
+      "releases": null,
+      "offsets": null,
+      "basis": "Geometric centroid; verify connection offsets and modelling assumptions"
     }
   ],
   "elements": [
     {
-      "id": "element-315354b26f815daef8bd5104",
-      "member_id": "member-922c98b81b4c859b2d50ff48",
-      "node_i": "node-846a3d78acee74f84f9f4e86",
-      "node_j": "node-e1260a7a5a5b5ffeb83af5d0",
-      "type": "frame",
-      "range": [
-        0.0,
-        1.0
-      ]
-    },
-    {
-      "id": "element-6140f6fe32c1ec95cacc00e2",
-      "member_id": "member-5aa55e456d7054e659a329f9",
+      "id": "element-6ffa0ebba1160015b571550c",
+      "member_id": "member-de0ad96d84db4709309db83b",
       "node_i": "node-c42502d9a3cb8c3bf47febeb",
       "node_j": "node-846a3d78acee74f84f9f4e86",
       "type": "frame",
@@ -238,13 +227,24 @@
       ]
     },
     {
-      "id": "element-f5734af3626af9f54806e971",
-      "member_id": "member-5aa55e456d7054e659a329f9",
+      "id": "element-be3c38cf73c81fca23efc4d9",
+      "member_id": "member-de0ad96d84db4709309db83b",
       "node_i": "node-846a3d78acee74f84f9f4e86",
       "node_j": "node-7212638e87c2410a3c474936",
       "type": "frame",
       "range": [
         0.5,
+        1.0
+      ]
+    },
+    {
+      "id": "element-91a9cb39717e05efcdd04c12",
+      "member_id": "member-7cfd582acc68c709edd7e734",
+      "node_i": "node-846a3d78acee74f84f9f4e86",
+      "node_j": "node-e1260a7a5a5b5ffeb83af5d0",
+      "type": "frame",
+      "range": [
+        0.0,
         1.0
       ]
     }
@@ -260,17 +260,17 @@
   "issues": [
     {
       "code": "free_endpoint",
-      "node_id": "node-e1260a7a5a5b5ffeb83af5d0",
-      "message": "Endpoint has one element; may be support or free end. Support not inferred"
-    },
-    {
-      "code": "free_endpoint",
       "node_id": "node-c42502d9a3cb8c3bf47febeb",
       "message": "Endpoint has one element; may be support or free end. Support not inferred"
     },
     {
       "code": "free_endpoint",
       "node_id": "node-7212638e87c2410a3c474936",
+      "message": "Endpoint has one element; may be support or free end. Support not inferred"
+    },
+    {
+      "code": "free_endpoint",
+      "node_id": "node-e1260a7a5a5b5ffeb83af5d0",
       "message": "Endpoint has one element; may be support or free end. Support not inferred"
     }
   ],

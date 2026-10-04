@@ -1,22 +1,22 @@
-# Thai BIM Toolkit 0.12.0
+# Thai BIM Toolkit 0.13.0
 
 An optional Thai-language extension for IngeTrazo Extension API 2. It adds a
-20-button toolbar and illustrated, modeless dialogs for concrete members,
+21-button toolbar and illustrated, modeless dialogs for concrete members,
 roof framing, straight concrete stairs, reinforcement and quantity takeoff.
 It runs locally without an AI service or API key.
 
 [ภาษาไทย / detailed Thai guide](README-th.md) ·
-[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.12.0)
+[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.13.0)
 
 ## Install
 
-1. Download `Thai-BIM-Toolkit-0.12.0.zip` from the release and extract it.
+1. Download `Thai-BIM-Toolkit-0.13.0.zip` from the release and extract it.
 2. Copy the complete `thai_bim` folder into IngeTrazo's **user plugins folder**.
    On Windows this is `%APPDATA%\ingetrazo\plugins\thai_bim`.
    Alternatively, copy this directory from the repository and name it `thai_bim`.
 3. Restart IngeTrazo. Open **Extensions → Thai BIM Toolkit…** or use the new toolbar.
 
-Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` `copy_identity.py`, `rebar_recipe.py`, `analytical.py` and `analytical_ui.py`
+Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py` and `selected_geometry.py`
 together. PySide6 and NumPy are provided by the host application. The plugin
 does not require `openpyxl`; that library is used only by the tests.
 
@@ -83,8 +83,8 @@ in isolated test scenes; they are modeling examples, not construction designs.
 
 ## Verification
 
-The installed 0.12.0 implementation passed **75 pure tests** and
-**246 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
+The installed 0.13.0 implementation passed **81 pure tests** and
+**298 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
 host association, QTO invalidation, IGZ persistence and GLB export. Native checks
 left the user's document geometry unchanged. Evidence is in
 [RELEASE.json](RELEASE.json) and [evidence/live-checks.json](evidence/live-checks.json).
@@ -105,14 +105,15 @@ in IngeTrazo's Python Console/AI bridge, where `scene` and `viewport` are suppli
 import runpy
 from core.extensions import user_plugins_dir
 scope = runpy.run_path(
-    str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_thai_bim_v12.py'),
+    str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_thai_bim_v13.py'),
     init_globals={'scene': scene, 'viewport': viewport},
 )
-scope = runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_types_v12.py'), init_globals=scope)
-scope = runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_drawings_v12.py'), init_globals=scope)
+scope = runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_types_v13.py'), init_globals=scope)
+scope = runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_drawings_v13.py'), init_globals=scope)
 scope = runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_copy_v101.py'), init_globals=scope)
 scope = runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_recipes_v11.py'), init_globals=scope)
-runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_analytical_v12.py'), init_globals=scope)
+scope = runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_analytical_v13.py'), init_globals=scope)
+runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_selected_edit_v13.py'), init_globals=scope)
 ```
 
 Native tests temporarily open dialogs and write results into `verification-local/`
@@ -320,7 +321,7 @@ pages. Synthetic examples: `examples/typed-members-click-placement.igz` and
 `examples/member-types-ไทย.json`. Whole-project Family10 was not rerun.
 
 
-## 0.12.0: native Copy followed by continued placement
+## 0.13.0: native Copy followed by continued placement
 
 Native Copy/Paste also copies extension metadata, including business IDs. New
 independent additions now adopt those copies automatically instead of blocking
@@ -343,7 +344,7 @@ BBS, copied-bar exclusion, stale metadata rejection and IGZ persistence.
 Synthetic example: `examples/native-copies-adopted.igz`.
 
 
-## 0.12.0: per-type reinforcement details
+## 0.13.0: per-type reinforcement details
 
 Open the member library, select a type and choose **แก้รายละเอียดเหล็ก / ดูพรีวิว…**.
 Edit the existing illustrated Rebar form, accept the details using the persistent bottom button,
@@ -368,7 +369,7 @@ no new whole-Family10 performance benchmark or LOD350 certification.
 ![Illustrated recipe editor](docs/images/rebar-type-editor.png)
 
 
-## 0.12.0: neutral analytical geometry snapshot
+## 0.13.0: neutral analytical geometry snapshot
 
 The twentieth toolbar button opens **Analytical Model / แนวแกนคาน–เสา**.
 Generate the preview to display gold centroid axes and nodes over the physical model.
@@ -390,3 +391,27 @@ native IGZ reopen, actual framebuffer overlay and diagnostic highlighting.
 
 ![Analytical overlay](docs/images/analytical-preview.png)
 ![Analytical dialog](docs/images/analytical-dialog.png)
+
+
+## 0.13.0: selected-instance dimension editor
+
+Select one Thai BIM concrete member and use the twenty-first toolbar button,
+**แก้ไขเฉพาะชิ้นที่เลือก / Instance dimensions**. Read its actual dimensions,
+edit them, inspect the world-space preview and before/after volume, then save with Undo.
+The project type library and sibling instances remain unchanged. Existing type snapshots,
+identities, pose, name/layer/material/hidden state and assembly binding are preserved.
+
+Footings/columns keep their centre and base; beams keep span, width centreline and bottom datum;
+rectangular and polygon slabs keep their outline and base; straight stairs keep start/direction
+while riser/going edits change the flight run. Endpoint/boundary dragging is not implemented.
+Selection/document/host changes and duplicate native-copy IDs block stale updates.
+Editing an adopted native copy creates a new mesh without changing the shared original.
+Old bars remain for explicit Host review; the dialog provides a direct Rebar handoff.
+Analytical snapshots become stale when their physical source geometry changes.
+
+Validation: 81 pure tests and 298 native checks (246 existing + 52 instance editing),
+including all five kinds, concave polygon outline, native save-button events, Undo/Redo,
+selection/document/pose guards, existing bar retention, analytic staleness, shared native copy
+and IGZ reopen. Polygon slab reinforcement and L/U stair modeling remain unsupported.
+
+![Selected instance editor](docs/images/selected-instance-editor.png)
