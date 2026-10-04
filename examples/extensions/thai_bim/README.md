@@ -1,22 +1,22 @@
-# Thai BIM Toolkit 0.8.0
+# Thai BIM Toolkit 0.9.0
 
-An optional Thai-language extension for IngeTrazo Extension API 2. It adds an
-16-button toolbar and illustrated, modeless dialogs for concrete members,
+An optional Thai-language extension for IngeTrazo Extension API 2. It adds a
+17-button toolbar and illustrated, modeless dialogs for concrete members,
 roof framing, straight concrete stairs, reinforcement and quantity takeoff.
 It runs locally without an AI service or API key.
 
 [ภาษาไทย / detailed Thai guide](README-th.md) ·
-[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.8.0)
+[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.9.0)
 
 ## Install
 
-1. Download `Thai-BIM-Toolkit-0.8.0.zip` from the release and extract it.
+1. Download `Thai-BIM-Toolkit-0.9.0.zip` from the release and extract it.
 2. Copy the complete `thai_bim` folder into IngeTrazo's **user plugins folder**.
    On Windows this is `%APPDATA%\ingetrazo\plugins\thai_bim`.
    Alternatively, copy this directory from the repository and name it `thai_bim`.
 3. Restart IngeTrazo. Open **Extensions → Thai BIM Toolkit…** or use the new toolbar.
 
-Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` and `audit.py`
+Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` and `drawings.py`
 together. PySide6 and NumPy are provided by the host application. The plugin
 does not require `openpyxl`; that library is used only by the tests.
 
@@ -38,6 +38,7 @@ for discovery and platform-specific plugin locations. The 0.x host API may chang
 | Host review | Detect changed hosts, preview before/after bars, require renewed review after changes, preserve IDs during regeneration |
 | BBS | Per-host shape marks, exact cut lengths, counts, nominal masses, selected-row shape preview and three-sheet Excel export |
 | QTO | Excel/CSV with measurement basis and issues; invalidates reinforcement quantities when its host is changed/missing |
+| Sheets 1:50 | Native Composer plans, elevations and section; explicit Grid/Level, anchored grid/extents dimensions, title block and PDF export |
 | Stock cutting | Material-separated stock plans with net lengths, lap allowances, kerf and reusable offcuts |
 
 Toolbar buttons have tooltips and the toolbar can be moved or floated. Preview
@@ -73,7 +74,7 @@ Default dimensions are editable examples, not engineered sizes.
 - New RC members use placement matrices so native Move/Rotate keeps their parametric meshes intact. Adopt old untouched members through the placement dialog before moving; old baked moves require host reconstruction.
 - Placement UI supports upright members and Z rotation. Reinforcement review also accepts rigid tilted hosts. Placement always locks Z to the chosen base level, even when snapping named geometry points.
 - Host notices inspect host geometry and bar poses. Individual bar-face edits are checked during review, regeneration, QTO and BBS.
-- PDF/OCR, architecture/MEP generators, construction sheets and LOD 350
+- PDF/OCR, architecture/MEP generators, complete construction documents and LOD 350
   certification are outside this release.
 
 See the Thai guide for axis conventions, cover definitions and all restrictions.
@@ -82,8 +83,8 @@ in isolated test scenes; they are modeling examples, not construction designs.
 
 ## Verification
 
-The original installed implementation passed **40 pure engine tests** and
-**79 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
+The original installed implementation passed **46 pure engine tests** and
+**106 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
 host association, QTO invalidation, IGZ persistence and GLB export. Native checks
 left the user's document geometry unchanged. Evidence is in
 [RELEASE.json](RELEASE.json) and [evidence/live-checks.json](evidence/live-checks.json).
@@ -103,10 +104,11 @@ in IngeTrazo's Python Console/AI bridge, where `scene` and `viewport` are suppli
 ```python
 import runpy
 from core.extensions import user_plugins_dir
-runpy.run_path(
-    str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_thai_bim_v08.py'),
+scope = runpy.run_path(
+    str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_thai_bim_v09.py'),
     init_globals={'scene': scene, 'viewport': viewport},
 )
+runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_drawings_v09.py'), init_globals=scope)
 ```
 
 Native tests temporarily open dialogs and write results into `verification-local/`
@@ -213,9 +215,52 @@ preview now resolves the correct host despite the added steel catalogue columns.
 ![BBS with selected shape](docs/images/bbs-detailing.png)
 
 Synthetic examples: `examples/slab-stair-compact.igz` and
-`examples/slab-stair-BBS.xlsx`. Current validation: 40 pure tests and 79 native
+`examples/slab-stair-BBS.xlsx`. Historical 0.8.0 validation: 40 pure tests and 79 native
 checks covering regressions, positive stair-hook solids, stable IDs and BBS across
 display modes, exact Undo/Redo and native save/reopen. Whole-project Family10
 evidence remains from 0.7.1 and was not rerun for 0.8.0. See `RELEASE.json` and
-`evidence/live-checks.json`. Construction sheets at 1:50 are the next development
-stage. User-supplied detailing is not structural design or LOD350 certification.
+`evidence/live-checks.json`. Starter sheets at 1:50 were added in 0.9.0 below. User-supplied detailing is not structural design or LOD350 certification.
+
+
+## 0.9.0: native starter sheets at 1:50
+
+Use the **Sheet** toolbar button. Set explicit metre coordinates for grids and
+levels, scope (selection or tagged BIM model), paper A3/A2/A1/A0 landscape,
+plan cut Z, section X, datum, project title, author, revision and date. Review
+the paper layout, then create/update and open Composer for the actual model
+lines. The dialog preview represents paper layout only.
+
+Five optional sheets: A101 floor plan, A102 roof plan, A201 front elevation,
+A202 side elevation and A301 section A-A. Every frame is parallel at 1:50;
+oversize scopes are rejected rather than silently rescaled. Title blocks and
+scale bars are native editable sheet items. Grid and level anchors retain exact
+user project coordinates instead of snapping to nearby model geometry.
+
+Automatic dimensions measure grid intervals and selected model extents (which
+can include roof overhangs). Add member/opening dimensions and construction
+details manually in Composer. Orientations follow world axes; one plan cut and
+one X section are supported, not floor-by-floor sets. Technical rendering is the
+default. Vector hidden-line rendering is limited here to 5,000 source faces;
+choose Technical or a smaller scope for larger models. Whole-project Family10
+rendering performance was not benchmarked in this release.
+
+Creation/update supports Undo/Redo and retains unrelated sheets. Source changes
+block stale PDF export until explicit review/update. Manual sheet annotation
+edits allow export but block regeneration; retain those edits in separate native
+sheets before recreating the automatic set. Frame/view/section edits also block
+export because grid placement may become stale. PDF export restores camera,
+object/layer visibility and active section; it atomically replaces the output
+only after successful rendering. Print at **100% actual size**, not fit-to-page.
+
+![Sheet layout dialog](docs/images/drawing-dialog.png)
+![Synthetic elevation](docs/images/drawing-elevation.png)
+
+Validation: 46 pure tests and 106 native checks (79 regression plus 27 drawing
+checks), including native technical rendering, vector lines in all five PDF
+frames, undo/redo, persistence, manual-edit preservation and updating after PDF
+reprojection. Independent PDF checks measured grid dimension spans and scale
+segments at exactly 20 mm per metre; all five rendered pages were inspected.
+See [PDF evidence](evidence/pdf-qa.json). The synthetic examples are
+`examples/drawing-set-1-50.igz` and `examples/Thai-BIM-drawings-1-50.pdf`.
+These are model-based coordination starters, not complete construction
+documents, strength design, standard conformity or LOD350 certification.

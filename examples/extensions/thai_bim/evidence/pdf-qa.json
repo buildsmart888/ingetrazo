@@ -1,0 +1,87 @@
+{
+  "version": "0.9.0",
+  "pages": [
+    {
+      "sheet": "A101",
+      "paper_mm": [
+        420.1583333333333,
+        297.0388888888889
+      ],
+      "vector_lines": 510,
+      "raster_images": 0,
+      "metre_scale_segments_mm": [
+        19.999999962666667,
+        19.999999962666667,
+        19.999999962666667,
+        19.999999962666653
+      ],
+      "measured_grid_dimension_paper_mm": 60
+    },
+    {
+      "sheet": "A102",
+      "paper_mm": [
+        420.1583333333333,
+        297.0388888888889
+      ],
+      "vector_lines": 329,
+      "raster_images": 0,
+      "metre_scale_segments_mm": [
+        19.999999962666667,
+        19.999999962666667,
+        19.999999962666667,
+        19.999999962666653
+      ],
+      "measured_grid_dimension_paper_mm": 60
+    },
+    {
+      "sheet": "A201",
+      "paper_mm": [
+        420.1583333333333,
+        297.0388888888889
+      ],
+      "vector_lines": 171,
+      "raster_images": 0,
+      "metre_scale_segments_mm": [
+        19.999999962666667,
+        19.999999962666667,
+        19.999999962666667,
+        19.999999962666653
+      ],
+      "measured_grid_dimension_paper_mm": 60
+    },
+    {
+      "sheet": "A202",
+      "paper_mm": [
+        420.1583333333333,
+        297.0388888888889
+      ],
+      "vector_lines": 135,
+      "raster_images": 0,
+      "metre_scale_segments_mm": [
+        19.999999962666667,
+        19.999999962666667,
+        19.999999962666667,
+        19.999999962666653
+      ],
+      "measured_grid_dimension_paper_mm": 80
+    },
+    {
+      "sheet": "A301",
+      "paper_mm": [
+        420.1583333333333,
+        297.0388888888889
+      ],
+      "vector_lines": 256,
+      "raster_images": 0,
+      "metre_scale_segments_mm": [
+        19.999999962666667,
+        19.999999962666667,
+        19.999999962666667,
+        19.999999962666653
+      ],
+      "measured_grid_dimension_paper_mm": 80
+    }
+  ],
+  "pdf_sha256": "1fd1427e57b8c00d6df4556e550eb9ddaa70e7b7e7c1331d63e57d923c2e99d5",
+  "visual_review": "All five Poppler-rendered pages inspected; explicit levels separated with leaders; synthetic coordination fixture, not construction design"
+}

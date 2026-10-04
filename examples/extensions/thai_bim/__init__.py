@@ -1,4 +1,4 @@
-"""IngeTrazo Extension: Thai BIM Toolkit 0.8.0 (API 2)."""
+"""IngeTrazo Extension: Thai BIM Toolkit 0.9.0 (API 2)."""
 import copy
 import json
 import math
@@ -21,7 +21,7 @@ from .visuals import launcher, decorate_multi, decorate_cut
 from .builders import add_tools
 
 KEY='thai_bim'
-TITLE='Thai BIM 0.8'
+TITLE='Thai BIM 0.9'
 
 
 class ExchangeGroups(Command):
@@ -461,6 +461,8 @@ def setup(app):
     install_management(panel)
     from .audit import install as install_audit
     install_audit(panel)
+    from .drawings import install as install_drawings
+    install_drawings(panel)
     return panel
 
 

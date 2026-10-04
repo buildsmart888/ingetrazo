@@ -1,12 +1,12 @@
 {
   "name": "Thai BIM Toolkit",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "api_version": 2,
   "license": "GPL-3.0-or-later",
-  "pure_tests": 40,
+  "pure_tests": 46,
   "native_checks": [
-    "16 actual toolbar actions with nonempty icons",
-    "fresh setup has 16 icons",
+    "17 actual toolbar actions with nonempty icons",
+    "fresh setup has 17 icons",
     "layer manager install idempotent",
     "create Footing retains all prior members",
     "create Column retains all prior members",
@@ -83,46 +83,162 @@
     "slab stair host revisions restored valid BBS",
     "slab stair native save reopen preserves detailed BBS",
     "selected BBS row displays matching shape preview",
-    "actual user scene unchanged"
+    "actual user scene unchanged",
+    "drawing toolbar has 17 icons",
+    "paper preview keeps 1m equal to 20mm",
+    "changed UI cannot build stale preview",
+    "five native sheets created with unrelated sheet retained",
+    "all frames are parallel at 1:50",
+    "dimensions anchor to each frame and world points",
+    "native grid span dimensions measure 3000mm",
+    "architectural levels retained not MEP levels",
+    "sheet Undo preserves exact groups and prior sheet",
+    "sheet Redo restores exact new sheet objects",
+    "update replaces owned sheets without duplicates",
+    "native PDF generated",
+    "export retains all unrelated sheets",
+    "export preserves object and layer visibility and active cut",
+    "export preserves original camera",
+    "rendered vector frames contain real model lines",
+    "export reprojection is not mistaken for manual edits",
+    "sheets regenerate after PDF export without duplication",
+    "default technical renderer produces a native image",
+    "manual annotations allowed for export",
+    "manual sheet edits not overwritten by regeneration",
+    "moved model blocks stale PDF export",
+    "intervening sheet mutation blocks prepared command",
+    "rejected stale command retains all current sheets",
+    "native IGZ roundtrip retains sheets metadata and anchors",
+    "scale person excluded from saved drawing views",
+    "drawing tests leave active user model unchanged"
   ],
   "native_tested_source_sha256": {
-    "__init__.py": "58f66bedbd536dffcf84ada74c5e1f5c46909ffa53da5718e9c4304a86d6ef8a",
-    "engine.py": "9a8a4800f29d6573793b417dd76f9587812ba2d3f64ffe91eab6222fed18f497",
+    "__init__.py": "05df2765fbde8f74dc94e0c7dfd63953aec364c8453948eba1e48b9338bc9318",
+    "engine.py": "929e5969b4385cd6d0999024eff60492113d1c72cdf2a5ed4e7f81ef8e3e69e6",
     "visuals.py": "d886e061ab2ad9d6f0b208a0ff082637a59d08694aa4eb24c8c8e880b0c4284e",
     "structures.py": "812651feb2c1c1341a6099005cbee76070a2db8032070c07fe59b001f9b265ef",
-    "builders.py": "91a9ea3ab988d3390bf8d696f0f2fc543fb69495d0fc423e3074bc4bbf274b16",
+    "builders.py": "f3df2697b73d3d2e6f85b6afb5ff7c3f3a5a174950515234cd6efe9772ede6da",
     "detailing.py": "b11ef9c72b1cb2c564d8a3160e64a37c229ebace5fca8dd80ae071b15a5f345a",
     "placement.py": "0917cff0ad9db53c8d65b7a3a5a9c41bf2e6024c8ec560fec2e148e2e7b75632",
-    "workflow.py": "845fe5779c2553a7f984dea9eea50f6498a6d09d6f072917b2a50d8e0833b3da",
+    "workflow.py": "37059be85520f2faa826039c1477d2349718669c3b02bbc0fb89433107af9b83",
     "steel.py": "680d13139e0677a1a015b15d8b93afdc390075abcaec04e921a6cecc97623114",
-    "management.py": "2a9d026c0d782b54299e7f79895e04e4a23d4657ecfe4f117a0f92abcee133ee",
-    "audit.py": "33cd59ddaa46e18ac4a260fc768c34c2efe166a0cb170b96392d5bad4c8ecdf5"
+    "management.py": "f92b76d1140e8334f620813a74ab05bfa691a80ef356044f5ce46b75199cbd2b",
+    "audit.py": "33cd59ddaa46e18ac4a260fc768c34c2efe166a0cb170b96392d5bad4c8ecdf5",
+    "drawing_layout.py": "d6e46629d16aac2fe78677f7fb78f35a9c3ae93d5cb08da9d2141ba7b7b11f28",
+    "drawings.py": "97e95e9dc406354242da7d5217dd85e44bfa90792cef1578e29cc4653e637559"
   },
-  "native_checks_context": "Windows installed IngeTrazo API2; isolated synthetic scenes and native UI/controller; active blank document unchanged; Family10 whole-project evidence belongs to 0.7.1",
+  "native_checks_context": "Windows IngeTrazo API2; 79 regression checks plus 27 isolated drawing/UI/controller checks. Default technical renderer and five vector PDF frames verified; original blank document unchanged. Family10 whole-project evidence remains 0.7.1.",
+  "pdf_verification": {
+    "version": "0.9.0",
+    "pages": [
+      {
+        "sheet": "A101",
+        "paper_mm": [
+          420.1583333333333,
+          297.0388888888889
+        ],
+        "vector_lines": 510,
+        "raster_images": 0,
+        "metre_scale_segments_mm": [
+          19.999999962666667,
+          19.999999962666667,
+          19.999999962666667,
+          19.999999962666653
+        ],
+        "measured_grid_dimension_paper_mm": 60
+      },
+      {
+        "sheet": "A102",
+        "paper_mm": [
+          420.1583333333333,
+          297.0388888888889
+        ],
+        "vector_lines": 329,
+        "raster_images": 0,
+        "metre_scale_segments_mm": [
+          19.999999962666667,
+          19.999999962666667,
+          19.999999962666667,
+          19.999999962666653
+        ],
+        "measured_grid_dimension_paper_mm": 60
+      },
+      {
+        "sheet": "A201",
+        "paper_mm": [
+          420.1583333333333,
+          297.0388888888889
+        ],
+        "vector_lines": 171,
+        "raster_images": 0,
+        "metre_scale_segments_mm": [
+          19.999999962666667,
+          19.999999962666667,
+          19.999999962666667,
+          19.999999962666653
+        ],
+        "measured_grid_dimension_paper_mm": 60
+      },
+      {
+        "sheet": "A202",
+        "paper_mm": [
+          420.1583333333333,
+          297.0388888888889
+        ],
+        "vector_lines": 135,
+        "raster_images": 0,
+        "metre_scale_segments_mm": [
+          19.999999962666667,
+          19.999999962666667,
+          19.999999962666667,
+          19.999999962666653
+        ],
+        "measured_grid_dimension_paper_mm": 80
+      },
+      {
+        "sheet": "A301",
+        "paper_mm": [
+          420.1583333333333,
+          297.0388888888889
+        ],
+        "vector_lines": 256,
+        "raster_images": 0,
+        "metre_scale_segments_mm": [
+          19.999999962666667,
+          19.999999962666667,
+          19.999999962666667,
+          19.999999962666653
+        ],
+        "measured_grid_dimension_paper_mm": 80
+      }
+    ],
+    "pdf_sha256": "1fd1427e57b8c00d6df4556e550eb9ddaa70e7b7e7c1331d63e57d923c2e99d5",
+    "visual_review": "All five Poppler-rendered pages inspected; explicit levels separated with leaders; synthetic coordination fixture, not construction design"
+  },
   "limitations": [
-    "User dimensions; no strength design or code/LOD350 certification",
-    "Rectangular slabs and straight stairs only; no landings, L/U flights or stair upper mat",
-    "Slab/stair lap splices and slab anchorage extensions are not supported",
-    "Stair hooks are vertical tails; anchorage extensions follow main-bar slope; these are alternative options",
-    "Extensions require adjacent landing/beam review; no whole-model clash check",
-    "Existing toolkit cages gain BBS only through explicit host review/regeneration; Family10 bars are not adopted automatically",
-    "Scaled/sheared/mirrored, manually edited bars and changed/missing hosts are blocked",
-    "Centreline mode has edges, not solid faces; nominal bar mass is independent of mesh facets",
-    "RB/DB/ASTM grades are specified metadata; ribs and standard conformity are not certified",
-    "Construction sheets 1:50, architecture/MEP and PDF/OCR remain future work"
+    "Starter model-based coordination sheets, not complete construction documents or LOD350 certification",
+    "Fixed world-axis orientations: front -Y, side +X; one plan cut and one X section; floor-by-floor sets not implemented",
+    "Grid and levels are explicit user project coordinates, not inferred or checked against the building",
+    "Automatic dimensions are grid spacing and source model extents, including roof overhangs; member/opening dimensions remain manual",
+    "Manual sheet edits are preserved and block regeneration; retain them in separate native sheets before regenerating",
+    "Vector rendering limited to 5000 source faces; technical rendering available for larger scopes, not benchmarked on whole Family10 in this release",
+    "Architectural/MEP generators and PDF/OCR remain unimplemented",
+    "User-defined reinforcement details are not strength design or certified standard compliance; existing 0.8.0 detailing limitations apply"
   ],
   "source_sha256": {
-    "__init__.py": "29e6b8a416bb17efda282b0d064bce4e7bdb2b4018e154e72e959107d6716638",
-    "engine.py": "124de1338dee704617b09a20b683b1cc2a8a96125fabfec3ae4ec9fcae74c8d8",
+    "__init__.py": "b2745a4a49d7f839a4f2780c36c3f0ceb4b59fe7ae2f02e4314e19c70a073e35",
+    "engine.py": "f11d579d6331df1672358544e3f2f360677710fb9627474b2e9679aa0f902787",
     "visuals.py": "d886e061ab2ad9d6f0b208a0ff082637a59d08694aa4eb24c8c8e880b0c4284e",
     "structures.py": "812651feb2c1c1341a6099005cbee76070a2db8032070c07fe59b001f9b265ef",
-    "builders.py": "2068893408d0e451fbb9af40afe640bf5c89e5e189ff2c8204381551aefbd586",
+    "builders.py": "059217dc2e33437244884ab7e41b7e17c4c1fda687683af1ab7adfac7cd5decf",
     "detailing.py": "b11ef9c72b1cb2c564d8a3160e64a37c229ebace5fca8dd80ae071b15a5f345a",
     "placement.py": "0917cff0ad9db53c8d65b7a3a5a9c41bf2e6024c8ec560fec2e148e2e7b75632",
-    "workflow.py": "bfc6785d0ef9edb5b96b67f58439be5d327f6efde84be98a2bd852127a885ffe",
+    "workflow.py": "013cd975e509496a37e713bb0ae4ba4b3d9850a1482d492d472ac8aaaa296101",
     "steel.py": "680d13139e0677a1a015b15d8b93afdc390075abcaec04e921a6cecc97623114",
-    "management.py": "3140a01ddd675360026c076ba17a5c369d2f72f1c8e0c3debf6ae2d162c7180f",
-    "audit.py": "09bf169302cee47f1896a688097c7d9a4abacae4a1ec58eb0fcb378068ab2e8b"
+    "management.py": "0eda3a0214bafa7603d20731c2c67beeb9eaf4418bfa1af11660b61a8a52be48",
+    "audit.py": "09bf169302cee47f1896a688097c7d9a4abacae4a1ec58eb0fcb378068ab2e8b",
+    "drawing_layout.py": "d6e46629d16aac2fe78677f7fb78f35a9c3ae93d5cb08da9d2141ba7b7b11f28",
+    "drawings.py": "97e95e9dc406354242da7d5217dd85e44bfa90792cef1578e29cc4653e637559"
   },
-  "publication_note": "Line endings normalized to LF; original installed/native-tested source hashes retained."
+  "publication_note": "Line endings normalized to LF; original installed/native-tested hashes retained."
 }

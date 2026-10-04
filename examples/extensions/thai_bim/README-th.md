@@ -1,13 +1,13 @@
-# Thai BIM Toolkit 0.8.0
+# Thai BIM Toolkit 0.9.0
 
 Extension สำหรับ IngeTrazo Extension API 2 พัฒนาจากงาน Family10
 ใช้ Python/PySide6 และไลบรารีของ IngeTrazo ไม่มี API key และไม่มีการเรียก AI ในคำสั่งรุ่นนี้
 
 ## ติดตั้งและเปิด
 
-นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py` ไปไว้ใน
+นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py` ไปไว้ใน
 `%APPDATA%\ingetrazo\plugins\thai_bim` แล้วเปิด IngeTrazo ใหม่
-เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.8
+เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.9
 การติดตั้งในครั้งนี้จะเปิดแผงให้ใน session ปัจจุบันด้วย จึงไม่จำเป็นต้องปิดไฟล์ที่ยังไม่บันทึก
 
 API ของ IngeTrazo ช่วง 0.x ยังเปลี่ยนได้ โดยเฉพาะการเชื่อมแผง Render ซึ่งใช้รายละเอียดภายใน
@@ -18,7 +18,7 @@ API ของ IngeTrazo ช่วง 0.x ยังเปลี่ยนได้
 
 1. โครงการ: ตั้งชื่อ Grid X/Y เป็นพิกัดเมตรคั่นด้วย comma และ Level เป็น `ชื่อ=ระดับเมตร`
    เช่น `Upper FFL=3.75` และ `Upper structure=3.65` แล้วกดบันทึกค่าประจำโครงการ
-   Grid/Level เป็นเส้นอ้างอิงบน viewport ไม่รวมเป็นชิ้นงานใน QTO และยังไม่เป็น snapping/dimension ของชุดแบบ
+   Grid/Level เป็นเส้นอ้างอิงบน viewport ไม่รวมเป็นชิ้นงานใน QTO และใช้เป็น Grid/Level อ้างอิงในชุด Sheet 1:50 ได้
 2. โครงสร้าง: สร้าง RC Footing/Column/Beam/Slab จากกล่องพารามิเตอร์
    X/Y/Z เป็นมุมล่างของชิ้น ส่วนกว้าง/ลึก/สูงตามแกน X/Y/Z
    เสาตาม Grid วางกึ่งกลางเสาที่จุดตัด ใช้ Z และขนาดจากช่องของเครื่องมือ
@@ -54,7 +54,7 @@ Save ไฟล์ .igz เพื่อเก็บค่าประจำโค
   ปริมาตรชิ้น RC ที่ Transform แล้ววัดจาก geometry; ความยาวเหล็กจากแกนที่ Transform
   พื้นที่หลังคาที่ Transform แล้วต้องตรวจใหม่ จึงเว้นปริมาณไว้
 - พบ ID ซ้ำจาก Copy จะรายงานและระงับอัปเดตชุด ยังไม่มีปุ่มปรับ ID สำเนาในรุ่นแรก
-- ยังไม่อ่าน PDF/OCR อัตโนมัติ ไม่สร้างสถาปัตย์/MEP หรือ Construction drawing อัตโนมัติ
+- ยังไม่อ่าน PDF/OCR อัตโนมัติ ไม่สร้างสถาปัตย์/MEP; Sheet 1:50 เป็นแบบตั้งต้นจากโมเดล
   ไม่รับรอง LOD 350 และไม่แทนการตรวจแบบโดยวิศวกร/สถาปนิก
 
 ## การทดสอบ
@@ -394,8 +394,48 @@ Layer dialog เพิ่มช่องรวม Family10 รุ่นเดิ
 ใช้ภาพใน `docs/images/slab-detailing.png`, `stair-detailing.png`, `bbs-detailing.png`
 และตัวอย่างสังเคราะห์ `examples/slab-stair-compact.igz`, `examples/slab-stair-BBS.xlsx`
 
-ผลตรวจรุ่นนี้: 40 pure tests และ 79 native checks บน IngeTrazo สำหรับทั้ง regression,
+ผลตรวจรุ่น 0.8.0: 40 pure tests และ 79 native checks บน IngeTrazo สำหรับทั้ง regression,
 solid รูปดัดบันได, ข้อมูล BBS, การอัปเดตเฉพาะ Host, Undo/Redo และการบันทึกเปิดใหม่
 ผลทดสอบ Family10 ของ 0.7.1 เป็นหลักฐานเดิม ไม่ได้ทดสอบโครงการบ้านทั้งหมดใหม่ในรุ่นนี้
 ไม่รวมการออกแบบรับแรงหรือรับรองมาตรฐาน/LOD 350; รัศมี ตะขอ และฝังยึดมาจากแบบและผู้ใช้
-ระยะถัดไป: construction drawing 1:50 พร้อม Grid/Level/มิติและตารางจากโมเดล
+ระยะถัดไปของรุ่น 0.8.0 คือชุด Sheet 1:50 (เพิ่มในรุ่น 0.9.0 ด้านล่าง)
+
+
+## รุ่น 0.9.0 — Sheet 1:50
+
+เพิ่มไอคอน Sheet เป็นปุ่มที่ 17 และไดอะลอกเลือกชุดแบบ แปลน A101, หลังคา A102,
+รูปด้านหน้า A201, รูปด้านข้าง A202 และรูปตัด A-A/A301 เป็น Sheet ของ Composer จริง
+รองรับ A3/A2/A1/A0 แนวนอน สเกล 1:50 คงที่ พร้อม Title block, Revision และ Scale bar
+ถ้าโมเดลไม่พอดีกระดาษจะให้เลือกกระดาษใหญ่ขึ้น ไม่ลดสเกลเอง
+
+วิธีใช้:
+1. บันทึก Grid/Level ประจำโครงการ หรือแก้ค่าในไดอะลอก Sheet เป็นพิกัดเมตร
+2. เลือกชิ้นงานที่จะออกแบบ หรือเลือกทั้งหมดที่มี BIM metadata; ไม่รวมคนสเกลและเหล็กเสริม
+3. กำหนดระดับตัดแปลน ตำแหน่งรูปตัด X และ Datum พร้อมข้อมูลผู้จัดทำ/Revision/วันที่
+4. กดตรวจพรีวิว/ขนาดกระดาษ → สร้างชุด Sheet → เปิด Composer เพื่อดูเส้นโมเดลจริง
+5. ตรวจมิติ/ระดับ แล้วส่งออกชุดนี้ PDF; พิมพ์ Actual size 100% (1 เมตร = 20 มม.)
+
+ภาพในไดอะลอกเป็นพรีวิวการจัดหน้ากระดาษ ไม่ใช่ภาพเรนเดอร์โมเดล
+Technical เป็นค่าเริ่มต้น; Vector สำหรับโมเดลขนาดเล็กไม่เกิน 5,000 faces ในขอบเขตที่เลือก
+สร้าง/อัปเดตชุด Sheet มี Undo/Redo และรักษา Sheet เดิมที่ไม่ได้เป็นของชุด Thai BIM
+หากโมเดลเปลี่ยนจะระงับส่งออกจนตรวจและอัปเดตใหม่
+ถ้าผู้ใช้แก้ข้อความหรือมิติบน Sheet จะส่งออกได้ แต่ระงับการสร้างทับเพื่อรักษางานที่แก้
+เก็บงานแก้ไว้ใน Sheet แยกก่อนสร้างชุดอัตโนมัติใหม่
+
+มิติอัตโนมัติคือช่วง Grid และขอบเขตโมเดลที่เลือก ซึ่งอาจรวมชายคา ไม่ใช่มิติผนัง/อาคารที่อนุมาน
+Grid/Level เป็นค่าจากผู้ใช้ ระดับ +3.75/+3.65 ต้องตรงกับแบบที่ใช้จริง
+เพิ่มมิติชิ้นส่วน ผนัง ช่องเปิด รายละเอียดจุดต่อ และหมายเหตุเฉพาะงานใน Composer
+รุ่นนี้มีหนึ่งระดับตัดแปลนและหนึ่งรูปตัด X ทิศรูปด้านยึดแกนโลก
+ยังไม่สร้างแปลนแยกทุกชั้น รายละเอียดเหล็ก ตารางประกอบแบบ หรือแบบ MEP อัตโนมัติ
+ชุดนี้เป็นแบบตั้งต้นเพื่อประสานงาน ยังไม่ใช่ชุดเอกสารก่อสร้างครบถ้วนหรือการรับรอง LOD 350
+
+![Sheet dialog](docs/images/drawing-dialog.png)
+![Model elevation and levels](docs/images/drawing-elevation.png)
+
+ผลตรวจ 0.9.0: 46 pure tests และ 106 native checks รวม 79 regression และ 27 checks ของชุดแบบ
+ตรวจทั้ง Technical renderer, Vector PDF 5 หน้า, Undo/Redo, Sheet เดิม, การแก้เอง,
+โมเดลเปลี่ยน, สร้างใหม่หลังส่งออก และบันทึก/เปิด IGZ โดยใช้ฉากสังเคราะห์แยก
+ตรวจสเกล PDF จากเส้นมิติจริงและ Scale bar ได้ 20 มม./เมตรทุกหน้า
+Family10 ทั้งโครงการไม่ได้ทดสอบใหม่ในรุ่นนี้; หลักฐานเดิมเป็นรุ่น 0.7.1
+ตัวอย่าง: `examples/drawing-set-1-50.igz`, `examples/Thai-BIM-drawings-1-50.pdf`
+ดู `evidence/live-checks.json`, `evidence/pdf-qa.json` และ `RELEASE.json`

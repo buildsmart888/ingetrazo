@@ -29,6 +29,7 @@ def icon(kind):
             'QTO':[[(13,8),(51,8),(51,56),(13,56),(13,8)],[(21,22),(44,22)],[(21,33),(44,33)],[(21,44),(44,44)]],
             'Place':[[(8,32),(56,32)],[(32,8),(32,56)],[(18,20),(46,20),(46,46),(18,46),(18,20)]],
             'Host':[[(10,10),(44,10),(44,44),(10,44),(10,10)],[(50,26),(56,34),(50,42)],[(56,34),(38,34)]],
+            'Sheet':[[(8,7),(56,7),(56,57),(8,57),(8,7)],[(14,15),(42,15),(42,39),(14,39),(14,15)],[(32,46),(50,46),(50,52),(32,52),(32,46)],[(18,12),(18,43)],[(12,26),(46,26)]],
             'Cut':[[(7,17),(57,17),(57,29),(7,29),(7,17)],[(27,9),(27,36)],[(7,45),(26,45)],[(38,45),(57,45)]],
         }
         for path in paths[kind]:p.drawPolyline(QPolygonF([QPointF(*v) for v in path]))
@@ -80,7 +81,7 @@ class AssemblyPreview(QWidget):
 
 class BuilderDialog(QDialog):
     def __init__(self,panel,title):
-        super().__init__(panel.app.window);self.panel=panel;self.setWindowTitle('Thai BIM 0.8 — '+title);self.setWindowIcon(icon(title if title in ('Stair','Rebar') else 'Roof'));self.resize(1080,800)
+        super().__init__(panel.app.window);self.panel=panel;self.setWindowTitle('Thai BIM 0.9 — '+title);self.setWindowIcon(icon(title if title in ('Stair','Rebar') else 'Roof'));self.resize(1080,800)
         lay=QVBoxLayout(self);row=QHBoxLayout();lay.addLayout(row,1)
         scroll=QScrollArea();scroll.setWidgetResizable(True);scroll.setMinimumWidth(355);scroll.setMaximumWidth(470);row.addWidget(scroll,4)
         content=QWidget();self.form=QFormLayout(content);scroll.setWidget(content)
@@ -282,7 +283,7 @@ def open_bbs(panel):
     records,issues=bbs_records(panel.app.scene);tables=D.tables(records,issues)
     old=getattr(panel,'bbs_dialog',None)
     if old is not None:old.close();old.deleteLater()
-    dialog=QDialog(panel.app.window);dialog.setWindowTitle('Thai BIM 0.8 — BBS / Bar bending schedule');dialog.resize(1280,780)
+    dialog=QDialog(panel.app.window);dialog.setWindowTitle('Thai BIM 0.9 — BBS / Bar bending schedule');dialog.resize(1280,780)
     lay=QVBoxLayout(dialog);lay.addWidget(QLabel(f'เหล็กรายละเอียด {len(records)} เส้น • กลุ่มรูปดัด {len(tables[0][1])-1} • รายการต้องตรวจ {len(issues)}'))
     tabs=QTabWidget();lay.addWidget(tabs)
     preview=AssemblyPreview();preview.setMinimumSize(440,220);lay.addWidget(preview)
@@ -322,7 +323,7 @@ def add_tools(panel):
         panel._v05_tools=True
         action=panel.toolbar.addAction(icon('QTO'),'BBS / รูปดัดเหล็ก');action.setToolTip('ตารางรูปดัด ความยาวตัด และน้ำหนักเหล็ก')
         action.triggered.connect(lambda checked=False:panel.guard(lambda:open_bbs(panel)))
-        panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.8 — รายละเอียดเหล็ก / BBS')
+        panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.9 — รายละเอียดเหล็ก / BBS')
     if getattr(panel,'_v04_tools',False):return
     panel._v04_tools=True
     panel.builder_dialogs={}
@@ -358,7 +359,7 @@ def add_tools(panel):
     panel.button(panel.members,'เหล็กเสริมของชิ้นที่เลือก…',lambda:open_builder('Rebar'))
     panel.button(panel.members,'สร้างบันได RC ตรง…',lambda:open_builder('Stair'))
     panel.button(panel.roof,'หลังคาจั่ว / ปั้นหยา / เพิง…',lambda:open_builder('Roof'))
-    toolbar=QToolBar('Thai BIM 0.8',panel.app.window);toolbar.setObjectName('thai_bim_toolbar');toolbar.setIconSize(QSize(28,28));toolbar.setMovable(True);toolbar.setFloatable(True)
+    toolbar=QToolBar('Thai BIM 0.9',panel.app.window);toolbar.setObjectName('thai_bim_toolbar');toolbar.setIconSize(QSize(28,28));toolbar.setMovable(True);toolbar.setFloatable(True)
     panel.app.window.addToolBarBreak(Qt.TopToolBarArea)
     panel.app.window.addToolBar(Qt.TopToolBarArea,toolbar);panel.toolbar=toolbar
     actions=[('Project','โครงการ / Grid / Level',lambda:(tabs.setCurrentIndex(0),panel.open_workspace()))]
@@ -368,9 +369,9 @@ def add_tools(panel):
         ('QTO','ปริมาณ / Excel',lambda:(tabs.setCurrentIndex(3),panel.open_workspace())),('Cut','แผนตัดวัสดุ',panel.open_cuts)]
     for k,title,fn in actions:
         action=toolbar.addAction(icon(k),title);action.setToolTip(title);action.triggered.connect(lambda checked=False,fn=fn:panel.guard(fn))
-    panel.workspace_dialog.setWindowIcon(icon('Project'));panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.8 — โครงสร้าง / หลังคา / เหล็กเสริม')
+    panel.workspace_dialog.setWindowIcon(icon('Project'));panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.9 — โครงสร้าง / หลังคา / เหล็กเสริม')
     for label in panel.findChildren(QLabel):
-        if label.text().startswith('Thai BIM Toolkit'):label.setText('Thai BIM Toolkit 0.8 • โครงสร้าง / หลังคา / เหล็กเสริม')
+        if label.text().startswith('Thai BIM Toolkit'):label.setText('Thai BIM Toolkit 0.9 • โครงสร้าง / หลังคา / เหล็กเสริม')
     for action in panel.app.window.findChildren(type(toolbar.toggleViewAction())):
         if action.text()=='Thai BIM Toolkit…':action.setIcon(icon('Project'))
     # QToolBar has a native visibility action; no private host toolbar API needed.
