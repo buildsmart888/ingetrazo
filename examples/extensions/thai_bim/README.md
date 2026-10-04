@@ -1,4 +1,4 @@
-# Thai BIM Toolkit 0.16.0
+# Thai BIM Toolkit 0.17.0
 
 An optional Thai-language extension for IngeTrazo Extension API 2. It adds a
 21-button toolbar and illustrated, modeless dialogs for concrete members,
@@ -6,17 +6,17 @@ roof framing, six RC stair layouts, reinforcement and quantity takeoff.
 It runs locally without an AI service or API key.
 
 [ภาษาไทย / detailed Thai guide](README-th.md) ·
-[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.16.0)
+[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.17.0)
 
 ## Install
 
-1. Download `Thai-BIM-Toolkit-0.16.0.zip` from the release and extract it.
+1. Download `Thai-BIM-Toolkit-0.17.0.zip` from the release and extract it.
 2. Copy the complete `thai_bim` folder into IngeTrazo's **user plugins folder**.
    On Windows this is `%APPDATA%\ingetrazo\plugins\thai_bim`.
    Alternatively, copy this directory from the repository and name it `thai_bim`.
 3. Restart IngeTrazo. Open **Extensions → Thai BIM Toolkit…** or use the new toolbar.
 
-Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py` and `stair_library_ui.py`
+Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py`, `stair_library_ui.py`, `stair_placement.py` and `stair_place_ui.py`
 together. PySide6 and NumPy are provided by the host application. The plugin
 does not require `openpyxl`; that library is used only by the tests.
 
@@ -81,8 +81,8 @@ in isolated test scenes; they are modeling examples, not construction designs.
 
 ## Verification
 
-The installed 0.16.0 implementation passed **153 pure tests** and
-**523 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
+The installed 0.17.0 implementation passed **163 pure tests** and
+**623 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
 host association, QTO invalidation, IGZ persistence and GLB export. Native checks
 left the user's document geometry unchanged. Evidence is in
 [RELEASE.json](RELEASE.json) and [evidence/live-checks.json](evidence/live-checks.json).
@@ -533,3 +533,44 @@ stair types use dialog XYZ/yaw; interactive two-point placement for all new stai
 forms remains the next stage. Steel generation remains unimplemented.
 
 ![Stair type library and stored revision](docs/images/stair-type-library.png)
+
+
+## 0.17.0: snap-aware two-point placement for every RC stair form
+
+Select a stair type or configure a custom shape, choose the footer base-level
+mode and press **Start click placement: entrance → ascent**. First click is the
+lower entrance midpoint; second click sets initial ascent direction. All six
+forms and both hands support repeated placement without replacing earlier Hosts.
+For curved stairs the anchor is the walkline midpoint at the initial radial
+edge, and direction is the initial ascent tangent, not the radius. Dimension,
+height, riser count and landing values stay fixed; click distance does not resize
+the stair and the second point's Z does not set the upper floor.
+
+Fixed Z uses the entered lower datum; First point Z follows the first snapped or
+inferred point and locks that elevation for the direction point. Host-native
+snapping and axis inference are used. Before the first click, a ghost follows
+the mouse using the dialog yaw; after it, the second point rotates the preview.
+Local preview edges are prepared once per Tool and transformed on hover; model
+solids are built only on commit. This is a concrete wireframe preview; reinforcement
+is created separately after explicit actual Host review.
+
+Esc with a pending point clears it; Esc without pending points ends placement
+and returns to the editor. Backspace clears the entrance. Each committed stair
+has its own Undo/Redo step, identity, Stair layer, frozen type snapshot and
+instance overrides. Parameters are captured when the Tool starts. Existing
+native copies are adopted through the established copied-ID repair. Group-edit
+contexts are blocked; a document switch cancels stale placement. On exit the
+last still-selected Host is read for detailing. Dialog XYZ is the actual local
+origin, which can differ from the entrance click. Stored click inputs describe
+initial placement; actual Host pose remains authoritative after Move/Rotate.
+
+163 pure tests and 623 native checks passed: 523 regression plus 100 placement
+checks, including real Qt mouse/footer/key events, endpoint snaps, visible cyan
+OpenGL preview, every layout/hand pair, snap-Z, repeated placement, Undo/Redo,
+copy adoption, cached hovers and native IGZ reopen with valid QTO/BBS. Synthetic
+hover timing is not a whole-building benchmark. Click-to-fit stair dimensions,
+automatic support connections, structural strength analysis and Steel generation
+remain unimplemented.
+
+![Live native stair ghost](docs/images/live-stair-click-preview.png)
+![Two-point stair editor and footer controls](docs/images/stair-click-dialog.png)

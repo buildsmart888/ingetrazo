@@ -1,13 +1,13 @@
-# Thai BIM Toolkit 0.16.0
+# Thai BIM Toolkit 0.17.0
 
 Extension สำหรับ IngeTrazo Extension API 2 พัฒนาจากงาน Family10
 ใช้ Python/PySide6 และไลบรารีของ IngeTrazo ไม่มี API key และไม่มีการเรียก AI ในคำสั่งรุ่นนี้
 
 ## ติดตั้งและเปิด
 
-นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py`, `stair_library_ui.py` ไปไว้ใน
+นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py`, `stair_library_ui.py`, `stair_placement.py`, `stair_place_ui.py` ไปไว้ใน
 `%APPDATA%\ingetrazo\plugins\thai_bim` แล้วเปิด IngeTrazo ใหม่
-เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.16
+เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.17
 การติดตั้งในครั้งนี้จะเปิดแผงให้ใน session ปัจจุบันด้วย จึงไม่จำเป็นต้องปิดไฟล์ที่ยังไม่บันทึก
 
 API ของ IngeTrazo ช่วง 0.x ยังเปลี่ยนได้ โดยเฉพาะการเชื่อมแผง Render ซึ่งใช้รายละเอียดภายใน
@@ -726,3 +726,37 @@ L/U ใช้เหล็กแต่ละช่วงต่อเข้าช�
 ตรวจ UI, revision/conflict, ชิ้นร่วมชนิดแยกแก้, คัดลอก, Undo/Redo, JSON ไทย, IGZ เปิดกลับ,
 ชุดเหล็ก RB/DB และ BBS/QTO ข้อจำกัดด้านการออกแบบและ Steel ของ 0.15 ยังใช้เหมือนเดิม
 การคลิกวางสองจุดสำหรับบันไดทุกรูปแบบยังเป็นขั้นถัดไป รุ่นนี้ใช้ XYZ/ทิศในไดอะลอก
+
+
+## 0.17.0 — คลิกวางบันไดทุกทรงสองจุด พร้อมสเนปและพรีวิว
+
+ไอคอนบันไดเดิม → เลือกชนิด/ตั้งค่ารูปแบบ → เลือกระดับฐานขณะคลิกที่ท้ายไดอะลอก
+→ กด **เริ่มคลิกวางบันได: ปาก → ทิศขึ้น** → คลิกจุดแรกกึ่งกลางปากบันไดที่ระดับฐาน
+→ คลิกจุดสองตามทิศขึ้นช่วงแรก → คลิกสองจุดต่อเพื่อวางชิ้นใหม่
+ไม่ต้องมีกริด สเนปใช้ระบบของ IngeTrazo พรีวิวเส้นก่อนคลิกและขณะกำหนดทิศไม่เพิ่ม geometry
+
+รองรับ Straight, L, U, Spiral, Circular, Floating และ Left/Right
+ทางตรง/L/U/ขั้นลอย จุดแรกคือกึ่งกลางขอบเริ่มช่วง ส่วนวน/โค้งคือกึ่งกลางแนวเดินที่ขอบเริ่ม
+วน/โค้ง จุดสองกำหนดแนวสัมผัสขึ้นเริ่มต้น ไม่ใช่แนวรัศมีจากศูนย์กลาง
+ระยะสองจุดกำหนดทิศเท่านั้น ไม่เปลี่ยนขนาด จำนวนขั้น ความสูง หรือชานพัก
+Fixed Z ใช้ระดับ Z ที่กรอก; First point Z ใช้ระดับของจุดแรก แล้วล็อกระดับนั้นสำหรับจุดทิศ
+ความสูงระหว่างชั้นคงตามชนิด/พรีวิว ไม่คำนวณจาก Z ของจุดสอง
+ตำแหน่ง XYZ ในช่องหลังอ่าน Host คือ origin ของชิ้นงาน ซึ่งอาจต่างจากจุดคลิกกึ่งกลางปาก
+
+Esc ครั้งแรกขณะมีจุดค้างล้างจุด; Esc ขณะไม่มีจุดจบเครื่องมือและกลับไดอะลอก
+Backspace ล้างจุดแรก; Undo/Redo ใช้ระบบปกติและแยกต่อชิ้น
+เครื่องมือเก็บรูปแบบ/ขนาด/เหล็ก/ชนิดเป็นสำเนาเมื่อเริ่มวาง แก้คลังระหว่างนั้นไม่เปลี่ยนค่าที่ถือวาง
+สร้างเฉพาะคอนกรีต ไม่สร้างเหล็กอัตโนมัติ เมื่อจบจะอ่านชิ้นสุดท้ายที่ยังเลือกอยู่ให้
+กดตรวจ Host+พรีวิวเหล็ก และสร้างเหล็กตามขั้นตอนเดิม สำหรับชิ้นอื่นให้เลือกแล้วอ่าน
+ออกจากการแก้ไขภายใน Group ก่อนเริ่ม; เปลี่ยนเอกสารจะยกเลิกเครื่องมือเดิม
+
+คอนกรีตแต่ละชิ้นมี ID อิสระ เลเยอร์ TBIM S Stair และสำเนาชนิดพร้อม override
+คัดลอกด้วยคำสั่งปกติแล้ววางต่อได้ผ่านระบบซ่อม copied IDs เดิม
+ข้อมูลคลิกเก็บเป็นอินพุตเริ่มต้น; pose จริงของชิ้นงานเป็นฐานสำหรับเหล็ก/QTO หลัง Move/Rotate
+พรีวิวใช้เส้นรูปทรงที่เตรียมไว้ตอนเริ่ม ไม่สร้าง solid ใหม่ทุก hover
+
+ผ่าน 163 pure tests และ 623 native checks (523 regression + 100 การวางบันได)
+ตรวจเมาส์/ปุ่ม/คีย์ Qt จริง พรีวิว OpenGL การวางครบ 12 คู่ทรงและทิศซ้าย/ขวา สเนประดับ,
+วางซ้ำ Undo/Redo คัดลอก แยก Host เหล็ก BBS/QTO และเปิด IGZ กลับ
+มีตัวอย่าง IGZ ทุกทรงและไฟล์ BBS การทดสอบ hover เป็น fixture ขนาดเล็ก ไม่ใช่ benchmark ทั้งอาคาร
+ยังไม่มีการยืดบันไดตามปลายสองจุด การเชื่อมรองรับอัตโนมัติ วิเคราะห์กำลัง หรือโมดูล Steel

@@ -61,10 +61,14 @@ class StairsDialog(BuilderDialog):
         self.connections=QTableWidget(0,9);self.connections.setHorizontalHeaderLabels(['ชื่อ','X','Y','Z','ทิศ°','ยาว m','ขา ±Z m','จำนวน','ระยะ m']);self.connections.setMinimumHeight(160);self.form.addRow(self.connections)
         self.connections.itemChanged.connect(lambda _:self.timer.start());self.button('เพิ่มแถวรอยต่อพิเศษ (ปรับตามแบบ)',self.add_connection);self.button('ลบแถวรอยต่อที่เลือก',self.remove_connection)
         for actions in [[('อ่านบันไดที่เลือก',self.read_host),('สร้างคอนกรีตชุดใหม่',self.create),('อัปเดตคอนกรีตเฉพาะชิ้นที่อ่าน',self.update)],
-            [('ตรวจ Host + พรีวิวเหล็ก',self.review),('สร้าง / อัปเดตเหล็กที่ตรวจแล้ว',self.build_rebar)]]:
+            [('ตรวจ Host + พรีวิวเหล็ก',self.review),('สร้าง / อัปเดตเหล็กที่ตรวจแล้ว',self.build_rebar)],
+            [('เริ่มคลิกวางบันได: ปาก → ทิศขึ้น',self.start_placement)]]:
             row=QHBoxLayout();self.layout().addLayout(row)
             for text,fn in actions:
                 b=QPushButton(text);b.clicked.connect(lambda checked=False,fn=fn:panel.guard(fn));row.addWidget(b)
+        clickrow=QHBoxLayout();self.layout().addLayout(clickrow);clickrow.addWidget(QLabel('ระดับฐานขณะคลิก'))
+        self.click_z=QComboBox();self.click_z.addItems(('Fixed Z / ล็อกระดับ Z ที่กรอก','First point Z / ใช้ระดับจุดแรก'));clickrow.addWidget(self.click_z,1)
+        self.note('คลิกวาง: จุดแรกกึ่งกลางปากบันไดระดับฐาน → จุดสองทิศขึ้นช่วงแรก\nวน/โค้งใช้แนวสัมผัสเริ่มต้น • ขนาดตามพรีวิว ไม่ยืดตามระยะคลิก\nคลิกต่อวางซ้ำ • Esc ล้างจุด; Esc อีกครั้งกลับไดอะลอก • Undo แยกแต่ละชิ้น\nสร้างคอนกรีตก่อน เหล็กต้องอ่าน Host ตรวจและสร้างแยก')
         self.layout_kind.currentIndexChanged.connect(self.changed_layout);self.mats.currentIndexChanged.connect(self.enable_fields);self.changed_layout()
     def combo(self,label,items):
         w=QComboBox();w.setMinimumContentsLength(14);w.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon);w.addItems(items);self.form.addRow(label,w);w.currentIndexChanged.connect(lambda _:self.timer.start());return w
@@ -154,6 +158,9 @@ class StairsDialog(BuilderDialog):
         self.timer.stop();row=self.library.model_source();p=self.geometry();q=self.rebar()
         if row:from .stair_catalogue import stair_type;stair_type(row['code'],row['name'],p,q,row['id'],row['revision'])
         cmd,host=concrete_command(self.panel.app.scene,p,self.pose());tag(host,row,p,q);self.panel.execute(cmd);self.panel.app.scene.selection={host};self.read_host();self.output.appendPlainText('สร้างคอนกรีตแล้ว • เหล็กต้องตรวจ Host แล้วสร้างแยก • Undo ได้')
+    def start_placement(self):
+        from .stair_place_ui import start
+        return start(self)
     def update(self):
         from .stair_library_ui import tag
         self.timer.stop();row=self.library.model_source();p=self.geometry();q=self.rebar()

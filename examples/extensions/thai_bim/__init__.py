@@ -21,7 +21,7 @@ from .visuals import launcher, decorate_multi, decorate_cut
 from .builders import add_tools
 
 KEY='thai_bim'
-TITLE='Thai BIM 0.16'
+TITLE='Thai BIM 0.17'
 
 
 class ExchangeGroups(Command):
