@@ -1,5 +1,5 @@
 {
-  "version": "0.9.0",
+  "version": "0.10.0",
   "pages": [
     {
       "sheet": "A101",
@@ -7,7 +7,7 @@
         420.1583333333333,
         297.0388888888889
       ],
-      "vector_lines": 510,
+      "vector_lines": 514,
       "raster_images": 0,
       "metre_scale_segments_mm": [
         19.999999962666667,
@@ -39,7 +39,7 @@
         420.1583333333333,
         297.0388888888889
       ],
-      "vector_lines": 171,
+      "vector_lines": 173,
       "raster_images": 0,
       "metre_scale_segments_mm": [
         19.999999962666667,
@@ -55,7 +55,7 @@
         420.1583333333333,
         297.0388888888889
       ],
-      "vector_lines": 135,
+      "vector_lines": 137,
       "raster_images": 0,
       "metre_scale_segments_mm": [
         19.999999962666667,
@@ -71,7 +71,7 @@
         420.1583333333333,
         297.0388888888889
       ],
-      "vector_lines": 256,
+      "vector_lines": 315,
       "raster_images": 0,
       "metre_scale_segments_mm": [
         19.999999962666667,
@@ -82,6 +82,6 @@
       "measured_grid_dimension_paper_mm": 80
     }
   ],
-  "pdf_sha256": "1fd1427e57b8c00d6df4556e550eb9ddaa70e7b7e7c1331d63e57d923c2e99d5",
+  "pdf_sha256": "8b866bd1b6d350413508f39b7552a2fc10272891557e15cc686c44aad3b597f6",
   "visual_review": "All five Poppler-rendered pages inspected; explicit levels separated with leaders; synthetic coordination fixture, not construction design"
 }

@@ -42,6 +42,7 @@ def host_matches(group,host):
     except ValueError:return False
 
 def bar_specs(kind,host_params,ui_params):
+    if host_params.get('shape')=='polygon':raise ValueError('Polygon slab reinforcement is not implemented; do not use a rectangular cage for this outline')
     p=copy.deepcopy(ui_params)
     for k in ('cover','diameter','tie_diameter','spacing','inside_radius','tie_inside_radius','hook_length','tie_hook_length','lap_length','extension_start','extension_end'):
         if k in p:p[k]/=1000
@@ -103,6 +104,7 @@ def placed_member_command(scene,config,previous=None,expected=None):
 
 def placement_of(host):
     host_token(host);r=host.ext['thai_bim'];hp=r['params'];m=P.rigid_matrix(pose(host))
+    if hp.get('shape')=='polygon':raise ValueError('Use the type library to change polygon slab thickness; rectangular placement would discard its outline')
     if any(abs(m[i]-P.IDENTITY[i])>1e-5 for i in (2,6,8,9,10)):raise ValueError('Placement dialog supports upright members rotated around Z; use rigid host review for tilted hosts')
     centred=r['kind'] in ('Column','Footing')
     local=(hp['x']+(hp['width']/2 if centred else 0),hp['y']+(hp['depth']/2 if centred else 0),hp['z'])
@@ -238,7 +240,7 @@ class Workflow:
     def open_hosts(self):
         self.refresh()
         if self.dialog is not None:self.dialog.close();self.dialog.deleteLater()
-        dialog=QDialog(self.panel.app.window);dialog.setWindowTitle('Thai BIM 0.9 — Host / ตรวจเหล็กก่อนอัปเดต');dialog.resize(1080,570)
+        dialog=QDialog(self.panel.app.window);dialog.setWindowTitle('Thai BIM 0.10 — Host / ตรวจเหล็กก่อนอัปเดต');dialog.resize(1080,570)
         lay=QVBoxLayout(dialog);lay.addWidget(QLabel('เลือก Host → เปิดพรีวิว → ตรวจรายละเอียด → อัปเดตเหล็ก • ไม่มีการสร้างใหม่อัตโนมัติ'))
         table=QTableWidget(len(self.rows),4);table.setHorizontalHeaderLabels(['Host','State','Reason','Bars']);table.setEditTriggers(QTableWidget.NoEditTriggers)
         rows=copy.deepcopy(self.rows);bound_scene=self.panel.app.scene
@@ -265,5 +267,5 @@ def install(panel):
     panel.button(panel.members,'ตรวจ Host และพรีวิวเหล็กที่เปลี่ยน…',controller.open_hosts)
     for key,text,fn in [('Place','วาง RC แบบคลิกซ้ำ / Grid / Level',controller.open_placement),('Host','ตรวจ Host / อัปเดตเหล็กหลังย้ายหรือปรับขนาด',controller.open_hosts)]:
         action=panel.toolbar.addAction(icon(key),text);action.setToolTip(text);action.triggered.connect(lambda checked=False,fn=fn:panel.guard(fn))
-    panel.toolbar.setWindowTitle('Thai BIM 0.9');panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.9 — Placement / Host review / BBS')
+    panel.toolbar.setWindowTitle('Thai BIM 0.10');panel.workspace_dialog.setWindowTitle('Thai BIM Toolkit 0.10 — Placement / Host review / BBS')
     controller.refresh();return controller

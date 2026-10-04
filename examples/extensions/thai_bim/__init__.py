@@ -1,4 +1,4 @@
-"""IngeTrazo Extension: Thai BIM Toolkit 0.9.0 (API 2)."""
+"""IngeTrazo Extension: Thai BIM Toolkit 0.10.0 (API 2)."""
 import copy
 import json
 import math
@@ -21,7 +21,7 @@ from .visuals import launcher, decorate_multi, decorate_cut
 from .builders import add_tools
 
 KEY='thai_bim'
-TITLE='Thai BIM 0.9'
+TITLE='Thai BIM 0.10'
 
 
 class ExchangeGroups(Command):
@@ -122,6 +122,8 @@ def make_group(spec, assembly='', previous=None):
     for k in ('stair_params','bar_path','bar_diameter','bar_closed','bbs','representation','steel'):
         if k in spec:rec[k]=copy.deepcopy(spec[k])
     if previous is not None:
+        for k in ('member_type','placement_mode'):
+            if k in previous.ext[KEY]:rec[k]=copy.deepcopy(previous.ext[KEY][k])
         g.uid=previous.uid
         g.hidden=previous.hidden
         g.xform=previous.xform
@@ -130,6 +132,9 @@ def make_group(spec, assembly='', previous=None):
         rec['id']=previous.ext[KEY]['id']
         rec['slot']=previous.ext[KEY]['slot']
         g.ext[KEY]=rec
+    if previous is not None and rec.get('member_type'):
+        from .type_ui import tag
+        tag(g,rec['member_type'])
     return g
 
 
@@ -338,6 +343,8 @@ class Panel(QWidget):
         selected=[g for g in self.app.scene.selection if g in self.app.scene.groups]
         if len(selected)!=1 or not (selected[0].ext or {}).get(KEY,{}).get('params'):
             raise ValueError('เลือกชิ้น RC ที่สร้างด้วย Thai BIM เพียงหนึ่งชิ้น')
+        if selected[0].ext[KEY]['params'].get('shape')=='polygon':
+            raise ValueError('พื้นหลายจุด: ใช้คลังชนิดเพื่อแก้ความหนา; เครื่องมือสี่เหลี่ยมจะทิ้งขอบเขตเดิม')
         return selected[0]
 
     def pick_member(self):
@@ -463,6 +470,8 @@ def setup(app):
     install_audit(panel)
     from .drawings import install as install_drawings
     install_drawings(panel)
+    from .type_ui import install as install_types
+    install_types(panel)
     return panel
 
 

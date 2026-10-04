@@ -1,22 +1,22 @@
-# Thai BIM Toolkit 0.9.0
+# Thai BIM Toolkit 0.10.0
 
 An optional Thai-language extension for IngeTrazo Extension API 2. It adds a
-17-button toolbar and illustrated, modeless dialogs for concrete members,
+19-button toolbar and illustrated, modeless dialogs for concrete members,
 roof framing, straight concrete stairs, reinforcement and quantity takeoff.
 It runs locally without an AI service or API key.
 
 [ภาษาไทย / detailed Thai guide](README-th.md) ·
-[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.9.0)
+[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.10.0)
 
 ## Install
 
-1. Download `Thai-BIM-Toolkit-0.9.0.zip` from the release and extract it.
+1. Download `Thai-BIM-Toolkit-0.10.0.zip` from the release and extract it.
 2. Copy the complete `thai_bim` folder into IngeTrazo's **user plugins folder**.
    On Windows this is `%APPDATA%\ingetrazo\plugins\thai_bim`.
    Alternatively, copy this directory from the repository and name it `thai_bim`.
 3. Restart IngeTrazo. Open **Extensions → Thai BIM Toolkit…** or use the new toolbar.
 
-Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` and `drawings.py`
+Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` and `multi_place.py`
 together. PySide6 and NumPy are provided by the host application. The plugin
 does not require `openpyxl`; that library is used only by the tests.
 
@@ -83,8 +83,8 @@ in isolated test scenes; they are modeling examples, not construction designs.
 
 ## Verification
 
-The original installed implementation passed **46 pure engine tests** and
-**106 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
+The original installed implementation passed **53 pure engine tests** and
+**145 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
 host association, QTO invalidation, IGZ persistence and GLB export. Native checks
 left the user's document geometry unchanged. Evidence is in
 [RELEASE.json](RELEASE.json) and [evidence/live-checks.json](evidence/live-checks.json).
@@ -105,10 +105,11 @@ in IngeTrazo's Python Console/AI bridge, where `scene` and `viewport` are suppli
 import runpy
 from core.extensions import user_plugins_dir
 scope = runpy.run_path(
-    str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_thai_bim_v09.py'),
+    str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_thai_bim_v10.py'),
     init_globals={'scene': scene, 'viewport': viewport},
 )
-runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_drawings_v09.py'), init_globals=scope)
+scope = runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_types_v10.py'), init_globals=scope)
+runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_drawings_v10.py'), init_globals=scope)
 ```
 
 Native tests temporarily open dialogs and write results into `verification-local/`
@@ -255,7 +256,7 @@ only after successful rendering. Print at **100% actual size**, not fit-to-page.
 ![Sheet layout dialog](docs/images/drawing-dialog.png)
 ![Synthetic elevation](docs/images/drawing-elevation.png)
 
-Validation: 46 pure tests and 106 native checks (79 regression plus 27 drawing
+Historical 0.9.0 validation: 46 pure tests and 106 native checks (79 regression plus 27 drawing
 checks), including native technical rendering, vector lines in all five PDF
 frames, undo/redo, persistence, manual-edit preservation and updating after PDF
 reprojection. Independent PDF checks measured grid dimension spans and scale
@@ -264,3 +265,53 @@ See [PDF evidence](evidence/pdf-qa.json). The synthetic examples are
 `examples/drawing-set-1-50.igz` and `examples/Thai-BIM-drawings-1-50.pdf`.
 These are model-based coordination starters, not complete construction
 documents, strength design, standard conformity or LOD350 certification.
+
+
+## 0.10.0: member types and point workflows
+
+Two new toolbar buttons open **Member type library** and **Beam/slab/stair point
+placement**. Choose a saved type or Custom, set the bottom Z and dimensions,
+then start the viewport tool. This new workflow needs no project grid or level
+entries; native geometry snaps supply XY while the explicitly entered Z remains
+fixed. Wireframe previews follow the cursor. Each completed member is one Undo.
+
+- Footing/column: repeated clicks at the bottom centre.
+- Beam: start/end centreline points; horizontal span determines length, type
+  determines section. No sloped beam support here.
+- Slab: two opposite rectangle corners, or a simple polygon (including concave
+  outlines) finished with Enter or a click near its first point. No holes.
+- Straight stair: bottom/upper levels determine total rise, step count and going
+  determine run. Click start then ascent direction; the second point does not
+  stretch the flight. No landings or L/U flights.
+- Backspace removes a path point; Esc clears an unfinished path, then exits on
+  the next Esc. After completion another member may be placed immediately.
+
+The project library offers add/edit/duplicate/delete and an illustrated preview,
+type code/name/UUID/revision and dimension fields. It persists in IGZ with Undo.
+JSON import replaces the project library with Undo; export/shared-library file
+writes are explicit external file operations outside model Undo. A shared local
+JSON library can be loaded into other projects. Types are detached snapshots on
+instances: editing or removing a library row never changes existing geometry.
+Applying a type affects exactly one selected compatible host, retains native and
+business IDs and pose, and preserves beam length or slab outline. Instance
+parameter overrides are recorded separately. Bulk type propagation is not
+implemented. The older Grid placement tool is retained with its original grid
+input requirements.
+
+Existing explicit Host reinforcement review works on typed footing/column/beam,
+rectangular slabs and directed straight stairs. Polygon reinforcement and saved
+type reinforcement recipes are reserved for future development; polygon slabs
+block rectangular-cage substitution and the old rectangular editing commands.
+Changing a reinforced concrete host requires renewed reinforcement review.
+
+![Member types](docs/images/member-library.png)
+![Stair point placement](docs/images/path-placement.png)
+![Native beam wireframe](docs/images/live-beam-preview.png)
+
+Validation: 53 pure tests and 145 native checks (79 regression, 39 library/point
+placement and 27 drawing checks). Actual Qt mouse/key events drive the viewport;
+native framebuffer pixels verify visible preview. Tests include concave solid
+volume, selected-instance edits, Thai JSON/IGZ roundtrips, per-member Undo/Redo,
+project type snapshots, directed stair Host reinforcement and all five 1:50 PDF
+pages. Synthetic examples: `examples/typed-members-click-placement.igz` and
+`examples/member-types-ไทย.json`. Whole-project Family10 was not rerun.

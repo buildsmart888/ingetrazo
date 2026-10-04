@@ -175,9 +175,9 @@ the document), **import STL (with principal-plane or advanced all-surface
 [Thai BIM Toolkit](examples/extensions/thai_bim/README.md) is an optional
 Thai-language plugin with a toolbar, illustrated RC/roof/stair tools,
 Grid/Level click placement, explicit host review, detailed footing/column/beam reinforcement, BBS and quantity takeoff. Download the
-[Thai BIM 0.9.0 extension release](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.9.0)
+[Thai BIM 0.10.0 extension release](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.10.0)
 or read the [Thai guide](examples/extensions/thai_bim/README-th.md).
-It models user-specified geometry and detailing. Rectangular slab and straight-stair detailing include BBS; native starter sheets at 1:50 include explicit grids, levels, grid/extents dimensions and PDF export. Member/opening details remain manual. It is not a structural design or LOD 350 certification tool.
+It models user-specified geometry and detailing, with a portable member-type library and native point placement for beams, slabs and straight stairs. Rectangular slab and straight-stair detailing include BBS; native starter sheets at 1:50 include explicit grids, levels, grid/extents dimensions and PDF export. Member/opening details remain manual. It is not a structural design or LOD 350 certification tool.
 
 ![Sheet composer: a real ornamental-fountain sheet — front view, 3D, plan and section at 1:40, with dimensions, labels, a reference photo and the title block](docs/images/laminas.jpeg)
 
