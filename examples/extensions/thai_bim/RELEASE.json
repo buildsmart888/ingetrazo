@@ -1,9 +1,9 @@
 {
   "name": "Thai BIM Toolkit",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "api_version": 2,
   "license": "GPL-3.0-or-later",
-  "pure_tests": 132,
+  "pure_tests": 153,
   "native_checks": [
     "21 actual toolbar actions with nonempty icons",
     "fresh setup has 21 icons",
@@ -481,11 +481,57 @@
     "new export detects child edits despite earlier valid cached export",
     "Right hand reflected stair is native closed composite",
     "Full 3D helix native volume agrees with nominal tube within facet tolerance",
-    "stair tests preserve actual user document geometry"
+    "stair tests preserve actual user document geometry",
+    "advanced stair library seeds six layouts and retains 21 icons",
+    "Straight library preview loads geometry and complete rebar without placing",
+    "L library preview loads geometry and complete rebar without placing",
+    "U library preview loads geometry and complete rebar without placing",
+    "Spiral library preview loads geometry and complete rebar without placing",
+    "Circular library preview loads geometry and complete rebar without placing",
+    "Floating library preview loads geometry and complete rebar without placing",
+    "stair type saves Thai name DB catalogue and connector table",
+    "stair library stays separate from legacy member library",
+    "stair type save Undo restores six default types",
+    "stair type save Redo restores exact snapshot",
+    "typed concrete stores frozen type snapshot and no override",
+    "read new typed Host retains preset steel before cage exists",
+    "typed stair still needs explicit Host review before creating bars",
+    "typed stair reviewed cage uses stored DB and connection patterns",
+    "same type creates independent Host identities and positions",
+    "editing saved type does not propagate to either placed Host",
+    "explicit typed update preserves native ID business ID layer pose and sibling",
+    "explicit update records revision two and current geometry",
+    "typed update Undo restores exact old concrete and all cage objects",
+    "instance dimension override does not change saved type or sibling",
+    "concrete update retains edited per-instance rebar preview instead of reverting old cage",
+    "instance cage changes preserve sibling cage objects",
+    "stale concurrent stair type save is rejected",
+    "stale concurrent stair type delete is rejected",
+    "stale dropdown snapshot cannot load changed row",
+    "stale project library command preserves intervening plugin data",
+    "deleting type keeps existing geometry and snapshots",
+    "type removal Undo restores exact revision three row",
+    "native stair JSON preserves Unicode full geometry and rebar",
+    "empty stair library remains empty and import changes no geometry",
+    "library import Undo restores project library",
+    "invalid import leaves all project data unchanged",
+    "local shared library roundtrip uses same validated schema",
+    "document switch blocks stale library save",
+    "document switch blocks preset placement",
+    "unsaved type name cannot be attached to concrete",
+    "invalid typed reinforcement fit blocks creation before geometry changes",
+    "failed typed creation leaves exact groups unchanged",
+    "copied typed stairs retain frozen type but have independent cage binding",
+    "IGZ reopen retains project stair library and exact type snapshots",
+    "IGZ reopened typed instance BBS and QTO retain valid bindings",
+    "read old Host snapshot shows its actual revision instead of latest library revision",
+    "snapshot display row cannot be loaded as a current saved library type",
+    "native library screenshot has illustrated preview and visible action footer",
+    "stair library tests preserve actual user document geometry"
   ],
   "native_tested_source_sha256": {
-    "__init__.py": "0b5c5ed56bdab93b156f8a20c0fa0c1841a82db7bc651de8ccef8445f5fe642a",
-    "engine.py": "50875cd78f0f1b78eb09a4159370251bbcf236aac129858fa0c1bbea97c61649",
+    "__init__.py": "454ced2fa9a09ebe57065f2294132764bbd8e063fe8b2482cfb11166aee51096",
+    "engine.py": "810a654b629df8e2afae139ab4e4fcfcffa8d2750a866314b484acdb0344c882",
     "visuals.py": "d886e061ab2ad9d6f0b208a0ff082637a59d08694aa4eb24c8c8e880b0c4284e",
     "structures.py": "812651feb2c1c1341a6099005cbee76070a2db8032070c07fe59b001f9b265ef",
     "builders.py": "ae5f1d3a2fb4e20679f196b00d9a889e6732e9232a08dc6bb54ff3f1cb2a4631",
@@ -499,7 +545,7 @@
     "drawings.py": "248b3ea771f54740c24e640bf99ed7dda9d04ef2f1bcb3ac0972e885c1e8beb1",
     "catalogue.py": "fb1a89a54a8c199cf2ac4b5d4d07e836491a73a01f9abc449e2cd22b267e619f",
     "path_geometry.py": "a79e7a451892bfc0faa2d7687755f9d8041ade9a8f3abda573426a654226a309",
-    "type_ui.py": "92c2e736dba2d6800d9d0c7041a133d99b591665f7bf680b56192ac19481bb38",
+    "type_ui.py": "ebf76736d4900504cccc709224730683e7fa3981df3c7df46b8329e36de71820",
     "multi_place.py": "94374086dee4bce77ec7619d09e30cd118ed39f9398f62aac59c0f81105e908f",
     "identity_data.py": "d2f89dd52d267f606ee89caf4001ee3e3d32e3001940f29d8e222ffe44525dcb",
     "copy_identity.py": "01feff69842fdcbc113a0e38748bd48d0ff2a893eb2aa225526f4578a493bfc4",
@@ -511,11 +557,13 @@
     "slab_rebar.py": "bdba2b79e04eff666b5589528bb7cd55fe3ac68d53afbbddfd54a0d9827137fb",
     "slab_ui.py": "46d31d042d8b00bf04a903aa3d98847f9320e15df52550ebb603823931c747bd",
     "stairs.py": "4e78f07e40f27a73b64ca455894285bc0da454bce85f51dd0af2b583e01c4b5c",
-    "stairs_ui.py": "d8dfc2397f3279e8615a4cedf147a58039b942f33b8e3b3e6f9b30669a5aaaf2"
+    "stairs_ui.py": "1625e57932b1ded34378a52f2aa58919875fe2f1b35d6db72cf665c334f8a975",
+    "stair_catalogue.py": "80f187464c6894d0108c2c688b15bfbd1898927a8de0c09ac61758cf561d65d6",
+    "stair_library_ui.py": "05faccc40c0a6d8531fb512d45f77fb2517b3e2f31297b5402ced58d2559f4b1"
   },
-  "native_checks_context": "Windows IngeTrazo API2; 79 regression, 39 member-library/point-placement, 27 drawing, 16 native copy/adoption and 62 per-type reinforcement recipe and 23 analytical graph and 52 selected-instance edit and 45 slab reinforcement and 134 stair checks. Native Qt mouse/key and visible framebuffer preview verified. Default technical renderer and five vector PDF frames verified; original blank document unchanged. Family10 whole-project evidence remains 0.7.1.",
+  "native_checks_context": "Windows IngeTrazo API2; 79 regression, 39 member-library/point-placement, 27 drawing, 16 native copy/adoption and 62 per-type reinforcement recipe and 23 analytical graph and 52 selected-instance edit and 45 slab reinforcement and 134 stair and 46 stair library checks. Native Qt mouse/key and visible framebuffer preview verified. Default technical renderer and five vector PDF frames verified; original blank document unchanged. Family10 whole-project evidence remains 0.7.1.",
   "pdf_verification": {
-    "version": "0.15.0",
+    "version": "0.16.0",
     "pages": [
       {
         "sheet": "A101",
@@ -598,7 +646,7 @@
         "measured_grid_dimension_paper_mm": 80
       }
     ],
-    "pdf_sha256": "ee317a99935a5825ca4f813294089abc970cdb8ec53b5c08f650ff06101edac6",
+    "pdf_sha256": "a7dded87cef9b0bbad95806afd81447b00a6564f9a5bc02fea03f51716fa33d9",
     "visual_review": "Front elevation Poppler rendering inspected in v15; all five pages independently measured; synthetic coordination fixture, not construction design"
   },
   "limitations": [
@@ -622,12 +670,12 @@
     "Slab detail settings are per Host; slab recipe catalogue integration remains pending",
     "Legacy stair second point sets ascent direction, not overall run; new six-layout RC stair dialog uses XYZ/yaw with optional landings",
     "Advanced stairs have no support, railing, strength, headroom, adjacent-host embedment or whole-building clash checks; special connection patterns require designer input",
-    "Advanced stair type catalogue and structural steel generator not implemented; new forms include full final tread at upper datum",
+    "Advanced stair library uses a separate schema; no bulk propagation or interactive placement for new forms; structural steel generator not implemented; new forms include full final tread at upper datum",
     "User-defined reinforcement details are not strength design or certified standard compliance; existing 0.8.0 detailing limitations apply"
   ],
   "source_sha256": {
-    "__init__.py": "a4e97695416135c1fa79dc5bcfc28bd2a8118499379b4573f05a1ea7a529568d",
-    "engine.py": "f5533359771bfbc4e42de7f3725a2a4ec829ab607f629602411dd41585af381f",
+    "__init__.py": "8ef66b9e277ac53e40705e7f3edbe5f50e40e89ebcb3996b348a575f003abcca",
+    "engine.py": "0add491a5e8d912fc7aa04130f729ebb0dad6ada3d9489c2dfa8930231a2bbe8",
     "visuals.py": "d886e061ab2ad9d6f0b208a0ff082637a59d08694aa4eb24c8c8e880b0c4284e",
     "structures.py": "812651feb2c1c1341a6099005cbee76070a2db8032070c07fe59b001f9b265ef",
     "builders.py": "6849ebaef96a1d5e4a0efd716d323fca21ee6b7618c3a6613d28e583867a07f4",
@@ -641,7 +689,7 @@
     "drawings.py": "97e95e9dc406354242da7d5217dd85e44bfa90792cef1578e29cc4653e637559",
     "catalogue.py": "33fccb87c961956b98592d73c72b8c7dcafaf712c9b9f0ebbc60cd594464ace7",
     "path_geometry.py": "a79e7a451892bfc0faa2d7687755f9d8041ade9a8f3abda573426a654226a309",
-    "type_ui.py": "ba07764544acf27ddb5a0cfd46eec22475af57598bfe878cdc85419f707e9bdb",
+    "type_ui.py": "4122c0f7167a44b57d6a27f1a2d05ca7dc5d9b0df56e2fba8fcb7dbcd097f4e2",
     "multi_place.py": "94374086dee4bce77ec7619d09e30cd118ed39f9398f62aac59c0f81105e908f",
     "identity_data.py": "d2f89dd52d267f606ee89caf4001ee3e3d32e3001940f29d8e222ffe44525dcb",
     "copy_identity.py": "01feff69842fdcbc113a0e38748bd48d0ff2a893eb2aa225526f4578a493bfc4",
@@ -653,7 +701,9 @@
     "slab_rebar.py": "bdba2b79e04eff666b5589528bb7cd55fe3ac68d53afbbddfd54a0d9827137fb",
     "slab_ui.py": "46d31d042d8b00bf04a903aa3d98847f9320e15df52550ebb603823931c747bd",
     "stairs.py": "4e78f07e40f27a73b64ca455894285bc0da454bce85f51dd0af2b583e01c4b5c",
-    "stairs_ui.py": "d8dfc2397f3279e8615a4cedf147a58039b942f33b8e3b3e6f9b30669a5aaaf2"
+    "stairs_ui.py": "1625e57932b1ded34378a52f2aa58919875fe2f1b35d6db72cf665c334f8a975",
+    "stair_catalogue.py": "80f187464c6894d0108c2c688b15bfbd1898927a8de0c09ac61758cf561d65d6",
+    "stair_library_ui.py": "05faccc40c0a6d8531fb512d45f77fb2517b3e2f31297b5402ced58d2559f4b1"
   },
   "publication_note": "Line endings normalized to LF; original installed/native-tested hashes retained."
 }

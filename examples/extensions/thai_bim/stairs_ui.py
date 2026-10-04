@@ -14,7 +14,7 @@ def concrete_command(scene,params,pose,host=None,expected=None):
     if host:result.name=host.name;result.layer=host.layer
     result.ext['thai_bim'].update(assembly_kind='advanced-rc-stair',assembly_params=copy.deepcopy(params))
     return ExchangeGroups(scene,replacements=[(host,result)] if host else (),additions=[] if host else [result]),result
-def rebar_key(host,params):return W.host_token(host),json.dumps(params,sort_keys=True),json.dumps(host.ext['thai_bim'].get('member_type'),sort_keys=True)
+def rebar_key(host,params):return W.host_token(host),json.dumps(params,sort_keys=True),json.dumps([host.ext['thai_bim'].get('member_type'),host.ext['thai_bim'].get('stair_type')],sort_keys=True)
 def review(scene,host,params):
     from . import identity_issues
     if host not in scene.groups or scene.selection!={host}:raise ValueError('Select the Stair originally read')
@@ -39,6 +39,8 @@ class StairsDialog(BuilderDialog):
         super().__init__(panel,'Stair');self.setWindowTitle('Thai BIM — บันได RC / ชานพัก / เหล็กเชื่อมต่อ');self.setWindowIcon(icon('Stair'));self.form.setRowWrapPolicy(QFormLayout.WrapLongRows)
         self.uid=None;self.bound_scene=None;self.expected=None;self.reviewed=None;self.loading=False
         self.label=QLabel('สร้างชุดใหม่ หรือเลือกบันไดรุ่นใหม่แล้วกดอ่าน');self.label.setWordWrap(True);self.form.addRow(self.label)
+        from .stair_library_ui import StairLibrary
+        self.library=StairLibrary(self)
         self.layout_kind=self.combo('รูปแบบบันได',S.LAYOUTS);self.hand=self.combo('เลี้ยว / ทิศหมุน',('Left','Right'));self.view=self.combo('พรีวิว',('Concrete','Rebar + Concrete'))
         self.note('ระบบวัสดุ: RC • Steel รูปพรรณยังไม่เปิดใช้งาน\nรุ่นใหม่รวมลูกนอนสุดท้ายที่ระดับบน ชานพักไม่นับเป็นลูกตั้งเพิ่ม\nเกลียว/โค้ง: ระบุรัศมีช่องกลางและมุมกวาด; ยังไม่สร้างเสาแกน/ราว/โครงรองรับ\nบันไดลอย: ขั้น RC แยกชิ้น รองรับและผนังต้องกำหนดตามแบบ')
         self.gf={};self.rf={};self.pf={};self.steels={};defaults=S.defaults();rb=S.rebar_defaults()
@@ -115,14 +117,19 @@ class StairsDialog(BuilderDialog):
         if p.get('stair_schema')!=2:raise ValueError('This dialog edits schema 2 stairs; use the legacy straight tool for earlier stairs')
         pose=P.rigid_matrix(W.pose(host))
         if abs(pose[8])+abs(pose[9])+abs(pose[10]-1)>1e-5:raise ValueError('Tilted stairs: restore upright Z placement before editing')
-        self.loading=True;self.layout_kind.setCurrentText(p['layout']);self.hand.setCurrentText(p['hand'])
-        for k,w in self.gf.items():w.setValue(p[k])
-        self.bottom.setChecked(p['bottom_landing']);self.top.setChecked(p['top_landing']);self.loading=False;self.enable_fields()
         for k,v in zip(('x','y','z','yaw'),(pose[3],pose[7],pose[11],math.degrees(math.atan2(pose[4],pose[0])))):self.pf[k].setValue(v)
         self.uid=host.uid;self.bound_scene=scene;self.expected=token;self.reviewed=None;self.label.setText(host.name+' • '+host.ext['thai_bim']['id'][:8])
         saved=next((g.ext['thai_bim']['stair_rebar_params'] for g in scene.groups if (g.ext or {}).get('thai_bim',{}).get('host_uid')==host.uid and g.ext['thai_bim'].get('stair_rebar_params')),None)
-        q=saved or S.rebar_defaults();q=copy.deepcopy(q)
-        if not saved and p['layout'] in ('Spiral','Circular'):q['connection']=0
+        q=saved or host.ext['thai_bim'].get('stair_rebar_preset') or (host.ext['thai_bim'].get('stair_type') or {}).get('rebar') or S.rebar_defaults();q=copy.deepcopy(q)
+        if not saved and not host.ext['thai_bim'].get('stair_rebar_preset') and not host.ext['thai_bim'].get('stair_type') and p['layout'] in ('Spiral','Circular'):q['connection']=0
+        self.load_values(p,q);self.library.read_snapshot(host);self.preview()
+    def load_values(self,p,q):
+        self.loading=True
+        try:
+            self.layout_kind.setCurrentText(p['layout']);self.hand.setCurrentText(p['hand'])
+            for k,w in self.gf.items():w.setValue(p[k])
+            self.bottom.setChecked(p['bottom_landing']);self.top.setChecked(p['top_landing'])
+        finally:self.loading=False
         self.rep.setCurrentText(q['representation']);self.mats.setCurrentIndex(q['mats']-1)
         for role,(combo,records) in self.steels.items():combo.setCurrentIndex(records.index(q[role+'_steel']))
         for k,w in self.rf.items():w.setValue(q[k]*1000)
@@ -143,9 +150,15 @@ class StairsDialog(BuilderDialog):
                 self.output.setPlainText('พรีวิวรายละเอียดผู้ใช้ • ยังไม่สร้าง\n'+'\n'.join(f'{role}: {n} เส้น / {l:.3f} m / {m:.3f} kg' for role,(n,l,m) in totals.items()))
         except Exception as error:self.visual.invalid(error);self.output.setPlainText(str(error))
     def create(self):
-        self.timer.stop();cmd,host=concrete_command(self.panel.app.scene,self.geometry(),self.pose());self.panel.execute(cmd);self.panel.app.scene.selection={host};self.read_host();self.output.appendPlainText('สร้างคอนกรีตแล้ว • เหล็กต้องตรวจ Host แล้วสร้างแยก • Undo ได้')
+        from .stair_library_ui import tag
+        self.timer.stop();row=self.library.model_source();p=self.geometry();q=self.rebar()
+        if row:from .stair_catalogue import stair_type;stair_type(row['code'],row['name'],p,q,row['id'],row['revision'])
+        cmd,host=concrete_command(self.panel.app.scene,p,self.pose());tag(host,row,p,q);self.panel.execute(cmd);self.panel.app.scene.selection={host};self.read_host();self.output.appendPlainText('สร้างคอนกรีตแล้ว • เหล็กต้องตรวจ Host แล้วสร้างแยก • Undo ได้')
     def update(self):
-        self.timer.stop();cmd,host=concrete_command(self.bound_scene,self.geometry(),self.pose(),self.host(),self.expected);self.panel.execute(cmd);self.panel.app.scene.selection={host};self.read_host();self.output.appendPlainText('อัปเดตคอนกรีตเฉพาะชิ้นแล้ว • เหล็กเดิมยังอยู่ ต้องตรวจ Host ใหม่')
+        from .stair_library_ui import tag
+        self.timer.stop();row=self.library.model_source();p=self.geometry();q=self.rebar()
+        if row:from .stair_catalogue import stair_type;stair_type(row['code'],row['name'],p,q,row['id'],row['revision'])
+        cmd,host=concrete_command(self.bound_scene,p,self.pose(),self.host(),self.expected);tag(host,row,p,q);self.panel.execute(cmd);self.panel.app.scene.selection={host};self.read_host();self.load_values(p,q);self.preview();self.output.appendPlainText('อัปเดตคอนกรีตเฉพาะชิ้นแล้ว • เหล็กเดิมยังอยู่ ต้องตรวจ Host ใหม่')
     def review(self):
         self.timer.stop();host=self.host()
         if self.geometry()!=host.ext['thai_bim']['stair_params'] or not P.same_pose(self.pose(),W.pose(host)):raise ValueError('Concrete preview differs from Host; save concrete or read Host before reviewing bars')

@@ -1,13 +1,13 @@
-# Thai BIM Toolkit 0.15.0
+# Thai BIM Toolkit 0.16.0
 
 Extension สำหรับ IngeTrazo Extension API 2 พัฒนาจากงาน Family10
 ใช้ Python/PySide6 และไลบรารีของ IngeTrazo ไม่มี API key และไม่มีการเรียก AI ในคำสั่งรุ่นนี้
 
 ## ติดตั้งและเปิด
 
-นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py` ไปไว้ใน
+นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py`, `stair_library_ui.py` ไปไว้ใน
 `%APPDATA%\ingetrazo\plugins\thai_bim` แล้วเปิด IngeTrazo ใหม่
-เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.15
+เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.16
 การติดตั้งในครั้งนี้จะเปิดแผงให้ใน session ปัจจุบันด้วย จึงไม่จำเป็นต้องปิดไฟล์ที่ยังไม่บันทึก
 
 API ของ IngeTrazo ช่วง 0.x ยังเปลี่ยนได้ โดยเฉพาะการเชื่อมแผง Render ซึ่งใช้รายละเอียดภายใน
@@ -695,3 +695,34 @@ L/U ใช้เหล็กแต่ละช่วงต่อเข้าช�
 ตรวจแก้ Host/เหล็ก, Undo/Redo, คัดลอก, BBS/QTO, Excel, GLB และบันทึกเปิด IGZ กลับ
 การตรวจ Host ใน BBS ทำครั้งเดียวต่อ Host ต่อการส่งออก เพื่อลดงานซ้ำกับบันไดโค้ง
 ไม่ใช้แคชข้ามการส่งออก จึงยังตรวจพบการแก้ geometry ครั้งถัดไป
+
+
+## 0.16.0 — คลังชนิดบันได RC พร้อมชุดเหล็ก
+
+เปิดไอคอนบันไดเดิม ส่วนบนของไดอะลอกมีคลังชนิดบันไดทั้ง 6 รูปแบบ
+เลือกชนิดเพื่อโหลดรูปตัวอย่างและชุดเหล็ก โดยยังไม่สร้างหรือเปลี่ยนชิ้นงาน
+ตำแหน่ง XYZ และทิศวางคงค่าปัจจุบัน ไม่ถูกบันทึกเป็นชนิด
+ตัวอย่าง ST-01 ถึง ST-06 เป็นค่าเริ่มต้นสำหรับแก้ไข ไม่ใช่แบบที่ผ่านการออกแบบกำลัง
+
+กรอกรหัสและชื่อ ปรับขนาด ชานพัก เหล็กและตารางรอยต่อ แล้วกด **บันทึกชนิด**
+**สำเนาชนิด** เก็บค่าปัจจุบันให้บันทึกเป็นรหัสใหม่; **ใหม่ / ไม่ผูกชนิด** ใช้ค่าปัจจุบันเป็น Custom
+บันทึกชนิดเพิ่ม revision; ลบชนิดลบเฉพาะรายการในคลัง ชิ้นงานเดิมยังอยู่
+คลังถูกบันทึกในโครงการ IGZ และแยกจากคลังบันไดทางตรงรุ่นเดิม
+
+สร้างชิ้นงาน: เลือกชนิด → ตั้ง XYZ/ทิศ → สร้างคอนกรีตชุดใหม่ → ตรวจ Host+เหล็ก → สร้างเหล็ก
+แก้ชิ้นงาน: เลือกชิ้น → อ่านบันไดที่เลือก → เลือกชนิดหรือแก้ค่าพรีวิว → อัปเดตเฉพาะชิ้นที่อ่าน
+→ ตรวจและสร้างเหล็กใหม่ ชิ้นงานเก็บสำเนาชนิดกับ revision; แก้คลังไม่เปลี่ยนชิ้นงานเดิม
+ค่าที่แก้เฉพาะชิ้นถูกเก็บเป็น override โดยไม่แก้ชนิดในคลัง ไม่มีการอัปเดตทุกชิ้นแบบอัตโนมัติ
+ถ้าชิ้นใช้ revision เก่า ช่องชนิดแสดง snapshot ตาม revision จริง ให้เลือกแถวในคลังเพื่ออ่านรุ่นล่าสุด
+ไม่อนุญาตให้หน้าต่างที่อ่านชนิดเก่าบันทึกทับชนิดใหม่; รีเฟรช/เลือกใหม่ หรือสำเนาเป็นชนิดใหม่
+
+ส่งออก JSON แล้วนำไปใช้อีกโครงการได้; นำเข้าเป็นการ **แทนคลังโครงการ** และ Undo ได้
+ไม่รวมชนิดอัตโนมัติ ไม่เปลี่ยนโมเดลเดิม ไฟล์ว่างจะทำให้คลังว่างตามไฟล์
+คลังกลางในเครื่องอยู่ที่ `%APPDATA%\ingetrazo\thai_bim-stair-library.json` แยกจากคลังสมาชิกเดิม
+รองรับชื่อไทย รหัสไม่ซ้ำ สูงสุด 500 ชนิด และไฟล์ JSON ไม่เกิน 4 MB
+การแก้คลังมี Undo/Redo; การส่งออกหรือเขียนคลังกลางเป็นงานไฟล์ ไม่อยู่ใน Undo โมเดล
+
+ผ่าน 153 pure tests และ 523 native checks รวม 477 regression + 46 คลังบันได
+ตรวจ UI, revision/conflict, ชิ้นร่วมชนิดแยกแก้, คัดลอก, Undo/Redo, JSON ไทย, IGZ เปิดกลับ,
+ชุดเหล็ก RB/DB และ BBS/QTO ข้อจำกัดด้านการออกแบบและ Steel ของ 0.15 ยังใช้เหมือนเดิม
+การคลิกวางสองจุดสำหรับบันไดทุกรูปแบบยังเป็นขั้นถัดไป รุ่นนี้ใช้ XYZ/ทิศในไดอะลอก

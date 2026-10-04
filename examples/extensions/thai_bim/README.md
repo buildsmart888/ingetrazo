@@ -1,4 +1,4 @@
-# Thai BIM Toolkit 0.15.0
+# Thai BIM Toolkit 0.16.0
 
 An optional Thai-language extension for IngeTrazo Extension API 2. It adds a
 21-button toolbar and illustrated, modeless dialogs for concrete members,
@@ -6,17 +6,17 @@ roof framing, six RC stair layouts, reinforcement and quantity takeoff.
 It runs locally without an AI service or API key.
 
 [ภาษาไทย / detailed Thai guide](README-th.md) ·
-[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.15.0)
+[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.16.0)
 
 ## Install
 
-1. Download `Thai-BIM-Toolkit-0.15.0.zip` from the release and extract it.
+1. Download `Thai-BIM-Toolkit-0.16.0.zip` from the release and extract it.
 2. Copy the complete `thai_bim` folder into IngeTrazo's **user plugins folder**.
    On Windows this is `%APPDATA%\ingetrazo\plugins\thai_bim`.
    Alternatively, copy this directory from the repository and name it `thai_bim`.
 3. Restart IngeTrazo. Open **Extensions → Thai BIM Toolkit…** or use the new toolbar.
 
-Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py` and `stairs_ui.py`
+Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py` and `stair_library_ui.py`
 together. PySide6 and NumPy are provided by the host application. The plugin
 does not require `openpyxl`; that library is used only by the tests.
 
@@ -81,8 +81,8 @@ in isolated test scenes; they are modeling examples, not construction designs.
 
 ## Verification
 
-The installed 0.15.0 implementation passed **132 pure tests** and
-**477 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
+The installed 0.16.0 implementation passed **153 pure tests** and
+**523 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
 host association, QTO invalidation, IGZ persistence and GLB export. Native checks
 left the user's document geometry unchanged. Evidence is in
 [RELEASE.json](RELEASE.json) and [evidence/live-checks.json](evidence/live-checks.json).
@@ -498,3 +498,38 @@ Excel, GLB and IGZ save/reopen. Synthetic fixtures are not construction designs.
 ![L stair and reinforcement](docs/images/stair-l-dialog.png)
 ![Spiral stair and tangent landings](docs/images/stair-spiral-dialog.png)
 ![Floating RC treads](docs/images/stair-floating-dialog.png)
+
+
+## 0.16.0: project RC stair type library with reinforcement presets
+
+The existing illustrated Stair dialog now contains a dedicated advanced stair
+library. Six editable example types cover every RC layout. A type stores its
+code/name, complete geometry, landings, hand, reinforcement, steel catalogue
+selections, representation and extra connector patterns. XYZ/yaw stay instance
+placement values. Selecting a type loads preview/settings without model edits.
+
+Save, duplicate, delete, refresh, JSON import/export and a separate local shared
+library are available. Types have UUIDs and revisions. Every placed stair keeps
+a frozen type snapshot; changing or deleting a library row does not propagate
+to existing instances. Read one Host and explicitly update it to apply a type.
+Instance overrides are retained independently. A Host's older snapshot is
+labelled with its actual revision, not the current library revision. Concurrent
+stale type saves/deletes and stale-document actions are rejected. Concrete and
+reinforcement updates keep the explicit Host-review workflow.
+
+Project library edits support Undo/Redo and IGZ persistence. Import replaces the
+project stair library and is undoable; it does not merge or change existing
+geometry. Empty imported libraries stay empty. JSON supports Thai names, up to
+500 types and a 4 MB input limit; writes use atomic replacement. Shared-library
+and export file writes are outside model Undo. The shared library is stored
+beside the user plugins directory as `thai_bim-stair-library.json`, independently
+of the legacy member library.
+
+153 pure tests and 523 native checks passed (477 regression + 46 stair library
+checks), including selected updates, sibling preservation, revision conflicts,
+DB presets, connector patterns, copy identity, Unicode files, Undo/Redo and IGZ
+roundtrip with valid BBS/QTO. Synthetic presets are not strength designs. New
+stair types use dialog XYZ/yaw; interactive two-point placement for all new stair
+forms remains the next stage. Steel generation remains unimplemented.
+
+![Stair type library and stored revision](docs/images/stair-type-library.png)

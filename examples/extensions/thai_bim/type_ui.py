@@ -178,6 +178,7 @@ def open_library(panel):
 def install(panel):
     if getattr(panel,'_member_types_installed',False):return
     panel._member_types_installed=True
+    panel.button(panel.members,'คลังชนิดบันได RC ทุกทรง + ชุดเหล็ก…',lambda:__import__(__package__+'.stairs_ui',fromlist=['open_dialog']).open_dialog(panel))
     from .builders import icon
     for key,label,fn in [('Project','คลังชนิดชิ้นงาน / F C B S ST',lambda:open_library(panel)),('Place','คานสองจุด / พื้น / บันไดคลิกวาง',lambda:__import__(__package__+'.multi_place',fromlist=['open_placement']).open_placement(panel))]:
         action=panel.toolbar.addAction(icon(key),label);action.setToolTip(label);action.triggered.connect(lambda checked=False,fn=fn:panel.guard(fn))
