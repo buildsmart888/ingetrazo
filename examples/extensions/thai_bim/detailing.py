@@ -177,5 +177,9 @@ def tables(records,issues=()):
         for row,(_,(_,b,_)) in zip(summary[1:],sorted(grouped.items())):
             row.extend([b.get(k,'') for k in ('slab_mode','slab_role','mesh_specification')])
         for row,r in zip(detail[1:],records):row.extend([r['bbs'].get(k,'') for k in ('slab_mode','slab_role','mesh_specification')])
+    if any(r['bbs'].get('stair_layout') for r in records):
+        summary[0].extend(['Stair layout','Stair role','Length basis']);detail[0].extend(['Stair layout','Stair role','Length basis'])
+        for row,(_,(_,b,_)) in zip(summary[1:],sorted(grouped.items())):row.extend([b.get(k,'') for k in ('stair_layout','stair_role','basis')])
+        for row,r in zip(detail[1:],records):row.extend([r['bbs'].get(k,'') for k in ('stair_layout','stair_role','basis')])
     notes=[['Basis / excluded items'],['Internal shape names; designer supplies dimensions, radius, hooks, lap and anchorage.'],['Cut length = tangent straight lengths + (inside radius + diameter/2) × angle in radians.'],['Lap is represented by two offset bars; extensions project beyond host ends and require adjacent-host review.'],['Nominal circular diameter × input density; mesh facets are a visual approximation.'],['Legacy bars and changed/missing hosts are excluded.']]+[[v] for v in issues]
     return [('BBS',summary),('Bars',detail),('Basis and issues',notes)]

@@ -39,6 +39,7 @@ def update_selected(scene,row):
     row=C.snapshot(row)
     if row['kind']!=kind:raise ValueError('Selected member and type must have the same kind')
     p=copy.deepcopy(r.get('params') or r.get('stair_params'));dims=row['params']
+    if kind=='Stair' and p.get('stair_schema')==2:raise ValueError('Advanced stair types are edited in Stair / landing dialog; legacy straight types cannot replace them')
     if kind=='Stair':
         sp=S.stair_spec(x=p['x'],y=p['y'],z=p['z'],**dims)
     elif p.get('shape')=='polygon':

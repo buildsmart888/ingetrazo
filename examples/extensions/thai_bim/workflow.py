@@ -32,17 +32,24 @@ def bar_unchanged(group):
         return group.xform is None
     except ValueError:return False
 
-def host_matches(group,host):
+def host_matches(group,host,cache=None):
     if host is None:return False
     rec=group.ext['thai_bim']
     try:
-        token=host_token(host)
+        if cache is not None and host.uid in cache:token=cache[host.uid]
+        else:
+            token=host_token(host)
+            if cache is not None:cache[host.uid]=token
+        if token is None:return False
         if token[2]!=rec.get('host_hash'):return False
         if 'host_pose' in rec:return P.same_pose(token[3],rec['host_pose']) and bar_unchanged(group)
         return host.xform is None and bar_unchanged(group)
-    except ValueError:return False
+    except ValueError:
+        if cache is not None:cache[host.uid]=None
+        return False
 
 def bar_specs(kind,host_params,ui_params):
+    if host_params.get('stair_schema')==2:raise ValueError('Use advanced Stair / landing reinforcement dialog for schema 2 stairs')
     if host_params.get('shape')=='polygon':raise ValueError('Polygon slab reinforcement is not implemented; do not use a rectangular cage for this outline')
     p=copy.deepcopy(ui_params)
     for k in ('cover','diameter','tie_diameter','spacing','inside_radius','tie_inside_radius','hook_length','tie_hook_length','lap_length','extension_start','extension_end'):

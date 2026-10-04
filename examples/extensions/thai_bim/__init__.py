@@ -21,7 +21,7 @@ from .visuals import launcher, decorate_multi, decorate_cut
 from .builders import add_tools
 
 KEY='thai_bim'
-TITLE='Thai BIM 0.14'
+TITLE='Thai BIM 0.15'
 
 
 class ExchangeGroups(Command):
@@ -88,13 +88,15 @@ class NormalizeColors(Command):
 def mesh_fingerprint(group):
     # Installed 0.x builds expose either vectors or Vertex objects on faces.
     faces=[[getattr(v,'position',v).toTuple() for v in f.vertices] for f in group.mesh.faces]
+    if group.children:
+        for child in group.children:faces.extend([[getattr(v,'position',v).toTuple() for v in f.vertices] for f in world_mesh(child).faces])
     if faces:return E.fingerprint(faces)
     return E.fingerprint([[getattr(v,'position',v).toTuple() for v in (e.a,e.b)] for e in group.mesh.edges])
 
 
 def make_group(spec, assembly='', previous=None):
     mesh=Mesh()
-    for ring in spec['faces']:
+    for ring in (() if spec.get('components') else spec['faces']):
         face=mesh.add_face([QVector3D(*p) for p in ring])
         if face is None: raise ValueError('สร้างผิวชิ้นงานไม่ได้')
         face.attrs['color']=tuple(spec['color'])
@@ -103,21 +105,33 @@ def make_group(spec, assembly='', previous=None):
         pts=spec['bar_path'];pairs=list(zip(pts,pts[1:]))
         if spec.get('bar_closed'):pairs.append((pts[-1],pts[0]))
         for a,b in pairs:mesh.add_edge(QVector3D(*a),QVector3D(*b))
-    measured=None if wire else bim.face_set_volume(list(mesh.faces))
+    children=[]
+    if spec.get('components'):
+        for part in spec['components']:
+            partmesh=Mesh()
+            for ring in part['faces']:partmesh.add_face([QVector3D(*p) for p in ring]).attrs['color']=tuple(spec['color'])
+            amount=bim.face_set_volume(list(partmesh.faces))
+            if amount is None or amount<=1e-9:raise ValueError('Stair component is not a closed solid: '+part['role'])
+            child=Group(partmesh,name=part['role']);bim.tag_group(child,'IfcStairFlight' if part['kind'] in ('Flight','Curved') else 'IfcSlab',child.name);child.ext={'thai_bim_part':dict(role=part['role'],volume_m3=amount)};children.append(child)
+        measured=sum(child.ext['thai_bim_part']['volume_m3'] for child in children)
+    else:measured=None if wire else bim.face_set_volume(list(mesh.faces))
     if not wire and (measured is None or measured <= 1e-9):
         raise ValueError('ชิ้นงานไม่เป็น solid ปิด: '+spec['slot'])
     g=Group(mesh,name='TBIM '+spec['kind']+' '+spec['slot'])
+    if children:g.adopt(children)
     if spec.get('params') and spec['kind'] in ('Footing','Column','Beam','Slab'):
         # Native Move/Rotate composes a pose instead of baking vertices for these hosts.
         g.xform=QMatrix4x4()
     from .management import layer_name
     g.layer=layer_name(spec)
+    for child in children:child.layer=g.layer
     bim.tag_group(g,spec['ifc'],g.name)
     rec={k:copy.deepcopy(spec[k]) for k in ('slot','kind','discipline','item','unit','quantity','note')}
     rec.update(id=str(uuid.uuid4()),schema=1,version=E.VERSION,assembly=assembly,
                source='User parameters',volume_m3=measured,params=spec.get('params'),
                axis=spec.get('axis'),roof_params=spec.get('roof_params'),plane_id=spec.get('plane_id'),
                plane_vertices=spec.get('plane_vertices'),fingerprint=mesh_fingerprint(g))
+    if children:rec['composite_stair']=True
     g.ext={KEY:rec}
     for k in ('stair_params','bar_path','bar_diameter','bar_closed','bbs','representation','steel'):
         if k in spec:rec[k]=copy.deepcopy(spec[k])
@@ -156,7 +170,7 @@ def identity_issues(scene):
 def bbs_records(scene):
     """Only trusted detailed bars with their original, unchanged host."""
     from .workflow import host_matches
-    records=[];issues=identity_issues(scene)
+    records=[];issues=identity_issues(scene);host_cache={}
     if issues:return [],issues
     legacy=sum((g.ext or {}).get('family10',{}).get('class')=='IfcReinforcingBar' for g in scene.groups)
     if legacy:issues.append(f'Family10 legacy bars excluded from fabrication BBS: {legacy}; source metadata / nominal paths lack verified hooks, laps and anchorage')
@@ -167,7 +181,7 @@ def bbs_records(scene):
         if not r.get('bbs'):
             issues.append('Legacy / undetailed bar excluded: '+g.name);continue
         host=byuid.get(r.get('host_uid'))
-        if not host_matches(g,host):
+        if not host_matches(g,host,host_cache):
             issues.append('Changed geometry / missing host excluded: '+g.name);continue
         b=r['bbs']
         if abs(E.finite(b['length_m'])-E.finite(r['quantity']))>1e-8:
@@ -178,7 +192,7 @@ def bbs_records(scene):
 
 def quantity_rows(scene):
     from .workflow import bar_unchanged,host_matches
-    rows=[]; issues=identity_issues(scene)
+    rows=[]; issues=identity_issues(scene);host_cache={}
     byuid={g.uid:g for g in scene.groups}
     for g in scene.groups:
         ext=g.ext or {}; ours=ext.get(KEY); legacy=ext.get('family10')
@@ -192,7 +206,14 @@ def quantity_rows(scene):
             if not unchanged:
                 q=None;basis='Unverified edited geometry';issues.append('Recheck quantity: '+g.name)
             elif r['unit']=='m3':
-                q=bim.face_set_volume(list(world_mesh(g).faces));basis='Measured gross solid volume'
+                if r.get('composite_stair'):
+                    from .workflow import pose
+                    from .placement import rigid_matrix
+                    try:
+                        rigid_matrix(pose(g));amounts=[bim.face_set_volume(list(world_mesh(child).faces)) for child in g.children]
+                        q=sum(amounts) if amounts and all(a is not None for a in amounts) else None;basis='Sum of individually closed stair component volumes; rigid placement'
+                    except ValueError:q=None;issues.append('Non-rigid stair placement: '+g.name)
+                else:q=bim.face_set_volume(list(world_mesh(g).faces));basis='Measured gross solid volume'
             elif g.xform is not None:
                 if r.get('bar_path') and bar_unchanged(g):basis='Analytic bar cut length under tracked rigid placement'
                 elif r.get('axis'):
@@ -204,7 +225,7 @@ def quantity_rows(scene):
             if r.get('bar_path') and unchanged and (g.xform is None or bar_unchanged(g)):basis='Analytic detailed bar cut length' if r.get('bbs') else 'Net model bar path; hooks/laps excluded'
             if r.get('host_uid'):
                 host=byuid.get(r['host_uid'])
-                if not host_matches(g,host):
+                if not host_matches(g,host,host_cache):
                     q=None;basis='Unverified changed/missing rebar host';issues.append('Recheck reinforcement host: '+g.name)
             if r.get('copy_review_required'):
                 q=None;basis='Unverified copied assembly / reinforcement';issues.append('Review copied member: '+g.name)
@@ -486,6 +507,8 @@ def setup(app):
     install_selected_edit(panel)
     from .slab_ui import install as install_slab_rebar
     install_slab_rebar(panel)
+    from .stairs_ui import install as install_advanced_stairs
+    install_advanced_stairs(panel)
     return panel
 
 

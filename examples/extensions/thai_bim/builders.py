@@ -245,6 +245,7 @@ class RebarDialog(BuilderDialog):
         if len(selected)!=1:raise ValueError('เลือกชิ้นคอนกรีต Thai BIM หนึ่งชิ้น')
         host=selected[0];rec=(host.ext or {}).get('thai_bim',{})
         params=rec.get('params') or rec.get('stair_params')
+        if params and params.get('stair_schema')==2:raise ValueError('Use advanced Stair / landing reinforcement dialog for this Host')
         if any((g.ext or {}).get('thai_bim',{}).get('slab_rebar_schema') for g in scene.groups if (g.ext or {}).get('thai_bim',{}).get('host_uid')==host.uid):raise ValueError('Use Slab reinforcement / mesh / dowel dialog for this Host')
         if not params or rec.get('kind') not in ('Footing','Column','Beam','Slab','Stair'):raise ValueError('รองรับ RC และบันไดตรงที่สร้างด้วย Thai BIM')
         if params.get('shape')=='polygon':raise ValueError('เหล็กพื้นหลายจุดยังไม่รองรับ; ไม่ใช้ตะแกรงสี่เหลี่ยมแทนขอบเขตจริง')
@@ -383,6 +384,12 @@ def add_tools(panel):
     panel._v04_tools=True
     panel.builder_dialogs={}
     def open_builder(kind):
+        if kind=='Stair':
+            from .stairs_ui import open_dialog
+            return open_dialog(panel)
+        if kind=='Rebar' and len(panel.app.scene.selection)==1 and ((next(iter(panel.app.scene.selection)).ext or {}).get('thai_bim',{}).get('stair_params') or {}).get('stair_schema')==2:
+            from .stairs_ui import open_dialog
+            return open_dialog(panel)
         if kind=='Rebar' and len(panel.app.scene.selection)==1 and next(iter(panel.app.scene.selection)).ext.get('thai_bim',{}).get('kind')=='Slab':
             from .slab_ui import open_dialog
             return open_dialog(panel)
@@ -415,7 +422,7 @@ def add_tools(panel):
     read_grid()
     panel.button(panel.members,'ใช้ขนาดตัวอย่างชนิดนี้',panel.apply_member_preset)
     panel.button(panel.members,'เหล็กเสริมของชิ้นที่เลือก…',lambda:open_builder('Rebar'))
-    panel.button(panel.members,'สร้างบันได RC ตรง…',lambda:open_builder('Stair'))
+    panel.button(panel.members,'บันได RC / ชานพัก / หลายรูปแบบ…',lambda:open_builder('Stair'))
     panel.button(panel.roof,'หลังคาจั่ว / ปั้นหยา / เพิง…',lambda:open_builder('Roof'))
     toolbar=QToolBar('Thai BIM 0.11',panel.app.window);toolbar.setObjectName('thai_bim_toolbar');toolbar.setIconSize(QSize(28,28));toolbar.setMovable(True);toolbar.setFloatable(True)
     panel.app.window.addToolBarBreak(Qt.TopToolBarArea)

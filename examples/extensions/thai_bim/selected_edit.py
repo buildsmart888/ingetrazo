@@ -83,6 +83,9 @@ class SelectedEditDialog(BuilderDialog):
         d=RebarDialog(self.panel);self.rebar_dialog=d;d.read_host();d.show()
 
 def open_dialog(panel):
+    if len(panel.app.scene.selection)==1 and ((next(iter(panel.app.scene.selection)).ext or {}).get('thai_bim',{}).get('stair_params') or {}).get('stair_schema')==2:
+        from .stairs_ui import open_dialog as advanced_stair
+        return advanced_stair(panel)
     old=getattr(panel,'selected_edit_dialog',None)
     if old:old.close();old.deleteLater()
     d=SelectedEditDialog(panel);panel.selected_edit_dialog=d

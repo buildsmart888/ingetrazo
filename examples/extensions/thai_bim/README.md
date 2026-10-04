@@ -1,22 +1,22 @@
-# Thai BIM Toolkit 0.14.0
+# Thai BIM Toolkit 0.15.0
 
 An optional Thai-language extension for IngeTrazo Extension API 2. It adds a
 21-button toolbar and illustrated, modeless dialogs for concrete members,
-roof framing, straight concrete stairs, reinforcement and quantity takeoff.
+roof framing, six RC stair layouts, reinforcement and quantity takeoff.
 It runs locally without an AI service or API key.
 
 [ภาษาไทย / detailed Thai guide](README-th.md) ·
-[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.14.0)
+[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.15.0)
 
 ## Install
 
-1. Download `Thai-BIM-Toolkit-0.14.0.zip` from the release and extract it.
+1. Download `Thai-BIM-Toolkit-0.15.0.zip` from the release and extract it.
 2. Copy the complete `thai_bim` folder into IngeTrazo's **user plugins folder**.
    On Windows this is `%APPDATA%\ingetrazo\plugins\thai_bim`.
    Alternatively, copy this directory from the repository and name it `thai_bim`.
 3. Restart IngeTrazo. Open **Extensions → Thai BIM Toolkit…** or use the new toolbar.
 
-Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py` and `slab_ui.py`
+Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py` and `stairs_ui.py`
 together. PySide6 and NumPy are provided by the host application. The plugin
 does not require `openpyxl`; that library is used only by the tests.
 
@@ -32,7 +32,7 @@ for discovery and platform-specific plugin locations. The 0.x host API may chang
 | Footing, column, beam, slab | Editable RC presets, illustrated dimensions, Grid/Level placement, selected-member updates |
 | Roof | Gable, hip/pyramid and shed; roof covers, C-section rafters, battens and shared ridge/hip members |
 | Multi-plane roof | Read actual `IfcRoof` faces, preview clipped rafters/battens, inspect cross-sections and advanced JSON |
-| Stair | Straight RC flight with user-set riser count, going and waist thickness; selected-flight updates |
+| Stair | Straight, L, U, Spiral, Circular and Floating RC forms, landings and selected-host updates |
 | Reinforcement | Footing/slab meshes, column/beam cages and straight-stair bottom meshes, associated with the selected Thai BIM concrete host |
 | Click placement | Centre/corner anchors, Grid/Level, Z rotation, repeated native viewport placement with one Undo per click |
 | Host review | Detect changed hosts, preview before/after bars, require renewed review after changes, preserve IDs during regeneration |
@@ -65,9 +65,7 @@ Default dimensions are editable examples, not engineered sizes.
 - BBS includes analytic arc lengths and nominal circular diameter mass at user-supplied density. Legacy, edited or independently transformed bars, and bars with changed/missing hosts are excluded. Rectangular slab and straight-stair bars now have detailed BBS. Legacy cages upgrade only after explicit host review and regeneration.
 - Main laps are modeled as two parallel bars offset inward by 1.5 diameters. Nearby parallel main-bar collisions are rejected; whole-model clashes and adjacent concrete embedment are not checked.
 - Concrete quantities are gross solids; intersections are not deducted.
-- The stair tool currently supports straight flights, without landings or rails.
-  The waist extends below the lower-floor datum at the start; support interfaces
-  must be detailed separately.
+- Legacy straight stairs retain their original geometry. New RC stairs support six layouts and landings; support interfaces, rails, headroom and strength require separate design.
 - Roof sections are user presets. Connections, strength checks, tile-gauge
   verification, tile overlaps and accessories are not included.
 - Concrete edits require explicit reinforcement review/regeneration. Rigid translation and rotation are supported; scale, shear, mirrors and manually edited host meshes remain blocked.
@@ -83,8 +81,8 @@ in isolated test scenes; they are modeling examples, not construction designs.
 
 ## Verification
 
-The installed 0.14.0 implementation passed **105 pure tests** and
-**343 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
+The installed 0.15.0 implementation passed **132 pure tests** and
+**477 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
 host association, QTO invalidation, IGZ persistence and GLB export. Native checks
 left the user's document geometry unchanged. Evidence is in
 [RELEASE.json](RELEASE.json) and [evidence/live-checks.json](evidence/live-checks.json).
@@ -455,3 +453,48 @@ Validation: 105 pure tests and 343 native checks (298 regression + 45 slab check
 including native Qt create, polygon clipping, mode conversion, steel catalogues,
 role-separated Excel, Full/Lightweight geometry, Unicode IGZ, stale review and
 Undo/Redo. Synthetic examples only; user document geometry remains unchanged.
+
+
+## 0.15.0: six RC stair forms, landings and explicit connection patterns
+
+The existing Stair toolbar button opens an illustrated modeless dialog. Choose
+Straight, L, U, Spiral, Circular or Floating, hand, XYZ and yaw. L/U include an
+intermediate landing; U requires equal flight riser counts. Optional start/end
+landings are tangent rectangles on curved stairs. Floating creates separate RC
+treads without landings or a supporting wall/spine. New stairs include a complete
+final tread at the upper datum; the separate legacy straight tool keeps its
+original upper-floor-as-final-step convention.
+
+Create concrete, read the selected Host, set reinforcement, review Host+bars,
+then explicitly create/update the reviewed cage. Dimensions and bar settings are
+per Host. Nested closed flight/landing parts keep the parent identity and layer;
+QTO sums gross part volumes without intersection deductions. BBS records stair
+layout, bar role and length basis. Edited concrete invalidates old cage quantities
+until renewed review and regeneration. Copy adoption produces independent cages.
+
+Straight/L/U main bars use rounded cranks into available landings with user-set
+extension and transverse bars. Landing mats use the slab geometry engine.
+Spiral/Circular main bars use analytic helix length; radial bars and landing mats
+are separate. Floating has top cantilever bars with explicit outside embedment
+and bottom distribution bars. All support the existing RB/DB/ASTM catalogue and
+Centreline, Lightweight or Full representation.
+
+The additional connection table accepts straight/L patterns with name, XYZ,
+angle, length, signed vertical leg, count and spacing. Units are metres except
+angle in degrees; coordinates are Host-local Left coordinates before Right-hand
+reflection. These are designer-specified patterns, without adjacent-host,
+anchorage, strength, headroom or whole-building clash validation. L/U main bars
+are separate flights extending into landings, not one continuous 3D bent bar.
+Supports, centre columns and railings are not generated. Advanced stairs are not
+yet integrated into the legacy type catalogue. Structural steel generation is
+not implemented; material_system only reserves a future schema boundary.
+
+BBS validates each Host fingerprint once per export rather than once per bar.
+This cache is local to that export; changed nested geometry is detected on the
+next export. 132 pure tests and 477 native checks passed, including all forms,
+native closed solids, Qt actions, Undo/Redo, copy identity, stale-source guards,
+Excel, GLB and IGZ save/reopen. Synthetic fixtures are not construction designs.
+
+![L stair and reinforcement](docs/images/stair-l-dialog.png)
+![Spiral stair and tangent landings](docs/images/stair-spiral-dialog.png)
+![Floating RC treads](docs/images/stair-floating-dialog.png)

@@ -1,13 +1,13 @@
-# Thai BIM Toolkit 0.14.0
+# Thai BIM Toolkit 0.15.0
 
 Extension สำหรับ IngeTrazo Extension API 2 พัฒนาจากงาน Family10
 ใช้ Python/PySide6 และไลบรารีของ IngeTrazo ไม่มี API key และไม่มีการเรียก AI ในคำสั่งรุ่นนี้
 
 ## ติดตั้งและเปิด
 
-นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py` ไปไว้ใน
+นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py` ไปไว้ใน
 `%APPDATA%\ingetrazo\plugins\thai_bim` แล้วเปิด IngeTrazo ใหม่
-เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.14
+เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.15
 การติดตั้งในครั้งนี้จะเปิดแผงให้ใน session ปัจจุบันด้วย จึงไม่จำเป็นต้องปิดไฟล์ที่ยังไม่บันทึก
 
 API ของ IngeTrazo ช่วง 0.x ยังเปลี่ยนได้ โดยเฉพาะการเชื่อมแผง Render ซึ่งใช้รายละเอียดภายใน
@@ -661,3 +661,37 @@ slot เดิมรักษา native/business IDs; Undo/Redo และ IGZ �
 ทดสอบ Qt create button, polygon เว้า, mode conversion, RB/DB fields, Full/Lightweight/Centreline,
 QTO/BBS/Excel, saved parameters, identity guards, stale preview, Undo/Redo และ IGZ reopen
 geometry ในไฟล์ผู้ใช้ไม่เปลี่ยน; หลักฐานและตัวอย่างใช้โมเดลสังเคราะห์แยก
+
+
+## 0.15.0 — บันได RC หลายรูปแบบและรายละเอียดเหล็กต่อ
+
+ไอคอนบันไดเดิมเปิดไดอะลอกใหม่พร้อมรูปตัวอย่าง รองรับ Straight, L, U, Spiral,
+Circular และ Floating เลือกซ้าย/ขวา ขนาด จำนวนขั้น ชานพักต้น/ปลาย และตำแหน่ง XYZ/มุมได้
+L/U มีชานพักกลาง; U ต้องแบ่งจำนวนลูกตั้งเท่ากันทั้งสองช่วงเพื่อให้ระยะวิ่งตรงกัน
+Spiral/Circular มีชานพักสี่เหลี่ยมตามแนวสัมผัส; Floating เป็นชิ้นขั้น RC แยก ไม่สร้างชานพัก
+รูปแบบใหม่นับลูกนอนสุดท้ายเต็มที่ระดับบน ต่างจากเครื่องมือทางตรงเดิมซึ่งให้พื้นชั้นบนเป็นขั้นสุดท้าย
+เครื่องมือเดิมยังเปิดได้จากปุ่มแยก และไม่แปลงชิ้นงานเดิมโดยอัตโนมัติ
+
+ขั้นตอน: เลือกรูปแบบ → สร้างคอนกรีต → อ่าน Host ที่เลือก → กำหนดเหล็ก → ตรวจ Host+เหล็ก
+→ สร้าง/อัปเดตเหล็กที่ตรวจแล้ว การแก้คอนกรีตปรับเฉพาะ Host ที่อ่าน ไม่สร้างแทนชิ้นงานอื่น
+ใช้ RB/DB หรือรายการ ASTM เดิมได้ ตั้งค่าต่อ Host และเลือก Centreline/Lightweight/Full
+QTO รวมปริมาตรชิ้นส่วนปิดภายในกลุ่มบันได; BBS แยกบทบาทเหล็กกับรูปแบบบันได
+เหล็กเก่าถูกระงับจากปริมาณเมื่อ Host เปลี่ยน จนกว่าจะตรวจและสร้างใหม่
+
+ทางตรง/L/U มีเหล็กหลักดัดเข้าชานพักตามระยะที่กรอก เหล็กขวาง และตะแกรงชานพัก
+Spiral/Circular ใช้ความยาวเหล็กเกลียวจากสูตรวิเคราะห์ ไม่ใช้ผลรวมเส้นย่อยของพรีวิว
+Floating มีเหล็กบนพร้อมระยะยื่นเข้ารองรับที่ผู้ใช้กำหนด และเหล็กกระจายด้านล่าง
+ตารางเหล็กต่อพิเศษเพิ่มเส้นตรง/รูป L ได้ ระบุชื่อ XYZ มุม ความยาว ขา จำนวน ระยะห่าง
+หน่วยเมตร ยกเว้นมุมเป็นองศา; XYZ อ้างอิงพิกัด Left ของ Host ก่อนสะท้อนเป็น Right
+
+ข้อจำกัด: เป็นโมเดลตามค่าที่กรอก ไม่วิเคราะห์กำลัง ระยะฝัง ระยะศีรษะ หรือการชนทั้งอาคาร
+ไม่สร้างผนังรองรับขั้นลอย เสากลาง ราวบันได หรือคานรองรับโดยอัตโนมัติ
+เหล็กต่อพิเศษต้องกำหนดโดยผู้ออกแบบ ไม่มีการตรวจว่าเข้าชิ้นงานข้างเคียงจริง
+L/U ใช้เหล็กแต่ละช่วงต่อเข้าชานพัก ไม่ใช่เหล็กเส้นเดียวต่อเนื่องโค้งสามมิติทั้งบันได
+ปริมาตรคอนกรีตเป็นปริมาตรรวมรายส่วน ไม่หักซ้อนทับ Advanced stair ยังไม่อยู่ในคลังชนิดเดิม
+ข้อมูล material_system เตรียมทางให้ Steel ในอนาคต แต่ยังไม่มีตัวสร้างบันไดเหล็กรูปพรรณ
+
+ผ่าน 132 pure tests และ 477 native checks รวมการสร้างทั้ง 6 รูปแบบ เหล็ก Full/Lightweight,
+ตรวจแก้ Host/เหล็ก, Undo/Redo, คัดลอก, BBS/QTO, Excel, GLB และบันทึกเปิด IGZ กลับ
+การตรวจ Host ใน BBS ทำครั้งเดียวต่อ Host ต่อการส่งออก เพื่อลดงานซ้ำกับบันไดโค้ง
+ไม่ใช้แคชข้ามการส่งออก จึงยังตรวจพบการแก้ geometry ครั้งถัดไป

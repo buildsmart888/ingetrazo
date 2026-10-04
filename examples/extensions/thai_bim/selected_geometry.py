@@ -10,7 +10,12 @@ def edit_spec(record,values):
     kind=record['kind'];p=copy.deepcopy(record.get('params') or record.get('stair_params'))
     if set(values)!=set(editable(kind)):raise ValueError('Edit fields must match the selected member kind')
     values={k:E.finite(v) for k,v in values.items()}
-    if kind=='Stair':p.update(values);return S.stair_spec(**p)
+    if kind=='Stair':
+        p.update(values)
+        if p.get('stair_schema')==2:
+            from .stairs import spec
+            return spec(**p)
+        return S.stair_spec(**p)
     if p.get('shape')=='polygon':
         result,_=G.polygon(p['footprint'],p['z'],dict(height=values['height']));return result
     if kind in ('Footing','Column'):
