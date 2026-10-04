@@ -1,5 +1,5 @@
 {
-  "version": "0.10.0",
+  "version": "0.10.1",
   "passed": [
     "19 actual toolbar actions with nonempty icons",
     "fresh setup has 19 icons",
@@ -145,6 +145,22 @@
     "rejected stale command retains all current sheets",
     "native IGZ roundtrip retains sheets metadata and anchors",
     "scale person excluded from saved drawing views",
-    "drawing tests leave active user model unchanged"
+    "drawing tests leave active user model unchanged",
+    "native Copy reproduces duplicate business IDs",
+    "copy then typed beam automatically repairs identity and retains all members",
+    "original ID and native instance identities remain unchanged",
+    "repair does not detach shared geometry or move copies",
+    "one Undo restores exact copy metadata and removes only new beam",
+    "Redo reuses repaired IDs and the same new member",
+    "copy of a copy followed by normal member creation succeeds",
+    "adopted copy selected edit leaves original shared definition intact",
+    "copied rebar quarantined without joining original Host assembly",
+    "original BBS remains usable and copied bar is excluded",
+    "copied bar QTO quantity is unverified instead of falsely counted",
+    "explicit copy repair Undo restores original duplicate bar metadata",
+    "stale identity repair does not overwrite intervening metadata edits",
+    "repeated copy repair is idempotent",
+    "native IGZ persists repaired identity and copied-bar quarantine",
+    "copy tests preserve actual user document geometry"
   ]
 }

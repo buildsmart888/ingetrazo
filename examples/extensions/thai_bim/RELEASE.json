@@ -1,9 +1,9 @@
 {
   "name": "Thai BIM Toolkit",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "api_version": 2,
   "license": "GPL-3.0-or-later",
-  "pure_tests": 53,
+  "pure_tests": 59,
   "native_checks": [
     "19 actual toolbar actions with nonempty icons",
     "fresh setup has 19 icons",
@@ -149,17 +149,33 @@
     "rejected stale command retains all current sheets",
     "native IGZ roundtrip retains sheets metadata and anchors",
     "scale person excluded from saved drawing views",
-    "drawing tests leave active user model unchanged"
+    "drawing tests leave active user model unchanged",
+    "native Copy reproduces duplicate business IDs",
+    "copy then typed beam automatically repairs identity and retains all members",
+    "original ID and native instance identities remain unchanged",
+    "repair does not detach shared geometry or move copies",
+    "one Undo restores exact copy metadata and removes only new beam",
+    "Redo reuses repaired IDs and the same new member",
+    "copy of a copy followed by normal member creation succeeds",
+    "adopted copy selected edit leaves original shared definition intact",
+    "copied rebar quarantined without joining original Host assembly",
+    "original BBS remains usable and copied bar is excluded",
+    "copied bar QTO quantity is unverified instead of falsely counted",
+    "explicit copy repair Undo restores original duplicate bar metadata",
+    "stale identity repair does not overwrite intervening metadata edits",
+    "repeated copy repair is idempotent",
+    "native IGZ persists repaired identity and copied-bar quarantine",
+    "copy tests preserve actual user document geometry"
   ],
   "native_tested_source_sha256": {
-    "__init__.py": "f5a2a695ca7e654c97c910240dd12ae855eaeb638abc9cd41182ab8364ccaf8c",
-    "engine.py": "4bd0538935aeb251b7e296972be9f9364c4f203d2f2f525b2a79114253d6ade6",
+    "__init__.py": "eb6e30b3f6b869777d7ac42e4c38656f9e4a3e67597729a181f66890d27c749f",
+    "engine.py": "474d00bbe2e368be1fb6554b1354d92ec85df582ddfe2db7e6b5dde921f9d75a",
     "visuals.py": "d886e061ab2ad9d6f0b208a0ff082637a59d08694aa4eb24c8c8e880b0c4284e",
     "structures.py": "812651feb2c1c1341a6099005cbee76070a2db8032070c07fe59b001f9b265ef",
     "builders.py": "3c663e61ca3c07832fb8466f9c90720428628057e1249123d8b982246a86ae22",
     "detailing.py": "b11ef9c72b1cb2c564d8a3160e64a37c229ebace5fca8dd80ae071b15a5f345a",
     "placement.py": "0917cff0ad9db53c8d65b7a3a5a9c41bf2e6024c8ec560fec2e148e2e7b75632",
-    "workflow.py": "cd99c95e1af2331a1e01b4bc3f37c1e3406cb15c63f5aaf0d98a98a10f6f4814",
+    "workflow.py": "0731ded7bd01ee6c8c45d0f4e228ec2c7d658fb764509a8a88954ff0b2a9d2fa",
     "steel.py": "680d13139e0677a1a015b15d8b93afdc390075abcaec04e921a6cecc97623114",
     "management.py": "632add9f120840f544cb4b7881d21c484da8599d6f29cee84e887bb1be9834de",
     "audit.py": "33cd59ddaa46e18ac4a260fc768c34c2efe166a0cb170b96392d5bad4c8ecdf5",
@@ -168,11 +184,13 @@
     "catalogue.py": "3a800189834349cf62eb619676b853d65913e5e3556ac1ab2182824c5e0d11a4",
     "path_geometry.py": "a79e7a451892bfc0faa2d7687755f9d8041ade9a8f3abda573426a654226a309",
     "type_ui.py": "f00e9aadf7844c90ece4f79c7b2a3af116f15ec63b2c374e1fa327fe3a8706be",
-    "multi_place.py": "32d0a766fd1074c04efefe6b5bf853e683d606b1925c26325263cc52cd722996"
+    "multi_place.py": "94374086dee4bce77ec7619d09e30cd118ed39f9398f62aac59c0f81105e908f",
+    "identity_data.py": "d2f89dd52d267f606ee89caf4001ee3e3d32e3001940f29d8e222ffe44525dcb",
+    "copy_identity.py": "01feff69842fdcbc113a0e38748bd48d0ff2a893eb2aa225526f4578a493bfc4"
   },
-  "native_checks_context": "Windows IngeTrazo API2; 79 regression, 39 member-library/point-placement and 27 drawing checks. Native Qt mouse/key and visible framebuffer preview verified. Default technical renderer and five vector PDF frames verified; original blank document unchanged. Family10 whole-project evidence remains 0.7.1.",
+  "native_checks_context": "Windows IngeTrazo API2; 79 regression, 39 member-library/point-placement 27 drawing and 16 native copy/adoption checks. Native Qt mouse/key and visible framebuffer preview verified. Default technical renderer and five vector PDF frames verified; original blank document unchanged. Family10 whole-project evidence remains 0.7.1.",
   "pdf_verification": {
-    "version": "0.10.0",
+    "version": "0.10.1",
     "pages": [
       {
         "sheet": "A101",
@@ -180,7 +198,7 @@
           420.1583333333333,
           297.0388888888889
         ],
-        "vector_lines": 514,
+        "vector_lines": 510,
         "raster_images": 0,
         "metre_scale_segments_mm": [
           19.999999962666667,
@@ -212,7 +230,7 @@
           420.1583333333333,
           297.0388888888889
         ],
-        "vector_lines": 173,
+        "vector_lines": 171,
         "raster_images": 0,
         "metre_scale_segments_mm": [
           19.999999962666667,
@@ -228,7 +246,7 @@
           420.1583333333333,
           297.0388888888889
         ],
-        "vector_lines": 137,
+        "vector_lines": 135,
         "raster_images": 0,
         "metre_scale_segments_mm": [
           19.999999962666667,
@@ -244,7 +262,7 @@
           420.1583333333333,
           297.0388888888889
         ],
-        "vector_lines": 315,
+        "vector_lines": 256,
         "raster_images": 0,
         "metre_scale_segments_mm": [
           19.999999962666667,
@@ -255,7 +273,7 @@
         "measured_grid_dimension_paper_mm": 80
       }
     ],
-    "pdf_sha256": "8b866bd1b6d350413508f39b7552a2fc10272891557e15cc686c44aad3b597f6",
+    "pdf_sha256": "2c01308ba1cc0c5a53e33e630b3cf02315602a75e6202e2905cdf21fd302932a",
     "visual_review": "All five Poppler-rendered pages inspected; explicit levels separated with leaders; synthetic coordination fixture, not construction design"
   },
   "limitations": [
@@ -273,14 +291,14 @@
     "User-defined reinforcement details are not strength design or certified standard compliance; existing 0.8.0 detailing limitations apply"
   ],
   "source_sha256": {
-    "__init__.py": "c7f8957ccc3a4bf1a2ee3851512125ae59acadb593f179be5dd911119a88edba",
-    "engine.py": "144379457f4b518074bac793f906bf54509a83ae3905c607d23174933d2cbb94",
+    "__init__.py": "86b325c8fbf48f20157f8c66df697bf25fe4dbbe2f7fd7154a70ad48204f15aa",
+    "engine.py": "f4fa4f3b15cd1872901808cfc5cef5d0fab3e6b28d5193a0c816dbc015a9782e",
     "visuals.py": "d886e061ab2ad9d6f0b208a0ff082637a59d08694aa4eb24c8c8e880b0c4284e",
     "structures.py": "812651feb2c1c1341a6099005cbee76070a2db8032070c07fe59b001f9b265ef",
     "builders.py": "a170bf93def96487bf6fa5bdd652b8d1fc5d313de3a0065d591f9035cba8c873",
     "detailing.py": "b11ef9c72b1cb2c564d8a3160e64a37c229ebace5fca8dd80ae071b15a5f345a",
     "placement.py": "0917cff0ad9db53c8d65b7a3a5a9c41bf2e6024c8ec560fec2e148e2e7b75632",
-    "workflow.py": "79bf746b1739a85bb13d871ac8cb09a0d7c9c6dfea135beffd201c806d5116c4",
+    "workflow.py": "e1cc2e2a96703e35211576cb128b71b57f4ab098daf414d235db311ef8b78d0a",
     "steel.py": "680d13139e0677a1a015b15d8b93afdc390075abcaec04e921a6cecc97623114",
     "management.py": "cd14a87dd38bc9349d6c67c3e28c17a75ebfe614a190dc6acfa2be4670604a0a",
     "audit.py": "09bf169302cee47f1896a688097c7d9a4abacae4a1ec58eb0fcb378068ab2e8b",
@@ -289,7 +307,9 @@
     "catalogue.py": "3a800189834349cf62eb619676b853d65913e5e3556ac1ab2182824c5e0d11a4",
     "path_geometry.py": "a79e7a451892bfc0faa2d7687755f9d8041ade9a8f3abda573426a654226a309",
     "type_ui.py": "f00e9aadf7844c90ece4f79c7b2a3af116f15ec63b2c374e1fa327fe3a8706be",
-    "multi_place.py": "32d0a766fd1074c04efefe6b5bf853e683d606b1925c26325263cc52cd722996"
+    "multi_place.py": "94374086dee4bce77ec7619d09e30cd118ed39f9398f62aac59c0f81105e908f",
+    "identity_data.py": "d2f89dd52d267f606ee89caf4001ee3e3d32e3001940f29d8e222ffe44525dcb",
+    "copy_identity.py": "01feff69842fdcbc113a0e38748bd48d0ff2a893eb2aa225526f4578a493bfc4"
   },
   "publication_note": "Line endings normalized to LF; original installed/native-tested hashes retained."
 }

@@ -25,7 +25,6 @@ class TypedPlacement(Command):
 def create_command(scene,mode,points,z,params,row=None):
     from . import make_group,ExchangeGroups,identity_issues
     from .workflow import matrix
-    if identity_issues(scene):raise ValueError('Resolve copied or missing Thai BIM IDs before placement')
     sp,pose=G.build(mode,points,z,params);group=make_group(sp);group.xform=matrix(pose)
     group.ext['thai_bim']['placement_mode']=mode;tag(group,row)
     if sp['kind']=='Stair':group.ext['thai_bim'].update(assembly_kind='rc-stair',assembly_params=copy.deepcopy(sp['stair_params']))

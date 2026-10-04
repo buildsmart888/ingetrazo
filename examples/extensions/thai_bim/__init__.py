@@ -1,4 +1,4 @@
-"""IngeTrazo Extension: Thai BIM Toolkit 0.10.0 (API 2)."""
+"""IngeTrazo Extension: Thai BIM Toolkit 0.10.1 (API 2)."""
 import copy
 import json
 import math
@@ -135,6 +135,7 @@ def make_group(spec, assembly='', previous=None):
     if previous is not None and rec.get('member_type'):
         from .type_ui import tag
         tag(g,rec['member_type'])
+    rec['native_uid']=g.uid
     return g
 
 
@@ -146,7 +147,9 @@ def identity_issues(scene):
         rid=rec.get('id')
         if not rid: issues.append('Missing TBIM ID: '+g.name)
         elif rid in ids: issues.append('Copied TBIM ID: '+g.name+' / '+ids[rid])
-        else: ids[rid]=g.name
+        else:
+            ids[rid]=g.name
+            if rec.get('native_uid') and rec['native_uid']!=g.uid:issues.append('Copied native binding: '+g.name)
     return issues
 
 
@@ -203,6 +206,8 @@ def quantity_rows(scene):
                 host=byuid.get(r['host_uid'])
                 if not host_matches(g,host):
                     q=None;basis='Unverified changed/missing rebar host';issues.append('Recheck reinforcement host: '+g.name)
+            if r.get('copy_review_required'):
+                q=None;basis='Unverified copied assembly / reinforcement';issues.append('Review copied member: '+g.name)
         if q is not None:
             q=E.finite(q)
             if q < 0: raise ValueError('ปริมาณติดลบ: '+g.name)
@@ -328,7 +333,8 @@ class Panel(QWidget):
     def execute(self,command):
         if self.app.scene.mesh is not self.app.scene.loose_mesh:
             raise ValueError('ออกจากการแก้ไขภายใน Group ก่อนใช้คำสั่ง Thai BIM')
-        self.app.viewport.history.execute(command)
+        from .copy_identity import wrap_creation
+        self.app.viewport.history.execute(wrap_creation(self.app.scene,command))
         if self.app.viewport.history.last_error:raise ValueError(self.app.viewport.history.last_error)
         self.app.viewport.notify_scene_changed();self.app.viewport.update()
 
@@ -472,6 +478,8 @@ def setup(app):
     install_drawings(panel)
     from .type_ui import install as install_types
     install_types(panel)
+    from .copy_identity import install as install_copies
+    install_copies(panel)
     return panel
 
 
@@ -479,6 +487,7 @@ def selected_assembly(scene,kind,selected=None):
     groups=[g for g in (scene.selection if selected is None else selected) if g in scene.groups]
     if len(groups)!=1 or (groups[0].ext or {}).get(KEY,{}).get('assembly_kind')!=kind:
         raise ValueError('เลือกชิ้นงานหนึ่งชิ้นในชุด '+kind+' ที่สร้างด้วย Thai BIM')
+    if groups[0].ext[KEY].get('copy_review_required'):raise ValueError('Copied multi-member assembly needs explicit review; rebuild as a new independent assembly')
     return groups[0]
 
 

@@ -1,4 +1,4 @@
-# Thai BIM Toolkit 0.10.0
+# Thai BIM Toolkit 0.10.1
 
 An optional Thai-language extension for IngeTrazo Extension API 2. It adds a
 19-button toolbar and illustrated, modeless dialogs for concrete members,
@@ -6,17 +6,17 @@ roof framing, straight concrete stairs, reinforcement and quantity takeoff.
 It runs locally without an AI service or API key.
 
 [ภาษาไทย / detailed Thai guide](README-th.md) ·
-[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.10.0)
+[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.10.1)
 
 ## Install
 
-1. Download `Thai-BIM-Toolkit-0.10.0.zip` from the release and extract it.
+1. Download `Thai-BIM-Toolkit-0.10.1.zip` from the release and extract it.
 2. Copy the complete `thai_bim` folder into IngeTrazo's **user plugins folder**.
    On Windows this is `%APPDATA%\ingetrazo\plugins\thai_bim`.
    Alternatively, copy this directory from the repository and name it `thai_bim`.
 3. Restart IngeTrazo. Open **Extensions → Thai BIM Toolkit…** or use the new toolbar.
 
-Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` and `multi_place.py`
+Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` and `copy_identity.py`
 together. PySide6 and NumPy are provided by the host application. The plugin
 does not require `openpyxl`; that library is used only by the tests.
 
@@ -83,8 +83,8 @@ in isolated test scenes; they are modeling examples, not construction designs.
 
 ## Verification
 
-The original installed implementation passed **53 pure engine tests** and
-**145 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
+The original installed implementation passed **59 pure engine tests** and
+**161 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
 host association, QTO invalidation, IGZ persistence and GLB export. Native checks
 left the user's document geometry unchanged. Evidence is in
 [RELEASE.json](RELEASE.json) and [evidence/live-checks.json](evidence/live-checks.json).
@@ -105,11 +105,12 @@ in IngeTrazo's Python Console/AI bridge, where `scene` and `viewport` are suppli
 import runpy
 from core.extensions import user_plugins_dir
 scope = runpy.run_path(
-    str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_thai_bim_v10.py'),
+    str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_thai_bim_v101.py'),
     init_globals={'scene': scene, 'viewport': viewport},
 )
 scope = runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_types_v10.py'), init_globals=scope)
-runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_drawings_v10.py'), init_globals=scope)
+scope = runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_drawings_v10.py'), init_globals=scope)
+runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_copy_v101.py'), init_globals=scope)
 ```
 
 Native tests temporarily open dialogs and write results into `verification-local/`
@@ -308,10 +309,33 @@ Changing a reinforced concrete host requires renewed reinforcement review.
 ![Stair point placement](docs/images/path-placement.png)
 ![Native beam wireframe](docs/images/live-beam-preview.png)
 
-Validation: 53 pure tests and 145 native checks (79 regression, 39 library/point
+Historical 0.10.0 validation: 53 pure tests and 145 native checks (79 regression, 39 library/point
 placement and 27 drawing checks). Actual Qt mouse/key events drive the viewport;
 native framebuffer pixels verify visible preview. Tests include concave solid
 volume, selected-instance edits, Thai JSON/IGZ roundtrips, per-member Undo/Redo,
 project type snapshots, directed stair Host reinforcement and all five 1:50 PDF
 pages. Synthetic examples: `examples/typed-members-click-placement.igz` and
 `examples/member-types-ไทย.json`. Whole-project Family10 was not rerun.
+
+
+## 0.10.1: native Copy followed by continued placement
+
+Native Copy/Paste also copies extension metadata, including business IDs. New
+independent additions now adopt those copies automatically instead of blocking
+all placement. Original IDs are retained; duplicates/missing IDs get fresh IDs
+and native instance bindings. Type IDs, native UIDs, pose, layers, shared meshes
+and geometry remain untouched. Adoption and creation are one Undo/Redo step.
+For selected edits, use **Adopt native copies / repair duplicate IDs** in the
+structural workspace first, then reread the member.
+
+Copied concrete is independent of the original's reinforcement. Copied bars and
+multi-member assemblies are detached and marked for review; reinforcement hosts
+are not inferred, and copied bars are excluded from verified QTO/BBS. Original
+bar/host associations remain intact. Rebuild copied reinforcement through an
+explicit concrete Host review; review/rebuild roof assemblies independently.
+
+Validation: 59 pure tests and 161 native checks, with the full previous suite
+rerun plus 16 native copy/adoption checks: shared component copy then placement,
+copy-of-copy, exact Undo/Redo, selected-copy updates, preservation of original
+BBS, copied-bar exclusion, stale metadata rejection and IGZ persistence.
+Synthetic example: `examples/native-copies-adopted.igz`.

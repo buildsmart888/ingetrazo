@@ -25,6 +25,7 @@ def host_token(host):
 def bar_unchanged(group):
     from . import mesh_fingerprint
     rec=group.ext['thai_bim']
+    if rec.get('copy_review_required'):return False
     if mesh_fingerprint(group)!=rec.get('fingerprint'):return False
     try:
         if 'bar_pose' in rec:return P.same_pose(pose(group),rec['bar_pose'])
@@ -89,7 +90,7 @@ def review_specs(scene,host,ui_params):
 
 def placed_member_command(scene,config,previous=None,expected=None):
     from . import make_group,ExchangeGroups,identity_issues
-    if identity_issues(scene):raise ValueError('Resolve Thai BIM copied / missing IDs first')
+    if previous is not None and identity_issues(scene):raise ValueError('Resolve Thai BIM copied / missing IDs before selected updates')
     if previous is not None:
         if previous not in scene.groups:raise ValueError('The selected host is no longer in this document')
         current=host_token(previous)

@@ -1,11 +1,11 @@
-# Thai BIM Toolkit 0.10.0
+# Thai BIM Toolkit 0.10.1
 
 Extension สำหรับ IngeTrazo Extension API 2 พัฒนาจากงาน Family10
 ใช้ Python/PySide6 และไลบรารีของ IngeTrazo ไม่มี API key และไม่มีการเรียก AI ในคำสั่งรุ่นนี้
 
 ## ติดตั้งและเปิด
 
-นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py` ไปไว้ใน
+นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py` ไปไว้ใน
 `%APPDATA%\ingetrazo\plugins\thai_bim` แล้วเปิด IngeTrazo ใหม่
 เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.10
 การติดตั้งในครั้งนี้จะเปิดแผงให้ใน session ปัจจุบันด้วย จึงไม่จำเป็นต้องปิดไฟล์ที่ยังไม่บันทึก
@@ -488,3 +488,26 @@ Family10 ทั้งโครงการไม่ได้ทดสอบใ�
 คลังภาษาไทย/Revision/Undo, อัปเดตเฉพาะชิ้น, IGZ roundtrip และเหล็กบันไดที่หมุนทิศ
 ตัวอย่างสังเคราะห์: `examples/typed-members-click-placement.igz`, `examples/member-types-ไทย.json`
 ไม่ใช่ผลออกแบบรับแรงหรือรับรอง LOD350; ไม่ได้ทดสอบ Family10 ทั้งโครงการใหม่
+
+
+## รุ่น 0.10.1 — Copy ปกติแล้วสร้างต่อได้
+
+แก้กรณี Copy/Paste ของ IngeTrazo คัดลอก business ID ใน metadata มาด้วย ทำให้คำสั่งสร้างถูกระงับ
+เมื่อสร้างชิ้นใหม่แบบเพิ่มอิสระ ปลั๊กอินจะรับสำเนาและออก ID ใหม่ให้อัตโนมัติ
+คง ID ของต้นฉบับ, native UID, ขนาด, Transform, mesh/component ที่แชร์, layer และรหัสชนิด
+ไม่ย้าย geometry และไม่เปลี่ยนการทำงานของ Copy ปกติ
+การรับสำเนารวมกับการสร้างเป็นหนึ่ง Undo/Redo; Undo คืนทั้ง metadata และเอาเฉพาะชิ้นใหม่ออก
+
+ถ้าต้องการแก้รหัสก่อนอัปเดตชิ้นเดิม ใช้แผงโครงสร้าง →
+**รับสำเนา Copy เป็นชิ้นงานอิสระ / แก้รหัสซ้ำ** แล้วอ่านชิ้นที่เลือกใหม่ก่อนอัปเดต
+อัปเดตสำเนาจะเปลี่ยนเฉพาะสำเนาที่เลือก ไม่แก้ต้นฉบับหรือ sibling ที่แชร์ mesh
+
+สำเนาคอนกรีตไม่รับเหล็กของต้นฉบับมาเป็นของตนเอง ต้องเลือกคอนกรีตสำเนาแล้วสร้าง/ตรวจ Host แยก
+เหล็กและชุดหลายชิ้นที่ Copy มาจะถูกแยก assembly และระบุว่าต้องตรวจใหม่
+ไม่เดา Host ของเหล็กที่คัดลอก และไม่รวมเหล็กเหล่านั้นใน QTO/BBS ที่ยืนยัน
+กรณี copied roof/multi-member assembly ให้ตรวจและสร้างเป็นชุดใหม่อิสระ
+
+ตรวจ 0.10.1: 59 pure tests และ 161 native checks รวมการทดสอบเดิมทั้งหมดใหม่
+และ 16 checks ของ native Copy → สร้างต่อ → Undo/Redo, copy-of-copy,
+การอัปเดตเฉพาะสำเนา, IGZ persistence, stale metadata guard และการแยก copied rebar
+ตัวอย่างสังเคราะห์ `examples/native-copies-adopted.igz`; ไม่มีโมเดลผู้ใช้ในแพ็กเกจ
