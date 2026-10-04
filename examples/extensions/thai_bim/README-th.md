@@ -1,13 +1,13 @@
-# Thai BIM Toolkit 0.17.0
+# Thai BIM Toolkit 0.18.0
 
 Extension สำหรับ IngeTrazo Extension API 2 พัฒนาจากงาน Family10
 ใช้ Python/PySide6 และไลบรารีของ IngeTrazo ไม่มี API key และไม่มีการเรียก AI ในคำสั่งรุ่นนี้
 
 ## ติดตั้งและเปิด
 
-นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py`, `stair_library_ui.py`, `stair_placement.py`, `stair_place_ui.py` ไปไว้ใน
+นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py`, `stair_library_ui.py`, `stair_placement.py`, `stair_place_ui.py`, `stair_connections.py`, `stair_connection_ui.py` ไปไว้ใน
 `%APPDATA%\ingetrazo\plugins\thai_bim` แล้วเปิด IngeTrazo ใหม่
-เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.17
+เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.18
 การติดตั้งในครั้งนี้จะเปิดแผงให้ใน session ปัจจุบันด้วย จึงไม่จำเป็นต้องปิดไฟล์ที่ยังไม่บันทึก
 
 API ของ IngeTrazo ช่วง 0.x ยังเปลี่ยนได้ โดยเฉพาะการเชื่อมแผง Render ซึ่งใช้รายละเอียดภายใน
@@ -760,3 +760,43 @@ Backspace ล้างจุดแรก; Undo/Redo ใช้ระบบปก�
 วางซ้ำ Undo/Redo คัดลอก แยก Host เหล็ก BBS/QTO และเปิด IGZ กลับ
 มีตัวอย่าง IGZ ทุกทรงและไฟล์ BBS การทดสอบ hover เป็น fixture ขนาดเล็ก ไม่ใช่ benchmark ทั้งอาคาร
 ยังไม่มีการยืดบันไดตามปลายสองจุด การเชื่อมรองรับอัตโนมัติ วิเคราะห์กำลัง หรือโมดูล Steel
+
+
+## 0.18.0 — ตรวจรูปทรงเหล็กบันไดกับชิ้นรองรับจริง
+
+ไอคอนบันได → เลือกบันได schema 2 ที่สร้างแล้ว → **ตรวจรอยต่อกับรองรับ…**
+→ **อ่าน Stair ที่เลือก** → เลือก Beam/Slab/Wall/Column ที่เป็นรองรับตามแบบ
+→ เลือกบทบาทเหล็ก → กรอกระยะรูปทรงที่ต้องการ (หรือปล่อย 0 = ยังไม่กำหนด)
+→ **ตรวจและพรีวิว** → คลิกแถวเพื่อดูเหล็กแต่ละเส้นกับรองรับและบันได
+เลือกชิ้นรองรับในโมเดลแล้วกด **อ่านรองรับที่เลือก** ได้ โดยยังเก็บบันไดที่อ่านไว้
+
+Actual ตรวจเหล็กที่สร้างแล้วและยังตรงกับ Host; เหล็กย้าย/แก้/เก่าต้องตรวจและสร้างใหม่ก่อน
+Proposed อ่านค่าที่บันทึกใน Host/ชนิดบันได ไม่ใช้ค่าที่ยังแก้ค้างในหน้าต่างบันได
+เครื่องมือไม่สร้างหรือปรับเหล็ก ไม่เลือกรองรับแทนผู้ใช้ และไม่ตรวจว่าเป็นรองรับที่ถูกต้องตามแบบ
+
+ตัดแนวศูนย์กลางเหล็กกับสามเหลี่ยมผิวของรองรับจริงในพิกัดโลก
+AABB ใช้คัดกรองชิ้นที่ไม่ทับกันเท่านั้น ไม่ใช้แทนรูปทรงรองรับ
+แสดงระยะภายในรวม ระยะต่อเนื่องยาวสุด และระยะอยู่บนผิว แยกกัน
+เทียบค่าที่กรอกกับ **ระยะต่อเนื่องยาวสุด** ไม่รวมช่วงที่ผ่านช่องว่างเป็นระยะเดียว
+ผล: ไม่เข้าในรองรับ / แตะผิวเท่านั้น / ยังไม่กำหนดระยะ / ระยะรูปทรงถึงหรือสั้นกว่าค่าที่กรอก
+หน่วยตาราง mm; JSON ใช้ m; เหล็กโค้งใช้แนว polyline ของโมเดล ไม่ใช่ความยาวโค้งเชิงวิเคราะห์
+
+**บันทึกรายงานในโครงการ** เก็บ snapshot ใน IGZ และรองรับ Undo/Redo โดยไม่แก้ geometry
+**อ่านรายงานคู่ที่เลือก** อ่านคู่บันได–รองรับ–บทบาท–โหมดเดิม; **ส่งออก JSON** ส่งผลที่ตรวจปัจจุบัน
+ย้าย/แก้/ลบชิ้นงาน หรือเปลี่ยนเหล็ก/บทบาท/โหมด/ระยะ ต้องตรวจใหม่ก่อนบันทึกหรือส่งออก
+รายงานเก่าจะแสดงสถานะข้อมูลเก่า ไม่ปรับผลเก่าอัตโนมัติ
+
+จำกัดบทบาทละ 200 เส้น รองรับ 5000 สามเหลี่ยม งานตัดรวม <=500000 triangle/path-point pairs
+และรายงาน 500 คู่ต่อโครงการ ผิวรองรับต้องปิดและเป็น triangulation แบบสองผิวต่อขอบ
+รองรับช่องว่างระหว่าง closed shells ที่ไม่ตัดกัน; ไม่รองรับ shells ซ้อนทับ/ตัดกันหรือผิว self-intersection
+ผิวเปิด/triangulation ไม่สอดคล้องจะปฏิเสธ ไม่แทนด้วยกล่อง
+
+**เป็นการตรวจรูปทรงเท่านั้น** ไม่คำนวณระยะฝัง/ทาบตามมาตรฐาน ไม่ตรวจระยะหุ้ม ขนาดเหล็ก
+bond/กำลัง รอยต่อคอนกรีตทั้งอาคาร หรือรับรองความปลอดภัยงานโครงสร้าง
+ผลระยะถึงค่าที่กรอกหมายถึงรูปทรงถึงค่าของผู้ใช้ ไม่ใช่ผลออกแบบผ่าน
+
+ผ่าน 183 pure tests และ 667 native checks (623 regression + 44 รอยต่อใหม่)
+ทดสอบ Qt จริง พรีวิว รายงาน IGZ/Unicode JSON, Undo/Redo, ผิวเปิด/ช่องว่าง,
+การย้าย/หมุนจริง เหล็กถูกแก้ ผลเก่า การเปลี่ยนเอกสาร และเอกสารเดิมไม่ถูกเปลี่ยน
+
+![หน้าตรวจรอยต่อบันไดและรองรับจริง](docs/images/stair-connection-dialog.png)

@@ -62,7 +62,7 @@ class StairsDialog(BuilderDialog):
         self.connections.itemChanged.connect(lambda _:self.timer.start());self.button('เพิ่มแถวรอยต่อพิเศษ (ปรับตามแบบ)',self.add_connection);self.button('ลบแถวรอยต่อที่เลือก',self.remove_connection)
         for actions in [[('อ่านบันไดที่เลือก',self.read_host),('สร้างคอนกรีตชุดใหม่',self.create),('อัปเดตคอนกรีตเฉพาะชิ้นที่อ่าน',self.update)],
             [('ตรวจ Host + พรีวิวเหล็ก',self.review),('สร้าง / อัปเดตเหล็กที่ตรวจแล้ว',self.build_rebar)],
-            [('เริ่มคลิกวางบันได: ปาก → ทิศขึ้น',self.start_placement)]]:
+            [('เริ่มคลิกวางบันได: ปาก → ทิศขึ้น',self.start_placement),('ตรวจรอยต่อกับรองรับ…',self.open_connections)]]:
             row=QHBoxLayout();self.layout().addLayout(row)
             for text,fn in actions:
                 b=QPushButton(text);b.clicked.connect(lambda checked=False,fn=fn:panel.guard(fn));row.addWidget(b)
@@ -161,6 +161,9 @@ class StairsDialog(BuilderDialog):
     def start_placement(self):
         from .stair_place_ui import start
         return start(self)
+    def open_connections(self):
+        from .stair_connection_ui import open_dialog
+        return open_dialog(self.panel)
     def update(self):
         from .stair_library_ui import tag
         self.timer.stop();row=self.library.model_source();p=self.geometry();q=self.rebar()

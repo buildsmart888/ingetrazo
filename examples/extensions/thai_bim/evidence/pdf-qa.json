@@ -1,5 +1,5 @@
 {
-  "version": "0.17.0",
+  "version": "0.18.0",
   "pages": [
     {
       "sheet": "A101",
@@ -82,6 +82,6 @@
       "measured_grid_dimension_paper_mm": 80
     }
   ],
-  "pdf_sha256": "2d18e0c938049f0fd625a5537f07f489cf93952c5fa936af7df1591b318fc063",
+  "pdf_sha256": "430ca012939ec9ce25bd32a1ba43200ba51c129c916a82e9fd2fd64534acd9f6",
   "visual_review": "Front elevation Poppler rendering inspected in v15; all five pages independently measured; synthetic coordination fixture, not construction design"
 }

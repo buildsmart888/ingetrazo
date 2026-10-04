@@ -1,4 +1,4 @@
-# Thai BIM Toolkit 0.17.0
+# Thai BIM Toolkit 0.18.0
 
 An optional Thai-language extension for IngeTrazo Extension API 2. It adds a
 21-button toolbar and illustrated, modeless dialogs for concrete members,
@@ -16,7 +16,7 @@ It runs locally without an AI service or API key.
    Alternatively, copy this directory from the repository and name it `thai_bim`.
 3. Restart IngeTrazo. Open **Extensions → Thai BIM Toolkit…** or use the new toolbar.
 
-Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py`, `stair_library_ui.py`, `stair_placement.py` and `stair_place_ui.py`
+Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py`, `stair_library_ui.py`, `stair_placement.py`, `stair_place_ui.py`, `stair_connections.py` and `stair_connection_ui.py`
 together. PySide6 and NumPy are provided by the host application. The plugin
 does not require `openpyxl`; that library is used only by the tests.
 
@@ -574,3 +574,48 @@ remain unimplemented.
 
 ![Live native stair ghost](docs/images/live-stair-click-preview.png)
 ![Two-point stair editor and footer controls](docs/images/stair-click-dialog.png)
+
+
+## 0.18.0 — Explicit stair/support geometric inspection
+
+Stair toolbar → select an advanced schema-2 Stair → **ตรวจรอยต่อกับรองรับ…**.
+Read selected Stair, choose an actual IFC Beam/Slab/Wall/Column support and bar
+role, optionally enter a required geometric length, then inspect. Select table
+rows to focus bars in the support/stair preview. Reading a selected support
+retains the independently bound Stair.
+
+Actual uses a validated generated cage. Proposed uses saved Host/type rebar
+settings, not unsaved edits in the parent stair dialog. Neither mode modifies
+reinforcement or chooses the engineering support for the user.
+
+Actual triangulated world geometry clips model bar centrelines. Bounds only
+reject obvious misses. Interior total, longest continuous interior interval,
+and surface-only length are separate. The longest continuous interval is
+compared with explicit user input; disconnected intervals across gaps are
+never added for that comparison. States include no entry, surface contact,
+missing required length, geometric length met and geometric length short.
+Tables use mm; JSON uses m. Curved bars use sampled model polylines.
+
+Save immutable project snapshots with Undo/Redo, reopen in native IGZ, or export
+reviewed UTF-8 JSON. Source geometry, transforms, deletion, bar edits and copied
+business IDs are guarded. Changed role/mode/required length requires a new
+inspection. Saved stale results are marked and cannot be silently reused.
+
+Limits: 200 bars per role, 5000 support triangles, 500000 triangle/path-point
+pairs, 500 project report keys. Requires closed two-manifold triangulated
+supports. Disconnected non-intersecting shells and gaps are supported;
+overlapping/intersecting shells and self-intersections are unsupported.
+Invalid/open/nonconforming triangulations are rejected without a box fallback.
+
+This is geometric inspection, not anchorage/development/splice design or
+structural strength verification. It does not check bar diameter, cover, bond,
+concrete contact, support suitability or whole-building clashes. User-entered
+length met is never a design approval. No automated bar extension/reinforcement
+generation from adjacent supports is introduced.
+
+Validated: 183 pure tests, 667 native checks (623 regressions + 44 connection
+checks), native Qt events/preview, actual and proposed cages, rigid relocation,
+open shells/gaps, stale and edited sources, Undo/Redo, native IGZ and Unicode
+JSON export. Existing technical vector drawing PDF scale remains verified.
+
+![Native support and bar connection inspection](docs/images/stair-connection-dialog.png)

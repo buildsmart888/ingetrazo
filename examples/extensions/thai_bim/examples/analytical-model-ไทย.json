@@ -1,6 +1,6 @@
 {
   "schema": "thai-bim-analytical/1",
-  "id": "690594cc-9ed7-4548-bbc7-0610c9262403",
+  "id": "8fbb362c-0f3f-419a-889d-f0f73a591d8d",
   "revision": 2,
   "units": {
     "length": "m",
@@ -8,11 +8,11 @@
     "mass": "tonne",
     "stress": "kN/m2"
   },
-  "source_digest": "d83111cb533050e3732796ff8f0fe1e9bd3709914643ae3ff11c3523a9eac838",
+  "source_digest": "dc6c172e8597b8f496bd192462e687c25f56a8e2b8593b542546ba658620afdc",
   "sources": [
     {
-      "id": "2725a0fa-e8ec-477e-9c76-a8fe1cd9fd9d",
-      "native_uid": "3fa04b5a786146c8",
+      "id": "200822b7-629f-4214-92e5-136ffc35bc4d",
+      "native_uid": "7dd4fc964a3648b3",
       "name": "TBIM Beam member",
       "kind": "Beam",
       "params": {
@@ -45,8 +45,8 @@
       "geometry_hash": "a64b821447dcf7b79ceaaa006675ecd8f8b11a5f486c7ba1728f64b4c9b26b9c"
     },
     {
-      "id": "8e4d7918-95c0-42b3-b3f6-7ec8405651c2",
-      "native_uid": "33cdb32dd53a46e8",
+      "id": "5751a6b8-7a91-45d0-966a-b754804001b7",
+      "native_uid": "29e511dcc28b4e26",
       "name": "TBIM Column member",
       "kind": "Column",
       "params": {
@@ -116,9 +116,9 @@
   ],
   "members": [
     {
-      "id": "member-b81475014588af73b44c448b",
-      "source_id": "2725a0fa-e8ec-477e-9c76-a8fe1cd9fd9d",
-      "source_native_uid": "3fa04b5a786146c8",
+      "id": "member-4406454fb1576e2074e900ad",
+      "source_id": "200822b7-629f-4214-92e5-136ffc35bc4d",
+      "source_native_uid": "7dd4fc964a3648b3",
       "name": "TBIM Beam member",
       "kind": "Beam",
       "axis": [
@@ -165,9 +165,9 @@
       "basis": "Geometric centroid; verify connection offsets and modelling assumptions"
     },
     {
-      "id": "member-d54bc10cfa49f80a03c67c1c",
-      "source_id": "8e4d7918-95c0-42b3-b3f6-7ec8405651c2",
-      "source_native_uid": "33cdb32dd53a46e8",
+      "id": "member-7abb8a3a1982e09162bda8ea",
+      "source_id": "5751a6b8-7a91-45d0-966a-b754804001b7",
+      "source_native_uid": "29e511dcc28b4e26",
       "name": "TBIM Column member",
       "kind": "Column",
       "axis": [
@@ -216,8 +216,8 @@
   ],
   "elements": [
     {
-      "id": "element-605ff3e6e2a40aad4289ad0e",
-      "member_id": "member-b81475014588af73b44c448b",
+      "id": "element-4e552cb7d17b364619c1e376",
+      "member_id": "member-4406454fb1576e2074e900ad",
       "node_i": "node-846a3d78acee74f84f9f4e86",
       "node_j": "node-e1260a7a5a5b5ffeb83af5d0",
       "type": "frame",
@@ -227,8 +227,8 @@
       ]
     },
     {
-      "id": "element-ffc964e95db8b6cc03671bf4",
-      "member_id": "member-d54bc10cfa49f80a03c67c1c",
+      "id": "element-cdfb01436db11224f5d6b97b",
+      "member_id": "member-7abb8a3a1982e09162bda8ea",
       "node_i": "node-c42502d9a3cb8c3bf47febeb",
       "node_j": "node-846a3d78acee74f84f9f4e86",
       "type": "frame",
@@ -238,8 +238,8 @@
       ]
     },
     {
-      "id": "element-3a517b53f026753acd846704",
-      "member_id": "member-d54bc10cfa49f80a03c67c1c",
+      "id": "element-f1569fed72eab62104fc8b30",
+      "member_id": "member-7abb8a3a1982e09162bda8ea",
       "node_i": "node-846a3d78acee74f84f9f4e86",
       "node_j": "node-7212638e87c2410a3c474936",
       "type": "frame",
