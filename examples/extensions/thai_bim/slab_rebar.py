@@ -16,7 +16,6 @@ def defaults():
         dowel_shape='Straight',dowel_leg=.08,dowel_radius=.024,dowel_cover=.01,dowel_steel=None)
 
 def boundary(host):
-    if host.get('holes'):raise ValueError('Slab openings are not supported in this release')
     if host.get('shape')=='polygon':return PG.outline(host['footprint'])
     x,y,w,d=(E.finite(host[k]) for k in ('x','y','width','depth'))
     return PG.outline([(x,y),(x+w,y),(x+w,y+d),(x,y+d)])
@@ -54,6 +53,10 @@ def clipped(polygon,direction,row,clearance):
         if (sa>row)!=(sb>row):
             f=(row-sa)/(sb-sa);cuts.append((a[0]+f*(b[0]-a[0]))*ux+(a[1]+f*(b[1]-a[1]))*uy)
     cuts.sort();intervals=[(a,b) for a,b in zip(cuts[::2],cuts[1::2]) if b-a>1e-9]
+    return clear_edges(intervals,polygon,direction,row,clearance)
+
+def clear_edges(intervals,polygon,direction,row,clearance):
+    ux,uy=direction;v=(-uy,ux);origin=(row*v[0],row*v[1])
     for a,b in zip(polygon,polygon[1:]+polygon[:1]):
         dx,dy=b[0]-a[0],b[1]-a[1];length=math.hypot(dx,dy);ex,ey=dx/length,dy/length
         rx,ry=origin[0]-a[0],origin[1]-a[1]
@@ -79,6 +82,8 @@ def generate(host,settings):
     p=defaults();unknown=set(settings)-set(p)
     if unknown:raise ValueError('Unknown slab settings: '+str(sorted(unknown)))
     p.update(settings);poly=boundary(host);z=E.finite(host['z']);h=E.finite(host['height'])
+    from .shape_geometry import validated_holes
+    holes=validated_holes(poly,host.get('holes',[]))
     if p['mode'] not in MODES or p['axis'] not in ('X','Y') or p['mats'] not in (1,2):raise ValueError('Invalid slab mode / span axis / mat count')
     if p['representation'] not in ('Full','Lightweight','Centreline'):raise ValueError('Unknown representation')
     if not isinstance(p['wire_name'],str) or not 1<=len(p['wire_name'].strip())<=120:raise ValueError('Specify mesh name / product (1–120 characters)')
@@ -111,7 +116,11 @@ def generate(host,settings):
         normal=(-direction[1],direction[0]);r=p['cover']+db/2
         transverse=[a*normal[0]+b*normal[1] for a,b in poly]
         for i,row in enumerate(rows(min(transverse)+r,max(transverse)-r,spacing)):
-            for j,(a,b) in enumerate(clipped(poly,direction,row,r)):
+            intervals=clipped(poly,direction,row,r)
+            for hole in holes:
+                for cut in clipped(hole,direction,row,0):intervals=_subtract(intervals,cut)
+                intervals=clear_edges(intervals,hole,direction,row,r)
+            for j,(a,b) in enumerate(intervals):
                 if b-a<db:continue
                 pts=[(t*direction[0]+row*normal[0],t*direction[1]+row*normal[1],level) for t in (a,b)]
                 bar(f'{slot}-{i}-{j}',pts,db,role,wire,steel)
@@ -121,6 +130,7 @@ def generate(host,settings):
         mat(u,top-da/2,da,p['wire_spacing_a'],'Wire mesh A','mesh-a',True)
         mat(v,top-da-db/2,db,p['wire_spacing_b'],'Wire mesh B','mesh-b',True)
         if p['dowels']:
+            if holes:raise ValueError('Precast end dowels with slab openings require separate detailing; mesh without dowels supported')
             if host.get('shape')=='polygon':raise ValueError('Precast end dowels currently require a rectangular Host; mesh alone supports polygons')
             if p['dowel_ends'] not in ('Start','End','Both') or p['dowel_shape'] not in ('Straight','L'):raise ValueError('Unknown dowel end / shape')
             d=p['dowel_diameter'];c=p['dowel_cover']

@@ -1,13 +1,13 @@
-# Thai BIM Toolkit 0.20.0
+# Thai BIM Toolkit 0.21.0
 
 Extension สำหรับ IngeTrazo Extension API 2 พัฒนาจากงาน Family10
 ใช้ Python/PySide6 และไลบรารีของ IngeTrazo ไม่มี API key และไม่มีการเรียก AI ในคำสั่งรุ่นนี้
 
 ## ติดตั้งและเปิด
 
-นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py`, `stair_library_ui.py`, `stair_placement.py`, `stair_place_ui.py`, `stair_connections.py`, `stair_connection_ui.py`, `stair_drawing_geometry.py`, `stair_drawings.py`, `member_drawing_geometry.py`, `member_drawings.py` ไปไว้ใน
+นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py`, `stair_library_ui.py`, `stair_placement.py`, `stair_place_ui.py`, `stair_connections.py`, `stair_connection_ui.py`, `stair_drawing_geometry.py`, `stair_drawings.py`, `member_drawing_geometry.py`, `member_drawings.py`, `shape_geometry.py`, `shape_edit.py` ไปไว้ใน
 `%APPDATA%\ingetrazo\plugins\thai_bim` แล้วเปิด IngeTrazo ใหม่
-เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.20
+เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.21
 การติดตั้งในครั้งนี้จะเปิดแผงให้ใน session ปัจจุบันด้วย จึงไม่จำเป็นต้องปิดไฟล์ที่ยังไม่บันทึก
 
 API ของ IngeTrazo ช่วง 0.x ยังเปลี่ยนได้ โดยเฉพาะการเชื่อมแผง Render ซึ่งใช้รายละเอียดภายใน
@@ -897,3 +897,38 @@ PDF อิสระตรวจ 122 หน้าเวกเตอร์ขอ�
 ![หน้าต่างแบบชิ้นงาน](docs/images/member-drawing-dialog.png)
 ![แบบฐานรากและเหล็กจริง](docs/images/footing-plan.png)
 ![รูปตัดคาน](docs/images/beam-section.png)
+
+
+## 0.21.0 — แก้รูปทรงเฉพาะชิ้นในโมเดล
+
+เลือกคาน/พื้น → ไอคอน **แก้ไขเฉพาะชิ้นที่เลือก / Instance dimensions**
+→ **แก้ปลายคาน / ขอบพื้น / ชานพัก ในโมเดล** → คลิกวงจุดจับสีส้ม
+→ คลิกตำแหน่งใหม่ หรือกดลากแล้วปล่อย มี Snap และพรีวิวเส้นสีฟ้าก่อนบันทึก
+Esc ยกเลิกพรีวิว; กดอีกครั้งออกจากเครื่องมือ แต่ละการแก้ Undo ได้หนึ่งครั้ง
+
+- คาน: ปรับปลายสองจุดในแนวราบ ปลายอีกด้านคงเดิม
+- พื้น: ย้ายมุมหรือขอบ; **เพิ่มช่องเปิดพื้น: คลิกสองมุม** สร้างรูทะลุจริง
+  ขนานแกน local ของพื้น; คลิกจุดจับช่องเปิดแล้ว Delete ลบช่องเปิดทั้งช่อง
+- บันได schema 2: เปิดเครื่องมือจากหน้าต่างบันได
+  ปรับความลึกชานพักที่ใช้ร่วมทุกชานพักของบันไดชิ้นนี้ ไม่ใช่แยกย้ายแต่ละชานพัก
+  รองรับ Straight/L/U/Spiral/Circular ที่มีชานพัก; Floating ไม่มีจุดจับนี้
+
+คง ID ชนิดชิ้นงาน ชื่อ และเลเยอร์ แก้เฉพาะชิ้นที่เลือก ไม่เปลี่ยนคลังหรือชิ้นอื่น
+รองรับชิ้นงานตั้งตรงที่เลื่อนและหมุน yaw ไม่รองรับ tilt/scale/mirror
+ช่องเปิดสูงสุด 20 ช่อง/พื้น รวมขอบไม่เกิน 300 จุด และเว้นขอบอย่างน้อย 2 mm
+ห้ามช่องซ้อน ทับ แตะขอบ หรือขอบตัดตัวเอง
+
+หลังแก้คอนกรีต เหล็กเดิมคงไว้แต่ถือว่าล้าสมัย ต้องอ่าน Host → ตรวจ → สร้างเหล็กใหม่
+แล้วตรวจ/อัปเดต Sheet และ Analytical Model ใหม่ก่อนส่งออก
+One-way/Two-way/Precast wire mesh ตัดแนวเหล็กสุทธิเว้นช่องและ cover ตามที่กรอก
+ยังไม่สร้างเหล็กเสริมขอบช่องหรือออกแบบ anchorage อัตโนมัติ
+Precast ที่มีโดเวลและช่องเปิดถูกปฏิเสธ ต้องกำหนดรายละเอียดปลายเฉพาะก่อน
+ปริมาณไวร์เมชเป็นแนวเหล็กติดตั้งสุทธิ ไม่ใช่จำนวนแผงซื้อ
+
+ตรวจแล้ว: 248 pure tests, 66 native checks ของรุ่นนี้ และ PDF vector 27 หน้า
+ทดสอบฉากแยก การลาก/คลิกจริง Undo/Redo ID ช่องเปิด ปริมาณสุทธิ เหล็กเก่า/แบบเก่า
+การสร้างใหม่ BBS และเปิด IGZ กลับ โดยโมเดลบ้านของผู้ใช้ไม่เปลี่ยน
+ไม่ได้รันชุด native ทุกเวอร์ชันเก่าซ้ำทั้งหมด
+
+![พรีวิวจุดจับคาน](docs/images/beam-shape-preview.png)
+![แบบพื้นมีช่องเปิดและเหล็กจริง](docs/images/opening-plan.png)

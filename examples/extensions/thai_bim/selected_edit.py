@@ -28,10 +28,15 @@ class SelectedEditDialog(BuilderDialog):
         super().__init__(panel,'Place');self.setWindowTitle('Thai BIM — แก้ไขเฉพาะชิ้นที่เลือก');self.uid=None;self.bound_scene=None;self.expected=None
         self.label=QLabel('เลือกคอนกรีต Thai BIM หนึ่งชิ้น แล้วกดอ่านค่า');self.label.setWordWrap(True);self.form.addRow(self.label)
         self.button('อ่านชิ้นงานที่เลือก / โหลดค่าใหม่',self.read_host)
-        self.note('แก้เฉพาะชิ้นนี้ ไม่แก้คลังชนิดหรือชิ้นอื่น\nคาน: คงความยาวและแนวแกนสองจุด / พื้น: คงขอบเขตเดิม\nฐาน–เสา: คงศูนย์กลางและระดับฐาน / บันไดตรง: คงจุดเริ่มและทิศขึ้น\nหลังแก้คอนกรีต ต้องตรวจเหล็กและ Analytical Model ใหม่')
+        self.note('แก้เฉพาะชิ้นนี้ ไม่แก้คลังชนิดหรือชิ้นอื่น\nช่องตัวเลข: คงแนวคาน/ขอบพื้น • เปลี่ยนรูปทรงด้วยปุ่มแก้ในโมเดล\nฐาน–เสา: คงศูนย์กลางและระดับฐาน / บันไดตรง: คงจุดเริ่มและทิศขึ้น\nหลังแก้คอนกรีต ต้องตรวจเหล็กและ Analytical Model ใหม่')
         self.edit_fields={};self.widgets=[]
         save=QPushButton('บันทึกขนาดเฉพาะชิ้นจากพรีวิว (Undo ได้)');save.clicked.connect(lambda checked=False:panel.guard(self.apply));self.layout().addWidget(save)
         steel=QPushButton('อ่านชิ้นนี้ในหน้าต่างเหล็ก / Host review');steel.clicked.connect(lambda checked=False:panel.guard(self.rebar));self.layout().addWidget(steel)
+        for text,opening in [('แก้ปลายคาน / ขอบพื้น / ชานพัก ในโมเดล',False),('เพิ่มช่องเปิดพื้น: คลิกสองมุม',True)]:
+            b=QPushButton(text);b.clicked.connect(lambda checked=False,opening=opening:panel.guard(lambda:self.shape(opening)));self.layout().addWidget(b)
+    def shape(self,opening=False):
+        from .shape_edit import start
+        self.host();return start(self.panel,opening)
     def host(self):
         scene=self.panel.app.scene
         if self.uid is None:raise ValueError('เลือกชิ้นคอนกรีต Thai BIM หนึ่งชิ้น แล้วกดอ่านค่า')

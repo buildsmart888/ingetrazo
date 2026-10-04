@@ -1,4 +1,4 @@
-# Thai BIM Toolkit 0.20.0
+# Thai BIM Toolkit 0.21.0
 
 An optional Thai-language extension for IngeTrazo Extension API 2. It adds a
 21-button toolbar and illustrated, modeless dialogs for concrete members,
@@ -6,11 +6,11 @@ roof framing, six RC stair layouts, reinforcement and quantity takeoff.
 It runs locally without an AI service or API key.
 
 [ภาษาไทย / detailed Thai guide](README-th.md) ·
-[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.17.0)
+[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.21.0)
 
 ## Install
 
-1. Download `Thai-BIM-Toolkit-0.17.0.zip` from the release and extract it.
+1. Download `Thai-BIM-Toolkit-0.21.0.zip` from the release and extract it.
 2. Copy the complete `thai_bim` folder into IngeTrazo's **user plugins folder**.
    On Windows this is `%APPDATA%\ingetrazo\plugins\thai_bim`.
    Alternatively, copy this directory from the repository and name it `thai_bim`.
@@ -719,3 +719,30 @@ Replace the complete plugin folder and restart; keep all 38 Python modules toget
 ![Member sheet dialog](docs/images/member-drawing-dialog.png)
 ![Actual footing cage plan](docs/images/footing-plan.png)
 ![Actual beam cage section](docs/images/beam-section.png)
+
+
+## 0.21.0 — Selected viewport shape editing
+
+Select a Beam/Slab, use Instance dimensions, then the viewport shape-edit button.
+Click an orange handle then a new snapped point, or press-drag-release. Preview is
+immutable; each commit is one Undo. Beam edits preserve the other end at fixed Z.
+Slab vertex/edge edits retain local placement; rectangular local-axis through holes
+have real cap loops and inward walls, measured net concrete and clipped net bars.
+Delete on a hole handle removes that entire opening. Esc cancels pending work.
+Schema-2 stairs with landings expose a shared landing-depth handle: all landings
+of that selected stair use this parameter. Straight/L/U/Spiral/Circular supported;
+Floating has no landing handle. This does not independently relocate each landing.
+
+UID/type/name/layer stay with the selected Host; other instances/library unchanged.
+Upright yaw/translation only. At most 20 holes, 300 total vertices, 2 mm boundary
+separation. Intersections, nested/overlapping/touching openings are rejected.
+Existing cages remain intact but become stale: explicitly review/rebuild bars,
+then update drawings and Analytical Model before export. RC mats/precast mesh clip
+around openings with entered cover. No automatic opening trimmers/anchorage design;
+precast dowels with openings are rejected. Net mesh wires are not purchase panels.
+
+Verified: 248 pure tests; 66 current native Qt checks; 27 vector PDF pages with
+physical 1:50 scale, opening outlines and actual BBS marks/counts/cut lengths.
+Native checks cover real pointer events, Undo/Redo, identity, net mesh volume,
+stale cages/sheets, explicit rebuild and IGZ reopening in an isolated scene.
+The actual user model remained unchanged. Historical native suite not rerun in full.

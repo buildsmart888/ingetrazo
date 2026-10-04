@@ -24,6 +24,7 @@ def source(scene,uid,steel=True):
     g=host(scene,uid);m=P.rigid_matrix(W.pose(g))
     if any(abs(m[i]-v)>1e-5 for i,v in zip((2,6,8,9,10),(0,0,0,0,1))):raise ValueError('Member drawings require upright members (yaw / translation only)')
     mesh=world_mesh(g);faces=[[S.local(p.toTuple(),m) for p in f.vertices] for f in mesh.faces]
+    for f in mesh.faces:faces.extend([[S.local(p.toTuple(),m) for p in hole] for hole in f.holes])
     triangles=[[S.local(p.toTuple(),m) for p in tri] for f in mesh.faces for tri in f.triangulate()]
     if len(triangles)>12000:raise ValueError('Member drawings limited to 12000 concrete triangles')
     bars=[];cache={uid:W.host_token(g)}

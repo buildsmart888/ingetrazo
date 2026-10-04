@@ -17,7 +17,8 @@ def edit_spec(record,values):
             return spec(**p)
         return S.stair_spec(**p)
     if p.get('shape')=='polygon':
-        result,_=G.polygon(p['footprint'],p['z'],dict(height=values['height']));return result
+        from .shape_geometry import slab_spec
+        return slab_spec(dict(p,height=values['height']))
     if kind in ('Footing','Column'):
         p['x']+=(p['width']-values['width'])/2;p['y']+=(p['depth']-values['depth'])/2
     elif kind=='Beam':p['y']+=(p['depth']-values['depth'])/2

@@ -66,10 +66,14 @@ class StairsDialog(BuilderDialog):
             row=QHBoxLayout();self.layout().addLayout(row)
             for text,fn in actions:
                 b=QPushButton(text);b.clicked.connect(lambda checked=False,fn=fn:panel.guard(fn));row.addWidget(b)
+        b=QPushButton('ปรับความลึกชานพักในโมเดล (ใช้ร่วมทุกชานพักของบันไดนี้)');b.clicked.connect(lambda checked=False:panel.guard(self.start_shape_edit));self.layout().addWidget(b)
         clickrow=QHBoxLayout();self.layout().addLayout(clickrow);clickrow.addWidget(QLabel('ระดับฐานขณะคลิก'))
         self.click_z=QComboBox();self.click_z.addItems(('Fixed Z / ล็อกระดับ Z ที่กรอก','First point Z / ใช้ระดับจุดแรก'));clickrow.addWidget(self.click_z,1)
         self.note('คลิกวาง: จุดแรกกึ่งกลางปากบันไดระดับฐาน → จุดสองทิศขึ้นช่วงแรก\nวน/โค้งใช้แนวสัมผัสเริ่มต้น • ขนาดตามพรีวิว ไม่ยืดตามระยะคลิก\nคลิกต่อวางซ้ำ • Esc ล้างจุด; Esc อีกครั้งกลับไดอะลอก • Undo แยกแต่ละชิ้น\nสร้างคอนกรีตก่อน เหล็กต้องอ่าน Host ตรวจและสร้างแยก')
         self.layout_kind.currentIndexChanged.connect(self.changed_layout);self.mats.currentIndexChanged.connect(self.enable_fields);self.changed_layout()
+    def start_shape_edit(self):
+        from .shape_edit import start
+        self.host();return start(self.panel)
     def combo(self,label,items):
         w=QComboBox();w.setMinimumContentsLength(14);w.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon);w.addItems(items);self.form.addRow(label,w);w.currentIndexChanged.connect(lambda _:self.timer.start());return w
     def steel_picker(self,role,key,label):

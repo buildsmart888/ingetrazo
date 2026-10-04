@@ -1,4 +1,4 @@
-"""IngeTrazo Extension: Thai BIM Toolkit 0.20.0 (API 2)."""
+"""IngeTrazo Extension: Thai BIM Toolkit 0.21.0 (API 2)."""
 import copy
 import json
 import math
@@ -21,7 +21,7 @@ from .visuals import launcher, decorate_multi, decorate_cut
 from .builders import add_tools
 
 KEY='thai_bim'
-TITLE='Thai BIM 0.20'
+TITLE='Thai BIM 0.21'
 
 
 class ExchangeGroups(Command):
@@ -88,6 +88,7 @@ class NormalizeColors(Command):
 def mesh_fingerprint(group):
     # Installed 0.x builds expose either vectors or Vertex objects on faces.
     faces=[[getattr(v,'position',v).toTuple() for v in f.vertices] for f in group.mesh.faces]
+    for f in group.mesh.faces:faces.extend([[getattr(v,'position',v).toTuple() for v in hole] for hole in f.holes])
     if group.children:
         for child in group.children:faces.extend([[getattr(v,'position',v).toTuple() for v in f.vertices] for f in world_mesh(child).faces])
     if faces:return E.fingerprint(faces)
@@ -96,8 +97,8 @@ def mesh_fingerprint(group):
 
 def make_group(spec, assembly='', previous=None):
     mesh=Mesh()
-    for ring in (() if spec.get('components') else spec['faces']):
-        face=mesh.add_face([QVector3D(*p) for p in ring])
+    for index,ring in enumerate(() if spec.get('components') else spec['faces']):
+        face=mesh.add_face([QVector3D(*p) for p in ring],[[QVector3D(*p) for p in hole] for hole in spec.get('face_holes',{}).get(index,[])])
         if face is None: raise ValueError('สร้างผิวชิ้นงานไม่ได้')
         face.attrs['color']=tuple(spec['color'])
     wire=spec.get('representation')=='Centreline' and spec['kind']=='Rebar'

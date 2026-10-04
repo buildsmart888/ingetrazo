@@ -112,7 +112,7 @@ class SlabDialog(BuilderDialog):
             host=self.host();specs,_=review(self.bound_scene,host,self.params());self.visual.display(W.P.world_specs(specs,W.pose(host)),W.P.world_specs([E.box_spec('Slab',**{k:host.ext['thai_bim']['params'][k] for k in ('x','y','z','width','depth','height')})],W.pose(host)))
             # Real polygon outline replaces the rectangular ghost.
             if host.ext['thai_bim']['params'].get('shape')=='polygon':
-                p=host.ext['thai_bim']['params'];ghost=dict(kind='Slab',faces=E.extrusion([(a,b,p['z']) for a,b in SR.boundary(p)],(0,0,p['height'])))
+                ghost=dict(kind='Slab',faces=[[tuple(v.toTuple()) for v in tri] for f in host.mesh.faces for tri in f.triangulate()])
                 self.visual.display(W.P.world_specs(specs,W.pose(host)),W.P.world_specs([ghost],W.pose(host)))
             totals={}
             for s in specs:
