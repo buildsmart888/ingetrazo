@@ -21,7 +21,7 @@ from .visuals import launcher, decorate_multi, decorate_cut
 from .builders import add_tools
 
 KEY='thai_bim'
-TITLE='Thai BIM 0.11'
+TITLE='Thai BIM 0.12'
 
 
 class ExchangeGroups(Command):
@@ -480,6 +480,8 @@ def setup(app):
     install_types(panel)
     from .copy_identity import install as install_copies
     install_copies(panel)
+    from .analytical_ui import install as install_analytical
+    install_analytical(panel)
     return panel
 
 

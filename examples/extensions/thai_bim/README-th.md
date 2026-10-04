@@ -1,13 +1,13 @@
-# Thai BIM Toolkit 0.11.0
+# Thai BIM Toolkit 0.12.0
 
 Extension สำหรับ IngeTrazo Extension API 2 พัฒนาจากงาน Family10
 ใช้ Python/PySide6 และไลบรารีของ IngeTrazo ไม่มี API key และไม่มีการเรียก AI ในคำสั่งรุ่นนี้
 
 ## ติดตั้งและเปิด
 
-นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py` ไปไว้ใน
+นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py` ไปไว้ใน
 `%APPDATA%\ingetrazo\plugins\thai_bim` แล้วเปิด IngeTrazo ใหม่
-เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.11
+เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.12
 การติดตั้งในครั้งนี้จะเปิดแผงให้ใน session ปัจจุบันด้วย จึงไม่จำเป็นต้องปิดไฟล์ที่ยังไม่บันทึก
 
 API ของ IngeTrazo ช่วง 0.x ยังเปลี่ยนได้ โดยเฉพาะการเชื่อมแผง Render ซึ่งใช้รายละเอียดภายใน
@@ -549,3 +549,39 @@ Cover, รัศมีดัด, ขาตะขอ, ระยะทาบ/ย�
 รวม native Qt button, ทุกชนิด, Undo/Redo, รุ่นข้อมูล, stale review, ASTM inch precision,
 JSON ภาษาไทย, IGZ reopen และ BBS; ใช้โมเดลทดสอบแยก ไม่เปลี่ยน geometry ในไฟล์ผู้ใช้
 ยังไม่ได้ benchmark เหล็กทั้งโครงการ Family10 ใหม่ในรุ่นนี้
+
+
+## รุ่น 0.12.0 — Analytical Model กลางสำหรับคาน–เสา
+
+เพิ่มไอคอน **Analytical Model / แนวแกนคาน–เสา** เป็นปุ่มที่ 20
+เปิดไดอะลอก → **สร้าง / ตรวจพรีวิว** → ตรวจแนวแกนและวงกลมจุดต่อสีทองใน viewport
+เลือกแถวรายการตรวจเพื่อไฮไลต์จุด/ชิ้นงานสีแดง; ตารางแสดงพิกัดเมตรและชื่อชิ้นงาน
+เลือก **บันทึก Analytical Snapshot** เพื่อเก็บข้อมูลกลางใน IGZ โดย Undo ได้
+หรือ **ส่งออก JSON** สำหรับปลั๊กอินวิเคราะห์ในอนาคต ไม่สร้าง geometry เพิ่ม
+
+เสาใช้แนวแกนกลางหน้าตัดตาม local Z คานใช้แนวแกนกลางหน้าตัดตาม local X
+คานที่คลิกวางเดิมมี Z เป็นระดับล่างคาน: analytical axis จึงสูงขึ้นครึ่งความสูงคาน
+รวม rigid Move/Rotate; ไม่รองรับ scale/mirror/แก้ผิวคอนกรีตด้วยมือ
+จุดปลายที่ตรงกันหรืออยู่กลางแนวแกนอีกชิ้นเชื่อมกันโดยแบ่ง analytical element
+ชิ้น BIM เดิมคงรูปและปริมาณ; จุดใกล้กันภายใน tolerance จะรายงานแต่ไม่รวมอัตโนมัติ
+แนวแกนซ้อน จุดตัดกลางช่วง กลุ่มที่ไม่เชื่อม และปลายที่ยังไม่กำหนดรองรับมีรายการตรวจ
+ปลายหนึ่ง element อาจเป็นจุดรองรับหรือปลายอิสระ ไม่ใช่ข้อผิดพลาดโดยอัตโนมัติ
+
+เก็บใน `scene.plugin_data['thai_bim_analytical']` แยกจากข้อมูลสร้างแบบเดิม
+contract เป็น `thai-bim-analytical/1`, หน่วย m–kN–tonne, มี model ID/revision,
+source digest, จุดต่อ, members, elements, แกน local และค่าหน้าตัด A/Iy/Iz
+ID member เชื่อมจาก business ID; node ID มาจากพิกัด จึงคงเดิมเมื่อพิกัดไม่เปลี่ยน
+เปลี่ยนพิกัดหรือ topology ต้องทบทวนการผูกโหลด/รองรับในโมดูลอนาคต
+ส่ง JSON ให้ solver plugin โดยไม่ต้องอ่าน mesh ใหม่; รายละเอียด contract ดู `docs/analytical-contract.md`
+
+รุ่นนี้เป็น geometry snapshot ตรวจความต่อเนื่องเท่านั้น:
+ยังไม่มีวัสดุ จุดรองรับ releases offsets loads torsional stiffness หรือ solver
+สถานะ `solver_ready=false` แม้กราฟต่อกันครบ ไม่มีการปรับแนวแกน/offset ให้เอง
+ไม่รวมพื้น ฐานราก บันได ผนัง และหลังคาใน analytical graph
+จำกัด 1000 คาน–เสาสำหรับรุ่นเริ่มต้น; ยังไม่ benchmark โครงการใหญ่
+JSON รุ่น 1 เป็น snapshot ที่สร้างโดย converter ไม่รองรับแก้ JSON ด้วยมือแล้วนำกลับเข้า
+การต่อโมดูลวิเคราะห์ต้องกำหนด analysis inputs แยกและผูกกับ snapshot ID/revision
+
+ตรวจรุ่นนี้: **75 pure tests / 246 native checks** รวม 223 จุดตรวจเดิม + 23 analytical
+ตรวจ rigid axis, internal joint splitting, near gap, Undo/Redo, source guards, Unicode JSON,
+IGZ reopen, viewport pixel overlay และการไฮไลต์รายการตรวจ; โมเดลผู้ใช้ไม่เปลี่ยน geometry

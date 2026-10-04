@@ -1,22 +1,22 @@
-# Thai BIM Toolkit 0.11.0
+# Thai BIM Toolkit 0.12.0
 
 An optional Thai-language extension for IngeTrazo Extension API 2. It adds a
-19-button toolbar and illustrated, modeless dialogs for concrete members,
+20-button toolbar and illustrated, modeless dialogs for concrete members,
 roof framing, straight concrete stairs, reinforcement and quantity takeoff.
 It runs locally without an AI service or API key.
 
 [ภาษาไทย / detailed Thai guide](README-th.md) ·
-[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.11.0)
+[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.12.0)
 
 ## Install
 
-1. Download `Thai-BIM-Toolkit-0.11.0.zip` from the release and extract it.
+1. Download `Thai-BIM-Toolkit-0.12.0.zip` from the release and extract it.
 2. Copy the complete `thai_bim` folder into IngeTrazo's **user plugins folder**.
    On Windows this is `%APPDATA%\ingetrazo\plugins\thai_bim`.
    Alternatively, copy this directory from the repository and name it `thai_bim`.
 3. Restart IngeTrazo. Open **Extensions → Thai BIM Toolkit…** or use the new toolbar.
 
-Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` `copy_identity.py` and `rebar_recipe.py`
+Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` `copy_identity.py`, `rebar_recipe.py`, `analytical.py` and `analytical_ui.py`
 together. PySide6 and NumPy are provided by the host application. The plugin
 does not require `openpyxl`; that library is used only by the tests.
 
@@ -83,8 +83,8 @@ in isolated test scenes; they are modeling examples, not construction designs.
 
 ## Verification
 
-The installed 0.11.0 implementation passed **67 pure tests** and
-**223 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
+The installed 0.12.0 implementation passed **75 pure tests** and
+**246 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
 host association, QTO invalidation, IGZ persistence and GLB export. Native checks
 left the user's document geometry unchanged. Evidence is in
 [RELEASE.json](RELEASE.json) and [evidence/live-checks.json](evidence/live-checks.json).
@@ -105,13 +105,14 @@ in IngeTrazo's Python Console/AI bridge, where `scene` and `viewport` are suppli
 import runpy
 from core.extensions import user_plugins_dir
 scope = runpy.run_path(
-    str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_thai_bim_v11.py'),
+    str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_thai_bim_v12.py'),
     init_globals={'scene': scene, 'viewport': viewport},
 )
-scope = runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_types_v10.py'), init_globals=scope)
-scope = runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_drawings_v10.py'), init_globals=scope)
+scope = runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_types_v12.py'), init_globals=scope)
+scope = runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_drawings_v12.py'), init_globals=scope)
 scope = runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_copy_v101.py'), init_globals=scope)
-runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_recipes_v11.py'), init_globals=scope)
+scope = runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_recipes_v11.py'), init_globals=scope)
+runpy.run_path(str(user_plugins_dir() / 'thai_bim' / 'tests' / 'live_analytical_v12.py'), init_globals=scope)
 ```
 
 Native tests temporarily open dialogs and write results into `verification-local/`
@@ -319,7 +320,7 @@ pages. Synthetic examples: `examples/typed-members-click-placement.igz` and
 `examples/member-types-ไทย.json`. Whole-project Family10 was not rerun.
 
 
-## 0.11.0: native Copy followed by continued placement
+## 0.12.0: native Copy followed by continued placement
 
 Native Copy/Paste also copies extension metadata, including business IDs. New
 independent additions now adopt those copies automatically instead of blocking
@@ -342,7 +343,7 @@ BBS, copied-bar exclusion, stale metadata rejection and IGZ persistence.
 Synthetic example: `examples/native-copies-adopted.igz`.
 
 
-## 0.11.0: per-type reinforcement details
+## 0.12.0: per-type reinforcement details
 
 Open the member library, select a type and choose **แก้รายละเอียดเหล็ก / ดูพรีวิว…**.
 Edit the existing illustrated Rebar form, accept the details using the persistent bottom button,
@@ -365,3 +366,27 @@ no new whole-Family10 performance benchmark or LOD350 certification.
 
 ![Member library with per-type details](docs/images/rebar-type-library.png)
 ![Illustrated recipe editor](docs/images/rebar-type-editor.png)
+
+
+## 0.12.0: neutral analytical geometry snapshot
+
+The twentieth toolbar button opens **Analytical Model / แนวแกนคาน–เสา**.
+Generate the preview to display gold centroid axes and nodes over the physical model.
+Select a diagnostic row to highlight its node/member. Save an undoable project snapshot
+or export solver-neutral JSON. No additional physical geometry is created.
+Exact endpoint-to-axis joints split analytical elements; near joints and interior crossings
+remain separate and are reported. Source moves/edits invalidate saving the old snapshot.
+
+The geometry contract lives at `scene.plugin_data['thai_bim_analytical']` and uses
+model ID/revision, source business/native IDs and hashes, nodes, frame members/elements,
+local axes and rectangular section properties. See [analytical contract](docs/analytical-contract.md).
+This is not a solver: materials, supports, releases, offsets, loads and torsional stiffness
+are unspecified. `solver_ready` is always false. Slabs/footings/stairs/walls/roofs are excluded.
+Initial limit: 1000 source frame members; large-project performance is not benchmarked.
+
+Current validation: 75 pure tests and 246 native checks (223 existing + 23 analytical),
+including source guards, rigid conversion, internal joints, Undo/Redo, Unicode JSON,
+native IGZ reopen, actual framebuffer overlay and diagnostic highlighting.
+
+![Analytical overlay](docs/images/analytical-preview.png)
+![Analytical dialog](docs/images/analytical-dialog.png)

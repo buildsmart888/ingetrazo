@@ -1,12 +1,12 @@
 {
   "name": "Thai BIM Toolkit",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "api_version": 2,
   "license": "GPL-3.0-or-later",
-  "pure_tests": 67,
+  "pure_tests": 75,
   "native_checks": [
-    "19 actual toolbar actions with nonempty icons",
-    "fresh setup has 19 icons",
+    "20 actual toolbar actions with nonempty icons",
+    "fresh setup has 20 icons",
     "layer manager install idempotent",
     "create Footing retains all prior members",
     "create Column retains all prior members",
@@ -84,7 +84,7 @@
     "slab stair native save reopen preserves detailed BBS",
     "selected BBS row displays matching shape preview",
     "actual user scene unchanged",
-    "type toolkit fresh setup has 19 nonempty icons",
+    "type toolkit fresh setup has 20 nonempty icons",
     "member type UI install idempotent",
     "native library saves Thai names and revision",
     "project library Undo restores prior type dimensions",
@@ -123,7 +123,7 @@
     "first typed placement Redo restores member and exact type library",
     "real Escape returns native viewport to prior tool",
     "type placement tests leave active user model unchanged",
-    "drawing toolbar has 19 icons",
+    "drawing toolbar has 20 icons",
     "paper preview keeps 1m equal to 20mm",
     "changed UI cannot build stale preview",
     "five native sheets created with unrelated sheet retained",
@@ -227,11 +227,34 @@
     "native button accepts recipe for a new unsaved type",
     "new ASTM type saves exact inch diameter and recipe",
     "changing duplicated host kind clears incompatible recipe",
-    "recipe tests preserve actual user document geometry"
+    "recipe tests preserve actual user document geometry",
+    "analytical conversion splits column at internal beam endpoint",
+    "analytical conversion preserves physical members and quantities",
+    "analytical graph explicitly not solver ready",
+    "analytical snapshot stores centrally with source bindings",
+    "analytical snapshot Undo removes only metadata",
+    "analytical snapshot Redo restores exact data",
+    "analytical regeneration retains model and node IDs with new revision",
+    "tolerance edit blocks saving unreviewed graph",
+    "analytical neutral JSON Unicode roundtrip",
+    "IGZ reopen retains analytical snapshot and source references",
+    "rigid BIM move marks analytical snapshot stale",
+    "stale BIM move blocks snapshot save",
+    "near beam column gap reported without joining nodes",
+    "stale analytical command cannot overwrite intervening project edits",
+    "native copied duplicate BIM IDs block analytical conversion",
+    "native analytical overlay callback survives actual viewport drawing",
+    "native analytical viewport contains projected gold axes and nodes",
+    "diagnostic row identifies actual node coordinates",
+    "selected diagnostic node highlights in native viewport",
+    "analytical preview toggle removes gold overlay",
+    "analytical installation idempotent with nonempty toolbar icon",
+    "analytical modeless dialog blocks document switch",
+    "analytical tests preserve actual user document geometry"
   ],
   "native_tested_source_sha256": {
-    "__init__.py": "8f61cc1d18ea74c9e1c486812696f6120ff91b407a71d6732fda21f1952e0b30",
-    "engine.py": "273814e7a228d02fc54500f6eb30fccb8f9dd2884cfa1efd19879ec2cbb7bafc",
+    "__init__.py": "176f98b5ad1c3f77d1018eb4d65466f0fee05828094dd570cb728a868380578c",
+    "engine.py": "29dbfcc03ed29455c5fd82c262bffcde0cef0568abb68a220c9a8694e46b6b8e",
     "visuals.py": "d886e061ab2ad9d6f0b208a0ff082637a59d08694aa4eb24c8c8e880b0c4284e",
     "structures.py": "812651feb2c1c1341a6099005cbee76070a2db8032070c07fe59b001f9b265ef",
     "builders.py": "140875c1d74b8211b19aa1a4e9d49ad9c7bdc9f78e3431ce0519e427cb6001e0",
@@ -249,11 +272,13 @@
     "multi_place.py": "94374086dee4bce77ec7619d09e30cd118ed39f9398f62aac59c0f81105e908f",
     "identity_data.py": "d2f89dd52d267f606ee89caf4001ee3e3d32e3001940f29d8e222ffe44525dcb",
     "copy_identity.py": "01feff69842fdcbc113a0e38748bd48d0ff2a893eb2aa225526f4578a493bfc4",
-    "rebar_recipe.py": "9f602c01312fdddfeef5e12c83739ff616ef0627f2e9ffac56cc4b92b8d35458"
+    "rebar_recipe.py": "9f602c01312fdddfeef5e12c83739ff616ef0627f2e9ffac56cc4b92b8d35458",
+    "analytical.py": "6832e8955659f52748ba78efb8c22d1ef1b8394ca1dc2247052c6efea277ef1f",
+    "analytical_ui.py": "d0f8a3edcd65997e8ababe8aa514a4f75bc26a49dc33fd09ec59cdd44d86ada8"
   },
-  "native_checks_context": "Windows IngeTrazo API2; 79 regression, 39 member-library/point-placement, 27 drawing, 16 native copy/adoption and 62 per-type reinforcement recipe checks. Native Qt mouse/key and visible framebuffer preview verified. Default technical renderer and five vector PDF frames verified; original blank document unchanged. Family10 whole-project evidence remains 0.7.1.",
+  "native_checks_context": "Windows IngeTrazo API2; 79 regression, 39 member-library/point-placement, 27 drawing, 16 native copy/adoption and 62 per-type reinforcement recipe and 23 analytical graph checks. Native Qt mouse/key and visible framebuffer preview verified. Default technical renderer and five vector PDF frames verified; original blank document unchanged. Family10 whole-project evidence remains 0.7.1.",
   "pdf_verification": {
-    "version": "0.11.0",
+    "version": "0.12.0",
     "pages": [
       {
         "sheet": "A101",
@@ -336,10 +361,12 @@
         "measured_grid_dimension_paper_mm": 80
       }
     ],
-    "pdf_sha256": "7c96f4d8bb1e3a57e2baa19305402fb8104d273bd4cf10bfcddd86f5c49835a2",
+    "pdf_sha256": "7d1f43a52fdab640d800fc3f0a9580cfe837b8c1d1021f4e4a305f0a15dfed5d",
     "visual_review": "All five Poppler-rendered pages inspected; explicit levels separated with leaders; synthetic coordination fixture, not construction design"
   },
   "limitations": [
+    "Analytical geometry only; no solver/materials/supports/releases/offsets/loads or torsional stiffness; solver_ready=false",
+    "Analytical conversion limited to 1000 Beam/Column members; interior crossings/near joints not automatically connected; node IDs change with coordinates",
     "Starter model-based coordination sheets, not complete construction documents or LOD350 certification",
     "Fixed world-axis orientations: front -Y, side +X; one plan cut and one X section; floor-by-floor sets not implemented",
     "Grid and levels are explicit user project coordinates, not inferred or checked against the building",
@@ -354,8 +381,8 @@
     "User-defined reinforcement details are not strength design or certified standard compliance; existing 0.8.0 detailing limitations apply"
   ],
   "source_sha256": {
-    "__init__.py": "0b4a132f8debd54d3c7280d042e387556c4e8eedba8b3458a15a2f24aef4fb46",
-    "engine.py": "2d0370976996d60a4972d19ec4767e7be2fb713ab25a8d301dece8362d8b334d",
+    "__init__.py": "b89bb0b68f0ee2d52c8d114890613876cd4c4d98c0825f29547f31a15526a1b6",
+    "engine.py": "269ceaea5f39704fae03fff099e1a550196b87f5edb29cbaf66d7069a43bc4b0",
     "visuals.py": "d886e061ab2ad9d6f0b208a0ff082637a59d08694aa4eb24c8c8e880b0c4284e",
     "structures.py": "812651feb2c1c1341a6099005cbee76070a2db8032070c07fe59b001f9b265ef",
     "builders.py": "d382743cac75ffa67ea917b606cf917d85d13280d72994324b8b74a9cb0bad6b",
@@ -373,7 +400,9 @@
     "multi_place.py": "94374086dee4bce77ec7619d09e30cd118ed39f9398f62aac59c0f81105e908f",
     "identity_data.py": "d2f89dd52d267f606ee89caf4001ee3e3d32e3001940f29d8e222ffe44525dcb",
     "copy_identity.py": "01feff69842fdcbc113a0e38748bd48d0ff2a893eb2aa225526f4578a493bfc4",
-    "rebar_recipe.py": "9f602c01312fdddfeef5e12c83739ff616ef0627f2e9ffac56cc4b92b8d35458"
+    "rebar_recipe.py": "9f602c01312fdddfeef5e12c83739ff616ef0627f2e9ffac56cc4b92b8d35458",
+    "analytical.py": "6832e8955659f52748ba78efb8c22d1ef1b8394ca1dc2247052c6efea277ef1f",
+    "analytical_ui.py": "d0f8a3edcd65997e8ababe8aa514a4f75bc26a49dc33fd09ec59cdd44d86ada8"
   },
   "publication_note": "Line endings normalized to LF; original installed/native-tested hashes retained."
 }

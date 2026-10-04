@@ -3,7 +3,7 @@ import json,hashlib
 from pathlib import Path
 import pdfplumber
 root=Path(__file__).resolve().parents[1]
-folder=root/'thai_bim/verification-v11'
+folder=root/'verification-local'
 path=folder/'Thai-BIM-drawings-1-50.pdf'
 report=[]
 with pdfplumber.open(path) as pdf:
@@ -27,7 +27,7 @@ with pdfplumber.open(path) as pdf:
         report.append(dict(sheet=code,paper_mm=[width,height],vector_lines=len(page.lines),
                            raster_images=len(page.images),metre_scale_segments_mm=widths,
                            measured_grid_dimension_paper_mm=span))
-out=dict(version='0.11.0',pages=report,pdf_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+out=dict(version='0.12.0',pages=report,pdf_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
          visual_review='All five Poppler-rendered pages inspected; explicit levels separated with leaders; synthetic coordination fixture, not construction design')
 (folder/'pdf-qa.json').write_text(json.dumps(out,indent=2)+'\n',encoding='utf-8')
 print('PASS: 5 A3 vector pages; model grid projection and 1 m scale segments physically verified at 1:50')
