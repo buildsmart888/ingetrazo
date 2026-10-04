@@ -82,6 +82,6 @@
       "measured_grid_dimension_paper_mm": 80
     }
   ],
-  "pdf_sha256": "3bb762d826bca97c416503c63086c0ddf858421ab64ce8ba50db1713f075ba05",
+  "pdf_sha256": "d6d59c5de9ab01458b2a6e0df049fbf08d23ac2f56ff397c14dbd2db1881dc52",
   "visual_review": "All five Poppler-rendered pages inspected; explicit levels separated with leaders; synthetic coordination fixture, not construction design"
 }

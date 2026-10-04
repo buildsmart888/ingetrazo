@@ -1,4 +1,4 @@
-# Thai BIM Toolkit 0.13.0
+# Thai BIM Toolkit 0.14.0
 
 Extension สำหรับ IngeTrazo Extension API 2 พัฒนาจากงาน Family10
 ใช้ Python/PySide6 และไลบรารีของ IngeTrazo ไม่มี API key และไม่มีการเรียก AI ในคำสั่งรุ่นนี้
@@ -7,7 +7,7 @@ Extension สำหรับ IngeTrazo Extension API 2 พัฒนาจาก�
 
 นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py` ไปไว้ใน
 `%APPDATA%\ingetrazo\plugins\thai_bim` แล้วเปิด IngeTrazo ใหม่
-เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.13
+เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.14
 การติดตั้งในครั้งนี้จะเปิดแผงให้ใน session ปัจจุบันด้วย จึงไม่จำเป็นต้องปิดไฟล์ที่ยังไม่บันทึก
 
 API ของ IngeTrazo ช่วง 0.x ยังเปลี่ยนได้ โดยเฉพาะการเชื่อมแผง Render ซึ่งใช้รายละเอียดภายใน
@@ -616,3 +616,48 @@ IGZ reopen, viewport pixel overlay และการไฮไลต์ราย
 ตรวจทุกชนิด, polygon เว้าพร้อมพิกัด local ติดลบ, native Qt save button, Undo/Redo,
 stale selection/document/pose, เหล็กเดิมและ analytical stale, copy shared mesh และ IGZ reopen
 ใช้โมเดลทดสอบแยก; geometry ในไฟล์ผู้ใช้ไม่เปลี่ยน
+
+
+## รุ่น 0.14.0 — เหล็กพื้นทางเดียว / สองทาง / ไวร์เมช / โดเวล
+
+เลือกพื้นคอนกรีต Thai BIM หนึ่งชิ้น → ไอคอน **เหล็กเสริม Host** เดิม
+หรือปุ่ม **เหล็กพื้นทางเดียว / สองทาง / ไวร์เมช / โดเวล…** ในหมวดชิ้นงาน
+→ อ่านพื้นที่เลือก → เลือกระบบ / ทิศพาด local X หรือ Y → ตั้งรายละเอียดตามแบบ
+→ **ตรวจ Host + ยืนยันพรีวิวก่อนสร้าง** → **สร้าง / อัปเดตเหล็กพื้น**
+ปุ่มตรวจและสร้างอยู่ด้านล่างหน้าต่างตลอดเวลา; ใช้ Centreline เป็นค่าเริ่มต้นลด geometry
+ช่องไม่เกี่ยวกับระบบที่เลือกปิดใช้งาน แต่เก็บค่าไว้เมื่อสลับระบบ
+
+- **One-way**: เหล็กหลักตามทิศพาด + เหล็กกระจายตั้งฉาก ตั้งขนาดและระยะสูงสุดแยกกัน
+- **Two-way**: เหล็ก A และ B ตั้งแยกกัน เลือก Bottom หรือ Bottom + Top
+- **Precast**: ไวร์เมช A/B ขนาด 2–12 mm อยู่ใน topping ภายในส่วนบนของ Host เดิม
+  ไม่เพิ่มคอนกรีต topping ซ้ำ; Host ต้องมีความหนารวมเพียงพอ
+- โดเวลปลายพื้นสำเร็จ: เลือก Start / End / Both ตามทิศพาด, Straight หรือ L ขึ้น
+  กำหนดระยะฝังเข้า Host ระยะยื่นนอก Host ขนาด ระยะ รัศมีดัด และระยะหุ้มตามแบบ
+  รุ่นนี้โดเวลใช้ Host สี่เหลี่ยม ส่วน mesh ใช้ polygon ได้
+
+![พรีวิวเหล็กพื้นเว้า](docs/images/slab-one-way-dialog.png)
+![พรีวิวไวร์เมชและโดเวลปลายพื้น](docs/images/slab-precast-dialog.png)
+
+ตัดเส้นเหล็กตาม polygon จริง รวมมุมเว้าและพิกัด local ติดลบ
+ใช้ระยะหุ้มถึงผิวเหล็ก ไม่ใช่แกนกลาง; ตัดแนวด้วย capsule รอบเส้นขอบและวงกลมรอบมุม
+เหล็ก A/B อยู่คนละระดับสัมผัสกัน; ตรวจความหนารองรับ mat, mesh และโดเวลก่อนสร้าง
+ยังไม่รองรับช่องเปิด เหล็กเสริมพิเศษเหนือรองรับ hooks/laps ของ mat หรือแกนเอียงอิสระ
+ทิศพาดเป็น local Host เมื่อหมุน Host; ชุดเหล็กใช้ transform เดียวกันหนึ่งครั้ง
+
+RB / DB / ASTM ใช้ nominal catalogue เดิมสำหรับเหล็ก mat และโดเวล
+ไวร์เมชระบุชื่อผลิตภัณฑ์ ขนาดและระยะเอง ไม่อ้างว่าเป็น RB/DB หรือรับรองมาตรฐานผลิตภัณฑ์
+QTO/BBS แยก Main / Distribution / Two-way A/B / Wire mesh / End dowel
+Excel BBS เพิ่ม Slab system, Slab role, Mesh specification พร้อมความยาวและน้ำหนักสุทธิ
+ไม่ได้ถอดจำนวนแผ่น/ม้วนสั่งซื้อ ระยะทาบ เศษ ลวดอัดแรง หรือแบ่งแผ่นพื้นสำเร็จจริง
+
+ค่าตั้งต้นเป็นตัวอย่างสำหรับพรีวิว ผู้ใช้ต้องตั้งตามแบบ ไม่ใช่การออกแบบกำลัง
+ไม่เลือกคานรองรับหรือคำนวณ anchorage/development length ให้เอง
+รายละเอียดเก็บแยกตาม Host; ยังไม่ได้เชื่อม recipe พื้นใหม่เข้าคลังชนิด
+การอัปเดตแทนที่เหล็กเฉพาะ Host ที่ตรวจแล้ว; ชิ้นคอนกรีตและเหล็ก Host อื่นคงเดิม
+เปลี่ยน Host/type/ค่าหลัง review ต้องตรวจใหม่; เหล็กที่แก้มือ/ย้ายเองหรือรหัส Copy ซ้ำถูกบล็อก
+slot เดิมรักษา native/business IDs; Undo/Redo และ IGZ ภาษาไทยผ่านการตรวจจริง
+
+ตรวจรุ่นนี้: **105 pure tests / 343 native checks** (298 regression + 45 slab checks)
+ทดสอบ Qt create button, polygon เว้า, mode conversion, RB/DB fields, Full/Lightweight/Centreline,
+QTO/BBS/Excel, saved parameters, identity guards, stale preview, Undo/Redo และ IGZ reopen
+geometry ในไฟล์ผู้ใช้ไม่เปลี่ยน; หลักฐานและตัวอย่างใช้โมเดลสังเคราะห์แยก

@@ -245,6 +245,7 @@ class RebarDialog(BuilderDialog):
         if len(selected)!=1:raise ValueError('เลือกชิ้นคอนกรีต Thai BIM หนึ่งชิ้น')
         host=selected[0];rec=(host.ext or {}).get('thai_bim',{})
         params=rec.get('params') or rec.get('stair_params')
+        if any((g.ext or {}).get('thai_bim',{}).get('slab_rebar_schema') for g in scene.groups if (g.ext or {}).get('thai_bim',{}).get('host_uid')==host.uid):raise ValueError('Use Slab reinforcement / mesh / dowel dialog for this Host')
         if not params or rec.get('kind') not in ('Footing','Column','Beam','Slab','Stair'):raise ValueError('รองรับ RC และบันไดตรงที่สร้างด้วย Thai BIM')
         if params.get('shape')=='polygon':raise ValueError('เหล็กพื้นหลายจุดยังไม่รองรับ; ไม่ใช้ตะแกรงสี่เหลี่ยมแทนขอบเขตจริง')
         host_token(host);self.bound_scene=scene;self.reviewed_key=None;self.reviewed_specs=None
@@ -382,6 +383,9 @@ def add_tools(panel):
     panel._v04_tools=True
     panel.builder_dialogs={}
     def open_builder(kind):
+        if kind=='Rebar' and len(panel.app.scene.selection)==1 and next(iter(panel.app.scene.selection)).ext.get('thai_bim',{}).get('kind')=='Slab':
+            from .slab_ui import open_dialog
+            return open_dialog(panel)
         if kind not in panel.builder_dialogs:panel.builder_dialogs[kind]={'Roof':RoofDialog,'Stair':StairDialog,'Rebar':RebarDialog}[kind](panel)
         d=panel.builder_dialogs[kind];d.show();d.raise_();d.activateWindow()
     panel.open_builder=open_builder

@@ -1,6 +1,6 @@
 {
   "schema": "thai-bim-analytical/1",
-  "id": "6976c8f8-e344-4db4-8f88-edfc67555083",
+  "id": "0e8d1880-d7c4-4f7f-9205-f306dfccfea9",
   "revision": 2,
   "units": {
     "length": "m",
@@ -8,11 +8,11 @@
     "mass": "tonne",
     "stress": "kN/m2"
   },
-  "source_digest": "51bf2fcbfcd47d6bedd5aef669f36beef1da65d52410bfc9ea4a5133104eb761",
+  "source_digest": "1ac0e601420470ee91b217f4f4e4472cd831eebc290144345bad360690accffb",
   "sources": [
     {
-      "id": "141f1c3e-3ebc-48ca-b8db-f40aee73e0d5",
-      "native_uid": "dbe29f78d77a4e7a",
+      "id": "41ba3496-63b9-4c42-a9a2-ae5015daaad6",
+      "native_uid": "a4d0beb0c89648f5",
       "name": "TBIM Column member",
       "kind": "Column",
       "params": {
@@ -45,8 +45,8 @@
       "geometry_hash": "0dd12968985521fb7c7ff4253a4e26d8d910b32f40500af57e40eedeb6e881f3"
     },
     {
-      "id": "8e7fd3ab-5fcb-4a77-aa78-faa2cfc0d532",
-      "native_uid": "b9413b42bea34cba",
+      "id": "b6c89021-8105-4f9f-9fcb-53fcb0a4564e",
+      "native_uid": "71f0ae57d0844d23",
       "name": "TBIM Beam member",
       "kind": "Beam",
       "params": {
@@ -116,9 +116,9 @@
   ],
   "members": [
     {
-      "id": "member-de0ad96d84db4709309db83b",
-      "source_id": "141f1c3e-3ebc-48ca-b8db-f40aee73e0d5",
-      "source_native_uid": "dbe29f78d77a4e7a",
+      "id": "member-fc87a27602aceffbfc6f63c1",
+      "source_id": "41ba3496-63b9-4c42-a9a2-ae5015daaad6",
+      "source_native_uid": "a4d0beb0c89648f5",
       "name": "TBIM Column member",
       "kind": "Column",
       "axis": [
@@ -165,9 +165,9 @@
       "basis": "Geometric centroid; verify connection offsets and modelling assumptions"
     },
     {
-      "id": "member-7cfd582acc68c709edd7e734",
-      "source_id": "8e7fd3ab-5fcb-4a77-aa78-faa2cfc0d532",
-      "source_native_uid": "b9413b42bea34cba",
+      "id": "member-9ae920a89bc1589adf9b35e8",
+      "source_id": "b6c89021-8105-4f9f-9fcb-53fcb0a4564e",
+      "source_native_uid": "71f0ae57d0844d23",
       "name": "TBIM Beam member",
       "kind": "Beam",
       "axis": [
@@ -216,8 +216,8 @@
   ],
   "elements": [
     {
-      "id": "element-6ffa0ebba1160015b571550c",
-      "member_id": "member-de0ad96d84db4709309db83b",
+      "id": "element-8443ab6edb86c3d8fba46877",
+      "member_id": "member-fc87a27602aceffbfc6f63c1",
       "node_i": "node-c42502d9a3cb8c3bf47febeb",
       "node_j": "node-846a3d78acee74f84f9f4e86",
       "type": "frame",
@@ -227,8 +227,8 @@
       ]
     },
     {
-      "id": "element-be3c38cf73c81fca23efc4d9",
-      "member_id": "member-de0ad96d84db4709309db83b",
+      "id": "element-bb72777b072fb94c552443e8",
+      "member_id": "member-fc87a27602aceffbfc6f63c1",
       "node_i": "node-846a3d78acee74f84f9f4e86",
       "node_j": "node-7212638e87c2410a3c474936",
       "type": "frame",
@@ -238,8 +238,8 @@
       ]
     },
     {
-      "id": "element-91a9cb39717e05efcdd04c12",
-      "member_id": "member-7cfd582acc68c709edd7e734",
+      "id": "element-4dbed32f489bd3b457dea43c",
+      "member_id": "member-9ae920a89bc1589adf9b35e8",
       "node_i": "node-846a3d78acee74f84f9f4e86",
       "node_j": "node-e1260a7a5a5b5ffeb83af5d0",
       "type": "frame",

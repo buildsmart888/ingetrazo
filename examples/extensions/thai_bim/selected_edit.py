@@ -74,7 +74,9 @@ class SelectedEditDialog(BuilderDialog):
         cmd,group=command(self.bound_scene,host,self.params(),self.expected);self.panel.execute(cmd);self.read_host()
         self.output.appendPlainText('บันทึกเฉพาะชิ้นนี้แล้ว • Undo ได้ • ชิ้นอื่นและคลังชนิดไม่เปลี่ยน')
     def rebar(self):
-        self.host()
+        if self.host().ext['thai_bim']['kind']=='Slab':
+            from .slab_ui import open_dialog
+            self.rebar_dialog=open_dialog(self.panel);return
         from .builders import RebarDialog
         old=getattr(self,'rebar_dialog',None)
         if old:old.close();old.deleteLater()

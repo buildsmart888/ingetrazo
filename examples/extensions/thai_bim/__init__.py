@@ -21,7 +21,7 @@ from .visuals import launcher, decorate_multi, decorate_cut
 from .builders import add_tools
 
 KEY='thai_bim'
-TITLE='Thai BIM 0.13'
+TITLE='Thai BIM 0.14'
 
 
 class ExchangeGroups(Command):
@@ -484,6 +484,8 @@ def setup(app):
     install_analytical(panel)
     from .selected_edit import install as install_selected_edit
     install_selected_edit(panel)
+    from .slab_ui import install as install_slab_rebar
+    install_slab_rebar(panel)
     return panel
 
 

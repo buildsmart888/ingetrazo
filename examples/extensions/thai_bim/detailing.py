@@ -4,10 +4,10 @@ from . import engine as E
 from . import structures as S
 
 
-def bent_bar(slot,points,diameter,inside_radius=.012,shape='Straight',density=7850,representation='Full'):
+def bent_bar(slot,points,diameter,inside_radius=.012,shape='Straight',density=7850,representation='Full',wire=False):
     pts=[tuple(map(E.finite,p)) for p in points];db=E.finite(diameter)
     inside=E.finite(inside_radius);rho=E.finite(density);radius=inside+db/2
-    if not .004<=db<=.06 or not db/2<=inside<=.25 or not 1000<=rho<=20000:
+    if not (.002 if wire else .004)<=db<=(.012 if wire else .06) or not db/2<=inside<=.25 or not 1000<=rho<=20000:
         raise ValueError('Diameter 4–60 mm; inside radius >= diameter/2; density 1000–20000 kg/m3')
     if representation not in ('Full','Lightweight','Centreline'):raise ValueError('Unknown bar representation')
     pairs=list(zip(pts,pts[1:]));lengths=[E.norm(E.sub(b,a)) for a,b in pairs]
@@ -172,5 +172,10 @@ def tables(records,issues=()):
     detail[0].extend(['Specified standard / unit system','Bar size','Surface','Specified grade'])
     for row,r in zip(detail[1:],records):
         steel=r['bbs'].get('steel',{});row.extend([steel.get(k,'Unspecified') for k in ('catalogue','size','surface','grade')])
+    if any(r['bbs'].get('slab_mode') for r in records):
+        headers=['Slab system','Slab role','Mesh specification'];summary[0].extend(headers);detail[0].extend(headers)
+        for row,(_,(_,b,_)) in zip(summary[1:],sorted(grouped.items())):
+            row.extend([b.get(k,'') for k in ('slab_mode','slab_role','mesh_specification')])
+        for row,r in zip(detail[1:],records):row.extend([r['bbs'].get(k,'') for k in ('slab_mode','slab_role','mesh_specification')])
     notes=[['Basis / excluded items'],['Internal shape names; designer supplies dimensions, radius, hooks, lap and anchorage.'],['Cut length = tangent straight lengths + (inside radius + diameter/2) × angle in radians.'],['Lap is represented by two offset bars; extensions project beyond host ends and require adjacent-host review.'],['Nominal circular diameter × input density; mesh facets are a visual approximation.'],['Legacy bars and changed/missing hosts are excluded.']]+[[v] for v in issues]
     return [('BBS',summary),('Bars',detail),('Basis and issues',notes)]

@@ -1,4 +1,4 @@
-# Thai BIM Toolkit 0.13.0
+# Thai BIM Toolkit 0.14.0
 
 An optional Thai-language extension for IngeTrazo Extension API 2. It adds a
 21-button toolbar and illustrated, modeless dialogs for concrete members,
@@ -6,17 +6,17 @@ roof framing, straight concrete stairs, reinforcement and quantity takeoff.
 It runs locally without an AI service or API key.
 
 [ภาษาไทย / detailed Thai guide](README-th.md) ·
-[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.13.0)
+[Download the extension](https://github.com/buildsmart888/ingetrazo/releases/tag/thai-bim-v0.14.0)
 
 ## Install
 
-1. Download `Thai-BIM-Toolkit-0.13.0.zip` from the release and extract it.
+1. Download `Thai-BIM-Toolkit-0.14.0.zip` from the release and extract it.
 2. Copy the complete `thai_bim` folder into IngeTrazo's **user plugins folder**.
    On Windows this is `%APPDATA%\ingetrazo\plugins\thai_bim`.
    Alternatively, copy this directory from the repository and name it `thai_bim`.
 3. Restart IngeTrazo. Open **Extensions → Thai BIM Toolkit…** or use the new toolbar.
 
-Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py` and `selected_geometry.py`
+Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py` and `slab_ui.py`
 together. PySide6 and NumPy are provided by the host application. The plugin
 does not require `openpyxl`; that library is used only by the tests.
 
@@ -83,8 +83,8 @@ in isolated test scenes; they are modeling examples, not construction designs.
 
 ## Verification
 
-The installed 0.13.0 implementation passed **81 pure tests** and
-**298 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
+The installed 0.14.0 implementation passed **105 pure tests** and
+**343 native checks** for solids, toolbar/dialog actions, stable updates, Undo,
 host association, QTO invalidation, IGZ persistence and GLB export. Native checks
 left the user's document geometry unchanged. Evidence is in
 [RELEASE.json](RELEASE.json) and [evidence/live-checks.json](evidence/live-checks.json).
@@ -303,9 +303,9 @@ implemented. The older Grid placement tool is retained with its original grid
 input requirements.
 
 Existing explicit Host reinforcement review works on typed footing/column/beam,
-rectangular slabs and directed straight stairs. Polygon reinforcement and saved
-type reinforcement recipes are reserved for future development; polygon slabs
-block rectangular-cage substitution and the old rectangular editing commands.
+rectangular slabs and directed straight stairs. The slab module now clips RC mats and mesh against actual polygon boundaries.
+Legacy rectangle-only cages cannot substitute for polygon outlines.
+Generic per-type reinforcement recipes remain available; new slab settings are per Host.
 Changing a reinforced concrete host requires renewed reinforcement review.
 
 ![Member types](docs/images/member-library.png)
@@ -415,3 +415,43 @@ selection/document/pose guards, existing bar retention, analytic staleness, shar
 and IGZ reopen. Polygon slab reinforcement and L/U stair modeling remain unsupported.
 
 ![Selected instance editor](docs/images/selected-instance-editor.png)
+
+
+## 0.14.0: polygon slab mats, topping mesh and end dowels
+
+Select one Thai BIM concrete Slab, then use the existing **Rebar Host** toolbar
+icon or the new slab reinforcement button in the members tab. Read the Host,
+select One-way / Two-way / Precast and local span X/Y, enter project detailing,
+explicitly review, then create/update. Review and create buttons remain visible
+at the bottom. Settings are saved per Host and reload from IGZ.
+
+RC mode supports independent A/B bar sizes and maximum spacing, with Bottom or
+Bottom + Top mats. Bars are clipped by exact boundary segment capsules,
+including concave corners and negative local coordinates. Cover is to steel
+surface. A/B bars touch on separate levels; insufficient thickness is rejected.
+Precast mode places user-named welded mesh wires (2–12 mm) within topping at the
+top of the existing full-thickness Host; it does not duplicate topping concrete.
+Rectangular precast Hosts also support Start / End / Both straight or upward-L
+dowels, with explicit embed, outside extension, diameter, spacing, cover and radius.
+
+![Polygon slab preview](docs/images/slab-one-way-dialog.png)
+![Precast mesh and end dowels](docs/images/slab-precast-dialog.png)
+
+QTO and BBS distinguish main, distribution, two-way, mesh and end-dowel roles.
+Excel adds slab system, role and mesh product text. Mesh quantities are net wire
+length and mass, excluding sheet/roll procurement counts, laps and waste.
+Centreline is the default; Full and Lightweight retain the same analytic BBS.
+Updates replace only the reviewed Host cage, retain matching IDs and support Undo.
+Selection/document/Host/type/settings changes invalidate review; copied IDs and
+manually edited or independently moved bars must be resolved before updating.
+
+No slab openings, support-strength/anchorage design, top support strips, mat
+hooks/laps, automatic support recognition, physical precast plank subdivision or
+prestressing are implemented. System names are explicit user choices, not an
+automatic structural classification. New slab recipes are per Host; integration
+with the type catalogue remains pending.
+
+Validation: 105 pure tests and 343 native checks (298 regression + 45 slab checks),
+including native Qt create, polygon clipping, mode conversion, steel catalogues,
+role-separated Excel, Full/Lightweight geometry, Unicode IGZ, stale review and
+Undo/Redo. Synthetic examples only; user document geometry remains unchanged.
