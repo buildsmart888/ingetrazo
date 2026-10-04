@@ -1,5 +1,5 @@
 {
-  "version": "0.19.0",
+  "version": "0.20.0",
   "passed": [
     "native stair drawing dialog opens without overriding QWidget.show",
     "native plan sections bar details and BBS pages all created",
@@ -68,9 +68,6 @@
     "user copied sheet does not redirect original managed-sheet ownership",
     "all six final drawing sets validate after native IGZ roundtrip",
     "stair drawing tools retain 21 toolbar icons",
-    "all stair drawing tests preserve actual user document geometry",
-    "final drawing and placement regressions preserve actual user geometry",
-    "native final sheet preview paints actual dimensions and levels without errors",
-    "native Right-hand L Stair yields mirrored plan two true sections and actual BBS"
+    "all stair drawing tests preserve actual user document geometry"
   ]
 }

@@ -1,4 +1,4 @@
-# Thai BIM Toolkit 0.19.0
+# Thai BIM Toolkit 0.20.0
 
 An optional Thai-language extension for IngeTrazo Extension API 2. It adds a
 21-button toolbar and illustrated, modeless dialogs for concrete members,
@@ -16,7 +16,7 @@ It runs locally without an AI service or API key.
    Alternatively, copy this directory from the repository and name it `thai_bim`.
 3. Restart IngeTrazo. Open **Extensions → Thai BIM Toolkit…** or use the new toolbar.
 
-Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py`, `stair_library_ui.py`, `stair_placement.py`, `stair_place_ui.py`, `stair_connections.py`, `stair_connection_ui.py`, `stair_drawing_geometry.py` and `stair_drawings.py`
+Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py`, `stair_library_ui.py`, `stair_placement.py`, `stair_place_ui.py`, `stair_connections.py`, `stair_connection_ui.py`, `stair_drawing_geometry.py`, `stair_drawings.py`, `member_drawing_geometry.py` and `member_drawings.py`
 together. PySide6 and NumPy are provided by the host application. The plugin
 does not require `openpyxl`; that library is used only by the tests.
 
@@ -677,3 +677,45 @@ geometry remained unchanged. Examples are synthetic, not Family10 approval.
 ![Stair sheets dialog and linked status](docs/images/stair-drawing-dialog.png)
 ![U-stair plan with dimensions and Bar Marks](docs/images/stair-u-plan.png)
 ![Straight stair section and role reinforcement](docs/images/stair-straight-section.png)
+
+
+## 0.20.0 — Footing, column, beam and slab detail sheets
+
+Select one Thai BIM concrete member → existing Sheet toolbar icon → read member
+→ review all pages → build/update. A3/A2/A1/A0 landscape, exact 1:20/25/50;
+overflow is rejected. Open native Composer or export vector PDF / actual BBS XLSX.
+
+Each member has a plan and two actual mesh sections in local X/Y, measured overall
+dimensions and absolute world TOP/BOTTOM levels. Polygon dimensions are bounding
+extents, not individual boundary-edge lengths. Upright yaw/translation supported;
+tilts, scale/mirror, manually edited concrete and stale/edited actual cages rejected.
+Two-point beams retain their real span/direction. No inferred grid or whole-floor plan.
+
+Complete actual reinforcement is projected in red, deduplicating coincident paths.
+Bars projected to points use nominal diameter rings. Leaders identify representative
+roles; MARK QTY means the total existing BBS count for that mark. All actual Bar Marks,
+cut lengths and counts are retained in detail pages and PDF/XLSX BBS. Supports generated
+one-way/two-way slab cages, precast mesh/dowels and concave polygon slabs. Concrete-only
+mode produces three pages without inventing BBS. Physical plank subdivision, prestress,
+openings, mesh sheet overlaps/procurement and code-based reinforcement design remain absent.
+
+UID-bound member sets use the guarded stair sheet engine with separate project storage.
+Source/cage/page/option changes block stale exports. Native manual additions/guides stay
+at original paper positions; full MANUAL/RETIRED pages are archived on changed content.
+Explicit review of preserved details is required after changes. Undo/Redo and native IGZ
+retain sheets and archives. Upgrading v19 stair sets requires an explicit generator update.
+
+Limits: 12000 triangles, 150000 bar-path points, 120 marks, 200 member sets; upright local
+views, not whole-building drawings or permit/LOD certification. No strength, development,
+cover, lap, adjacent support suitability or reinforcement sizing verification.
+
+Verified: 220 pure tests; 145 native checks (76 new member checks + 69 repeated stair
+checks). Independent PDF verification: 58 member pages + 122 stair pages, 180 total.
+Physical scale, actual projected geometry, levels, marks/counts/cut lengths against XLSX,
+Qt review buttons, stale events, guarded updates, manual archives, Undo/Redo and IGZ.
+Original user geometry unchanged. Synthetic examples are not approved Family10 drawings.
+Replace the complete plugin folder and restart; keep all 38 Python modules together.
+
+![Member sheet dialog](docs/images/member-drawing-dialog.png)
+![Actual footing cage plan](docs/images/footing-plan.png)
+![Actual beam cage section](docs/images/beam-section.png)

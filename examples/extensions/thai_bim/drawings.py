@@ -321,6 +321,9 @@ class DrawingDialog(QDialog):
 
 def open_dialog(panel):
     selected=panel.app.scene.selection
+    if len(selected)==1 and next(iter(selected)).ext.get('thai_bim',{}).get('kind') in ('Footing','Column','Beam','Slab'):
+        from .member_drawings import open_dialog as member_dialog
+        return member_dialog(panel)
     if len(selected)==1 and next(iter(selected)).ext.get('thai_bim',{}).get('stair_params',{}).get('stair_schema')==2:
         from .stair_drawings import open_dialog as stair_dialog
         return stair_dialog(panel)

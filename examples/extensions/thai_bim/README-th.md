@@ -1,13 +1,13 @@
-# Thai BIM Toolkit 0.19.0
+# Thai BIM Toolkit 0.20.0
 
 Extension สำหรับ IngeTrazo Extension API 2 พัฒนาจากงาน Family10
 ใช้ Python/PySide6 และไลบรารีของ IngeTrazo ไม่มี API key และไม่มีการเรียก AI ในคำสั่งรุ่นนี้
 
 ## ติดตั้งและเปิด
 
-นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py`, `stair_library_ui.py`, `stair_placement.py`, `stair_place_ui.py`, `stair_connections.py`, `stair_connection_ui.py`, `stair_drawing_geometry.py`, `stair_drawings.py` ไปไว้ใน
+นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py`, `stair_library_ui.py`, `stair_placement.py`, `stair_place_ui.py`, `stair_connections.py`, `stair_connection_ui.py`, `stair_drawing_geometry.py`, `stair_drawings.py`, `member_drawing_geometry.py`, `member_drawings.py` ไปไว้ใน
 `%APPDATA%\ingetrazo\plugins\thai_bim` แล้วเปิด IngeTrazo ใหม่
-เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.19
+เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.20
 การติดตั้งในครั้งนี้จะเปิดแผงให้ใน session ปัจจุบันด้วย จึงไม่จำเป็นต้องปิดไฟล์ที่ยังไม่บันทึก
 
 API ของ IngeTrazo ช่วง 0.x ยังเปลี่ยนได้ โดยเฉพาะการเชื่อมแผง Render ซึ่งใช้รายละเอียดภายใน
@@ -856,3 +856,44 @@ PDF อิสระตรวจ 122 หน้าเวกเตอร์ขอ�
 ![หน้าต่างแบบบันไดและสถานะ](docs/images/stair-drawing-dialog.png)
 ![แปลนบันได U](docs/images/stair-u-plan.png)
 ![รูปตัดบันไดและเหล็ก](docs/images/stair-straight-section.png)
+
+
+## 0.20.0 — แบบฐานราก เสา คาน และพื้น พร้อมเหล็กจริง
+
+เลือกชิ้นงาน Thai BIM หนึ่งชิ้น → ไอคอน **Sheet** → **อ่านฐานราก / เสา / คาน / พื้นที่เลือก**
+→ เลือกกระดาษ A3/A2/A1/A0 และ 1:20/1:25/1:50 → **ตรวจพรีวิวทุกหน้า** → **สร้าง/อัปเดต Sheet**
+→ เปิด Composer / ส่งออก PDF / ส่งออก BBS XLSX
+
+สร้างแปลนและรูปตัดจริงสองทิศตาม local X/Y ของชิ้นงาน พร้อมมิติขนาดรวมจาก mesh
+และระดับ TOP/BOTTOM ตามตำแหน่งโลกจริง กรณีพื้นหลายเหลี่ยม มิติรวมเป็นขนาดกรอบครอบ
+ไม่ใช่ระยะทุกด้านของขอบพื้น คานจากการคลิกสองจุดใช้ความยาวและทิศของโมเดลจริง
+รองรับการย้ายและหมุน yaw; ปฏิเสธชิ้นงานเอียง/scale/mirror และ geometry ที่ถูกแก้ด้วยมือ
+ยังไม่สร้างกริดโครงการ แปลนรวมชั้น หรือรายละเอียดชิ้นรองรับข้างเคียงอัตโนมัติ
+
+แสดงแนวเหล็กจริงครบชุดเป็นภาพฉายสีแดง; แนวที่ฉายทับกันแสดงซ้อนกัน
+ปลายเหล็กที่ฉายเป็นจุดแสดงวงขนาดเส้นผ่านศูนย์กลาง nominal
+เส้นนำระบุ Bar Mark/บทบาท/ขนาด และ **MARK QTY** เป็นจำนวนรวมของ Mark นั้นตาม BBS
+รายละเอียดแต่ละ Mark ใช้แนวจริงและความยาวตัดเดิม ไม่สร้างเหล็กสมมติ
+พื้นรองรับเหล็กทางเดียว สองทาง และพื้นสำเร็จที่มีไวร์เมช/โดเวลซึ่งสร้างแล้ว
+การแบ่งแผ่นพื้นสำเร็จ ลวดอัดแรง ช่องเปิด และระยะทาบแผ่น mesh ยังไม่ทำ
+ปิดตัวเลือกเหล็กเพื่อสร้างแบบคอนกรีตอย่างเดียวได้; โหมดนี้ไม่มี BBS
+
+ชุดแบบผูกกับ UID ชิ้นงาน แยกจากชุดแบบบันได การเปลี่ยน Host/เหล็ก/ตัวเลือก
+หรือแก้ส่วนอัตโนมัติจะบล็อกส่งออกจนตรวจ/อัปเดต เก็บรายละเอียดเพิ่มเองและ guides
+ที่ตำแหน่งกระดาษเดิม พร้อมเก็บสำเนา MANUAL/RETIRED เมื่อต้องเปลี่ยนหน้า
+ต้องตรวจรายละเอียดที่คงไว้ก่อนส่งออกหลังเปลี่ยนข้อมูล รองรับ Undo/Redo และ IGZ
+เมื่ออัปเกรดจาก 0.19 ชุดแบบบันไดเดิมจะแจ้งรุ่นเครื่องมือเปลี่ยน ให้อัปเดตก่อนส่งออก
+
+ขอบเขต: แบบรายละเอียดจากโมเดลจริง ไม่ใช่การรับรองแบบก่อสร้างทั้งโครงการ
+ไม่มีการคำนวณกำลัง ระยะพัฒนา ทาบ ระยะหุ้ม หรือเลือกเหล็กตามมาตรฐานแทนผู้ออกแบบ
+จำกัด 12000 concrete triangles, 150000 bar-path points, 120 marks และ 200 member sets
+ใช้ 38 Python modules ร่วมกัน ต้องติดตั้งทั้งโฟลเดอร์
+
+ตรวจรุ่นนี้: 220 pure tests, 145 native checks (76 งานชิ้นงานใหม่ + 69 บันไดที่ทดสอบซ้ำ)
+ตรวจ PDF แยก 58 หน้างานชิ้นงาน + 122 หน้าบันได รวม 180 หน้า
+มาตราส่วน รูปฉาย ขนาด ระดับ Bar Marks จำนวน และความยาวตัดเทียบ XLSX ผ่าน
+เอกสารเดิมของผู้ใช้ไม่ถูกเปลี่ยน ตัวอย่างเป็น synthetic fixtures ไม่ใช่แบบ Family10 ที่รับรองแล้ว
+
+![หน้าต่างแบบชิ้นงาน](docs/images/member-drawing-dialog.png)
+![แบบฐานรากและเหล็กจริง](docs/images/footing-plan.png)
+![รูปตัดคาน](docs/images/beam-section.png)

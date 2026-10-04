@@ -53,10 +53,11 @@ def find_sheet(scene,row):
 
 def manual_items(comp,tag):return [v for v in comp.all_items() if getattr(v,'group_id','')!=tag]
 
-def status(scene,uid):
-    meta=(scene.plugin_data.get(KEY) or {}).get(uid)
+def status(scene,uid,backend=None):
+    backend=backend or STAIR_BACKEND;key=backend.key
+    meta=(scene.plugin_data.get(key) or {}).get(uid)
     if not meta:return []
-    try:info=source(scene,uid,meta['steel']);failure=None
+    try:info=backend.source(scene,uid,meta['steel']);failure=None
     except ValueError as e:info=None;failure=str(e)
     out=[]
     for row in meta['sheets']:
@@ -72,16 +73,17 @@ def status(scene,uid):
         out.append(dict(key=row['key'],name=row['name'],reasons=reasons,manual=len(manual_items(comp,row['marker'])) if comp else 0))
     return out
 
-def validate(scene,uid):
-    rows=status(scene,uid)
+def validate(scene,uid,backend=None):
+    backend=backend or STAIR_BACKEND
+    rows=status(scene,uid,backend)
     if not rows:raise ValueError('Create Stair sheets first')
     bad=[r for r in rows if r['reasons']]
     if bad:raise ValueError('Review/update before export: '+'; '.join(r['key']+': '+', '.join(r['reasons']) for r in bad))
-    meta=scene.plugin_data[KEY][uid];return [find_sheet(scene,r) for r in meta['sheets']],meta
+    meta=scene.plugin_data[backend.key][uid];return [find_sheet(scene,r) for r in meta['sheets']],meta
 
 def sheet(view,opts,setid,key):
     paper,pp=G.paper_view(view,opts);pw,ph=paper['paper_size'];tag=marker(setid,key)
-    c=Composicion(name='TBIM Stair '+setid[:8]+' '+key,paper=opts['paper'],landscape=True,margin_mm=10,border=True)
+    c=Composicion(name='TBIM '+view.get('sheet_family','Stair')+' '+setid[:8]+' '+key,paper=opts['paper'],landscape=True,margin_mm=10,border=True)
     def text(x,y,w,value,size=8,bold=False,align='left'):
         c.texts.append(TextoItem(x_mm=x,y_mm=y,w_mm=w,text=str(value),size_pt=size,bold=bold,align=align,family='Arial',z=25,locked=True,group_id=tag))
     def line(a,b,weight=.18,color='#202020',arrow=False):
@@ -105,7 +107,7 @@ def sheet(view,opts,setid,key):
         x,y=l['point'];sx=pw-91
         c.niveles.append(NivelItem(x_mm=sx,y_mm=y,ax_mm=x-sx,ay_mm=0,z_m=l['z'],datum_m=opts['datum'],text=l['name']+' {z}',decimals=3,size_mm=2.4,line_mm=16,locked=True,group_id=tag,z=30))
     text(18,17,pw-36,opts['name']+' | '+key+' | '+view['title'],12,True)
-    text(18,28,pw-36,f"MODEL DETAIL | 1:{opts['scale']} | Dimensions mm / levels m | local stair view / actual cage",8)
+    text(18,28,pw-36,f"MODEL DETAIL | 1:{opts['scale']} | Dimensions mm / levels m | local {view.get('sheet_family','Stair')} view / actual cage",8)
     for i,label in enumerate(view.get('labels',[])):
         pos=pp(label['point']);tx,ty=pw-108,51+i*10
         line(pos,(tx-2,ty+2),.15,'#8c301b');text(tx,ty,88,label['text'],6.8)
@@ -119,8 +121,8 @@ def sheet(view,opts,setid,key):
             text(18,yy,pw-36,s,7);yy+=4.2
         if view.get('spatial'):text(pw-108,53,87,'SPATIAL BAR\nOrthographic projection;\nuse analytic BBS cut length.',7,True)
     else:
-        text(18,ph-78,pw-36,'Rise '+str(view.get('rise_text',''))+' | '+view.get('note','Dimensions from verified schema-2 concrete; heavy = cut, grey = projected context'),7)
-        text(18,ph-72,pw-36,'Representative bars shown by role; full quantities / all Bar Marks are in BBS. Curved bars are sampled centrelines.',7)
+        text(18,ph-78,pw-36,view.get('summary','Rise '+str(view.get('rise_text','')))+' | '+view.get('note','Dimensions from verified schema-2 concrete; heavy = cut, grey = projected context'),7)
+        text(18,ph-72,pw-36,view.get('reinforcement_note','Representative bars shown by role; full quantities / all Bar Marks are in BBS. Curved bars are sampled centrelines.'),7)
     # Generated title grid is ordinary tagged shapes/texts: native user title blocks remain independent.
     x,y,w,h=pw-215,ph-43,205,33
     for a,b in [((x,y),(x+w,y)),((x,y+h),(x+w,y+h)),((x,y),(x,y+h)),((x+w,y),(x+w,y+h)),((x+w/2,y),(x+w/2,y+h))]:line(a,b,.3)
@@ -146,15 +148,18 @@ def build_parts(info,opts,setid,steel=True):
             v['lines'] += [dict(a=a,b=b,weight=.25,color='#8c301b') for a,b in zip(pts,pts[1:]) if math.dist(a,b)>G.EPS]
             v['labels'].append(dict(point=pts[len(pts)//2],text=row['mark']+'\n'+role))
         if len(representatives)>max(1,int((G.PAPERS[opts['paper']][1]-150)/10)):v['note']='Representative callouts limited to available sidebar; all roles in BBS/detail pages'
+    return render_parts(views,rows,opts,setid,p['layout'],steel=steel)
+
+def render_parts(views,rows,opts,setid,layout,family='Stair',steel=True):
     details=G.detail_views(rows)
-    for v in details:v['layout']=p['layout']
+    for v in views+details:v['layout']=layout;v['sheet_family']=family
     parts=[];entries=[]
     for i,v in enumerate(views+details,1):
         key=('S'+str(i).zfill(3));c=sheet(v,opts,setid,key);parts.append(c);entries.append(dict(key=key,title=v['title'],name=c.name,marker=marker(setid,key),steel=steel,auto_hash=auto_hash(c,marker(setid,key))))
     # Vector BBS table. No scale implied for table text; title explicitly says schedule.
     for start in range(0,len(rows),22):
         subset=rows[start:start+22];key='BBS'+str(start//22+1).zfill(2);tag=marker(setid,key);pw,ph=G.PAPERS[opts['paper']]
-        v=dict(title='Bar bending schedule',lines=[dict(a=(0,0),b=(1,0),weight=.01)],dims=[],texts=[],levels=[],layout=p['layout'])
+        v=dict(title='Bar bending schedule',lines=[dict(a=(0,0),b=(1,0),weight=.01)],dims=[],texts=[],levels=[],layout=layout,sheet_family=family)
         c=sheet(v,opts,setid,key);c.shapes=[s for s in c.shapes if s.stroke_mm!=.01]
         def text(x,y,w,value,size=7,bold=False):c.texts.append(TextoItem(x_mm=x,y_mm=y,w_mm=w,text=str(value),size_pt=size,bold=bold,family='Arial',locked=True,group_id=tag,z=35))
         columns=[('BAR MARK',.20),('ROLE / STEEL',.35),('D mm',.07),('QTY',.06),('CUT m',.10),('TOTAL m',.11),('MASS kg',.11)];x=18;width=pw-36;xs=[]
@@ -164,7 +169,7 @@ def build_parts(info,opts,setid,steel=True):
             vals=[row['mark'],', '.join(row['roles'])+' '+steelname,f"{b['diameter_mm']:g}",n,f"{b['length_m']:.3f}",f"{n*b['length_m']:.3f}",f"{n*b['mass_kg']:.3f}"]
             for value,(x,w) in zip(vals,xs):text(x,52+j*5.8,w,str(value),7)
         text(18,ph-86,pw-36,'Counts and analytic cut lengths match actual-cage BBS Bar Marks; no procurement waste / laps inferred.',7)
-        c.name='TBIM Stair '+setid[:8]+' '+key
+        c.name='TBIM '+family+' '+setid[:8]+' '+key
         c.scalebars=[];c.texts=[t for t in c.texts if not t.text.startswith(('Scale check:','Rise ','Representative bars'))]
         for t in c.texts:
             if t.text.startswith('MODEL DETAIL |'):t.text='BBS SCHEDULE | Table NTS | Actual-cage marks and analytic cut lengths'
@@ -172,12 +177,21 @@ def build_parts(info,opts,setid,steel=True):
         parts.append(c);entries.append(dict(key=key,title='BBS',name=c.name,marker=tag,steel=True,auto_hash=auto_hash(c,tag)))
     return parts,entries,rows
 
+class StairBackend:
+    key=KEY;title='Stair';selection_label='Stair ที่เลือก';dialog_attr='stair_drawing_dialog'
+    source=staticmethod(source);build_parts=staticmethod(build_parts);host=staticmethod(C.host)
+    @staticmethod
+    def summary(g):return g.ext['thai_bim']['stair_params']['layout']
+
+STAIR_BACKEND=StairBackend()
+
 class StairSheetSet(Command):
-    def __init__(self,scene,uid,opts,steel,expected):
-        self.scene=scene;self.info=source(scene,uid,steel)
+    def __init__(self,scene,uid,opts,steel,expected,backend=None):
+        self.backend=backend or STAIR_BACKEND;self.key=self.backend.key
+        self.scene=scene;self.info=self.backend.source(scene,uid,steel)
         if self.info['stamp']!=expected:raise ValueError('Stair/cage changed after preview; review again')
-        self.before=(list(scene.compositions),copy.deepcopy(scene.plugin_data));self.before_hash=D.digest([c.to_dict() for c in scene.compositions]);old=(scene.plugin_data.get(KEY) or {}).get(uid);setid=old['id'] if old else uuid.uuid4().hex
-        self.parts,entries,self.rows=build_parts(self.info,opts,setid,steel);prior={r['key']:r for r in old['sheets']} if old else {};removed=[];archives=[]
+        self.before=(list(scene.compositions),copy.deepcopy(scene.plugin_data));self.before_hash=D.digest([c.to_dict() for c in scene.compositions]);old=(scene.plugin_data.get(self.key) or {}).get(uid);setid=old['id'] if old else uuid.uuid4().hex
+        self.parts,entries,self.rows=self.backend.build_parts(self.info,opts,setid,steel);prior={r['key']:r for r in old['sheets']} if old else {};removed=[];archives=[]
         source_changed=bool(old and (old['geom']!=self.info['geom'] or old['bars_stamp']!=self.info['bars_stamp'] or old['options']!=opts or old['steel']!=steel or old.get('generator_version')!=E.VERSION))
         for c,row in zip(self.parts,entries):
             before=prior.get(row['key']);previous=find_sheet(scene,before) if before else None
@@ -199,28 +213,29 @@ class StairSheetSet(Command):
                 removed.append(prev);archive=copy.deepcopy(prev);archive.name=prev.name+' / RETIRED '+uuid.uuid4().hex[:6]
                 for item in archive.all_items():item.group_id=''
                 archives.append(archive)
-        data=copy.deepcopy(self.before[1]);store=data.setdefault(KEY,{})
+        data=copy.deepcopy(self.before[1]);store=data.setdefault(self.key,{})
         if len(store)>=200 and uid not in store:raise ValueError('Limit 200 stair sheet sets per document')
         store[uid]=dict(schema=1,generator_version=E.VERSION,id=setid,uid=uid,geom=self.info['geom'],bars_stamp=self.info['bars_stamp'],options=copy.deepcopy(opts),steel=steel,sheets=entries,archives=[c.name for c in archives])
         self.after=([c for c in self.before[0] if c not in removed]+archives+self.parts,data)
     def do(self,scene):
-        if scene is not self.scene or source(scene,self.info['uid'],self.after[1][KEY][self.info['uid']]['steel'])['stamp']!=self.info['stamp'] or scene.plugin_data!=self.before[1] or D.digest([c.to_dict() for c in scene.compositions])!=self.before_hash:raise ValueError('Source/sheets/document changed before commit')
+        if scene is not self.scene or self.backend.source(scene,self.info['uid'],self.after[1][self.key][self.info['uid']]['steel'])['stamp']!=self.info['stamp'] or scene.plugin_data!=self.before[1] or D.digest([c.to_dict() for c in scene.compositions])!=self.before_hash:raise ValueError('Source/sheets/document changed before commit')
         scene.compositions=list(self.after[0]);scene.plugin_data=copy.deepcopy(self.after[1])
     def undo(self,scene):scene.compositions=list(self.before[0]);scene.plugin_data=copy.deepcopy(self.before[1])
 
 class ReviewManual(Command):
-    def __init__(self,scene,uid):
-        self.scene=scene;self.before=copy.deepcopy(scene.plugin_data);self.hash=D.digest([c.to_dict() for c in scene.compositions]);self.uid=uid;self.after=copy.deepcopy(self.before);self.source_stamp=source(scene,uid,self.before[KEY][uid]['steel'])['stamp']
-        rows=status(scene,uid)
+    def __init__(self,scene,uid,backend=None):
+        self.backend=backend or STAIR_BACKEND;self.key=self.backend.key
+        self.scene=scene;self.before=copy.deepcopy(scene.plugin_data);self.hash=D.digest([c.to_dict() for c in scene.compositions]);self.uid=uid;self.after=copy.deepcopy(self.before);self.source_stamp=self.backend.source(scene,uid,self.before[self.key][uid]['steel'])['stamp']
+        rows=status(scene,uid,self.backend)
         if not rows or any(any(r!='Preserved manual details require review' for r in row['reasons']) for row in rows):raise ValueError('Update all stale/edited sheets before acknowledging preserved details')
-        for row in self.after[KEY][uid]['sheets']:row['manual_pending']=False
+        for row in self.after[self.key][uid]['sheets']:row['manual_pending']=False
     def do(self,scene):
-        if scene is not self.scene or scene.plugin_data!=self.before or D.digest([c.to_dict() for c in scene.compositions])!=self.hash or source(scene,self.uid,self.before[KEY][self.uid]['steel'])['stamp']!=self.source_stamp:raise ValueError('Sheets changed during manual review')
+        if scene is not self.scene or scene.plugin_data!=self.before or D.digest([c.to_dict() for c in scene.compositions])!=self.hash or self.backend.source(scene,self.uid,self.before[self.key][self.uid]['steel'])['stamp']!=self.source_stamp:raise ValueError('Sheets changed during manual review')
         scene.plugin_data=copy.deepcopy(self.after)
     def undo(self,scene):scene.plugin_data=copy.deepcopy(self.before)
 
-def export_pdf(panel,uid,path):
-    scene=panel.app.scene;parts,meta=validate(scene,uid);path=Path(path).with_suffix('.pdf');comp=D.composer(panel)
+def export_pdf(panel,uid,path,backend=None):
+    scene=panel.app.scene;parts,meta=validate(scene,uid,backend);path=Path(path).with_suffix('.pdf');comp=D.composer(panel)
     fd,temp=tempfile.mkstemp(prefix='tbim-stair-',suffix='.pdf',dir=path.parent);os.close(fd);before=scene.compositions;active=comp.comp
     try:
         scene.compositions=parts;errors=comp.export_all_pdf(temp)
@@ -231,10 +246,11 @@ def export_pdf(panel,uid,path):
         if Path(temp).exists():Path(temp).unlink()
     return path
 
-def export_bbs(scene,uid,path):
-    _,meta=validate(scene,uid)
+def export_bbs(scene,uid,path,backend=None):
+    backend=backend or STAIR_BACKEND
+    _,meta=validate(scene,uid,backend)
     if not meta['steel']:raise ValueError('This set excludes reinforcement')
-    info=source(scene,uid,True);records=[dict(id=b['uid'],host_uid=uid,host_name=info['name'],bbs=b['bbs']) for b in info['bars']]
+    info=backend.source(scene,uid,True);records=[dict(id=b['uid'],host_uid=uid,host_name=info['name'],bbs=b['bbs']) for b in info['bars']]
     E.write_xlsx(path,tables=B.tables(records));return Path(path)
 
 class SheetPreview(QWidget):
@@ -262,23 +278,25 @@ class SheetPreview(QWidget):
         p.end()
 
 class StairDrawingDialog(QDialog):
-    def __init__(self,panel):
+    def __init__(self,panel,backend=None):
+        self.backend=backend or STAIR_BACKEND;self.key=self.backend.key
         super().__init__(panel.app.window);self.panel=panel;self.scene=panel.app.scene;self.uid=None;self.review=None;self.preview_parts=[]
-        self.setWindowTitle('Thai BIM '+E.VERSION+' — Stair plan / sections / bars / BBS / Sheets');self.resize(1350,880)
+        self.setWindowTitle('Thai BIM '+E.VERSION+' — '+self.backend.title+' plan / sections / bars / BBS / Sheets');self.resize(1350,880)
         lay=QVBoxLayout(self);self.note=QLabel('เลือกบันได → อ่าน Stair → ตรวจพรีวิว → สร้าง/อัปเดต Sheet\nเหล็กต้องสร้างจริงและตรง Host • แก้ส่วนอัตโนมัติจะเก็บสำเนาเดิม • รายละเอียดเพิ่มเองคงไว้และต้องตรวจหลังอัปเดต');self.note.setWordWrap(True);self.note.setMaximumHeight(65);lay.addWidget(self.note)
         row=QHBoxLayout();lay.addLayout(row,1);form=QFormLayout();form.setFormAlignment(Qt.AlignTop);row.addLayout(form)
         self.fields={}
-        for key,label,value in [('name','โครงการ','Thai BIM Stair'),('revision','Revision','01'),('author','ผู้เขียนแบบ',''),('date','วันที่',datetime.now().strftime('%Y-%m-%d'))]:self.fields[key]=QLineEdit(value);form.addRow(label,self.fields[key])
+        for key,label,value in [('name','โครงการ','Thai BIM Stair'),('revision','Revision','01'),('author','ผู้เขียนแบบ',''),('date','วันที่',datetime.now().strftime('%Y-%m-%d'))]:self.fields[key]=QLineEdit(value if key!='name' else 'Thai BIM '+self.backend.title);form.addRow(label,self.fields[key])
         self.paper=QComboBox();self.paper.addItems(G.PAPERS);form.addRow('กระดาษแนวนอน',self.paper)
         self.scale=QComboBox();self.scale.addItems(['20','25','50']);self.scale.setCurrentText('50');form.addRow('มาตราส่วน 1:',self.scale)
-        self.angle=QDoubleSpinBox();self.angle.setRange(-360,720);self.angle.setValue(90);form.addRow('มุมรูปตัดรัศมี วน/โค้ง (deg)',self.angle)
+        self.angle=QDoubleSpinBox();self.angle.setRange(-360,720);self.angle.setValue(90);form.addRow('มุมรูปตัดรัศมี วน/โค้ง (deg)',self.angle);self.angle.setEnabled(self.backend.title=='Stair')
+        if self.backend.title!='Stair':self.angle.hide();form.labelForField(self.angle).hide()
         self.datum=QDoubleSpinBox();self.datum.setRange(-10000,10000);self.datum.setDecimals(3);form.addRow('Datum ระดับ (m)',self.datum)
         self.steel=QCheckBox('รวมเหล็กจริง + รายละเอียด Bar Mark + BBS');self.steel.setChecked(True);form.addRow(self.steel)
         self.pages=QComboBox();form.addRow('หน้าพรีวิว',self.pages);self.pages.currentIndexChanged.connect(self.page_changed)
         self.preview=SheetPreview();row.addWidget(self.preview,1)
         panel.app.viewport.sceneVersionChanged.connect(self.model_changed)
         self.table=QTableWidget(0,4);self.table.setHorizontalHeaderLabels(['Sheet','ชื่อ','รายละเอียดเพิ่มเอง','สถานะ / ต้องอัปเดต']);self.table.setEditTriggers(QTableWidget.NoEditTriggers);self.table.setMaximumHeight(200);lay.addWidget(self.table)
-        for labels in [[('อ่าน Stair ที่เลือก',self.read),('ตรวจพรีวิวทุกหน้า',self.prepare),('สร้าง/อัปเดต Sheet',self.build),('ตรวจสถานะแบบ',self.refresh)], [('เปิดแบบใน Composer',self.show_composer),('ตรวจรายละเอียดที่คงไว้แล้ว',self.acknowledge),('ส่งออก PDF…',self.export),('ส่งออก BBS XLSX…',self.bbs)]]:
+        for labels in [[('อ่าน '+self.backend.selection_label,self.read),('ตรวจพรีวิวทุกหน้า',self.prepare),('สร้าง/อัปเดต Sheet',self.build),('ตรวจสถานะแบบ',self.refresh)], [('เปิดแบบใน Composer',self.show_composer),('ตรวจรายละเอียดที่คงไว้แล้ว',self.acknowledge),('ส่งออก PDF…',self.export),('ส่งออก BBS XLSX…',self.bbs)]]:
             buttons=QHBoxLayout();lay.addLayout(buttons)
             for label,fn in labels:
                 b=QPushButton(label);b.clicked.connect(lambda checked=False,fn=fn:panel.guard(fn));buttons.addWidget(b)
@@ -290,40 +308,40 @@ class StairDrawingDialog(QDialog):
     def options(self):return G.options(paper=self.paper.currentText(),scale=int(self.scale.currentText()),angle=self.angle.value(),datum=self.datum.value(),**{k:w.text() for k,w in self.fields.items()})
     def read(self):
         self.check()
-        if len(self.scene.selection)!=1:raise ValueError('Select one schema-2 RC Stair')
-        g=C.host(self.scene,next(iter(self.scene.selection)).uid);self.uid=g.uid;self.review=None;self.note.setText('อ่าน '+g.name+' • '+g.ext['thai_bim']['stair_params']['layout']);meta=(self.scene.plugin_data.get(KEY) or {}).get(self.uid)
+        if len(self.scene.selection)!=1:raise ValueError('Select one '+self.backend.title)
+        g=self.backend.host(self.scene,next(iter(self.scene.selection)).uid);self.uid=g.uid;self.review=None;self.note.setText('อ่าน '+g.name+' • '+self.backend.summary(g));meta=(self.scene.plugin_data.get(self.key) or {}).get(self.uid)
         if meta:
             for k,w in self.fields.items():w.setText(meta['options'][k])
             self.paper.setCurrentText(meta['options']['paper']);self.scale.setCurrentText(str(meta['options']['scale']));self.angle.setValue(meta['options']['angle']);self.datum.setValue(meta['options']['datum']);self.steel.setChecked(meta['steel'])
         self.refresh()
     def prepare(self):
-        self.check();info=source(self.scene,self.uid,self.steel.isChecked());opts=self.options();meta=(self.scene.plugin_data.get(KEY) or {}).get(self.uid);self.preview_parts,_,_=build_parts(info,opts,meta['id'] if meta else 'preview',self.steel.isChecked());self.review=(info['stamp'],opts,self.steel.isChecked());self.pages.clear();self.pages.addItems([c.name for c in self.preview_parts]);self.page_changed(0);self.note.setText('ตรวจแล้ว '+str(len(self.preview_parts))+' หน้า • '+opts['paper']+' • 1:'+str(opts['scale'])+' • 1 m = '+str(1000/opts['scale'])+' mm บนกระดาษ')
+        self.check();info=self.backend.source(self.scene,self.uid,self.steel.isChecked());opts=self.options();meta=(self.scene.plugin_data.get(self.key) or {}).get(self.uid);self.preview_parts,_,_=self.backend.build_parts(info,opts,meta['id'] if meta else 'preview',self.steel.isChecked());self.review=(info['stamp'],opts,self.steel.isChecked());self.pages.clear();self.pages.addItems([c.name for c in self.preview_parts]);self.page_changed(0);self.note.setText('ตรวจแล้ว '+str(len(self.preview_parts))+' หน้า • '+opts['paper']+' • 1:'+str(opts['scale'])+' • 1 m = '+str(1000/opts['scale'])+' mm บนกระดาษ')
     def page_changed(self,index):self.preview.comp=self.preview_parts[index] if 0<=index<len(self.preview_parts) else None;self.preview.update()
     def build(self):
         self.check()
         if not self.review or self.review[1]!=self.options() or self.review[2]!=self.steel.isChecked():raise ValueError('Inputs changed; review all pages first')
-        cmd=StairSheetSet(self.scene,self.uid,self.options(),self.steel.isChecked(),self.review[0]);self.panel.execute(cmd);self.refresh();self.note.setText('สร้าง/อัปเดตแล้ว '+str(len(cmd.parts))+' หน้า • รายละเอียดเพิ่มเองคงไว้; ตรวจสถานะก่อนส่งออก')
+        cmd=StairSheetSet(self.scene,self.uid,self.options(),self.steel.isChecked(),self.review[0],self.backend);self.panel.execute(cmd);self.refresh();self.note.setText('สร้าง/อัปเดตแล้ว '+str(len(cmd.parts))+' หน้า • รายละเอียดเพิ่มเองคงไว้; ตรวจสถานะก่อนส่งออก')
     def refresh(self):
-        self.check();rows=status(self.scene,self.uid) if self.uid else [];self.table.setRowCount(len(rows))
+        self.check();rows=status(self.scene,self.uid,self.backend) if self.uid else [];self.table.setRowCount(len(rows))
         for i,row in enumerate(rows):
             for j,value in enumerate((row['key'],row['name'],row['manual'],'ปัจจุบัน' if not row['reasons'] else ' | '.join(REASONS.get(v,v) for v in row['reasons']))):self.table.setItem(i,j,QTableWidgetItem(str(value)))
         self.table.resizeColumnsToContents();return rows
     def show_composer(self):
-        self.check();meta=(self.scene.plugin_data.get(KEY) or {}).get(self.uid)
+        self.check();meta=(self.scene.plugin_data.get(self.key) or {}).get(self.uid)
         if not meta:raise ValueError('Create Stair sheets first')
         c=find_sheet(self.scene,meta['sheets'][0])
         if c is None:raise ValueError('Sheet missing; update')
         composer=D.composer(self.panel);composer._reload_comp_combo();composer.show_sheet(self.scene.compositions.index(c));self.panel.app.window._refresh_sheet_tabs();return composer
-    def acknowledge(self):self.check();self.panel.execute(ReviewManual(self.scene,self.uid));self.refresh()
+    def acknowledge(self):self.check();self.panel.execute(ReviewManual(self.scene,self.uid,self.backend));self.refresh()
     def export_current(self):
-        self.check();_,meta=validate(self.scene,self.uid)
+        self.check();_,meta=validate(self.scene,self.uid,self.backend)
         if self.options()!=meta['options'] or self.steel.isChecked()!=meta['steel']:raise ValueError('Dialog options differ from saved sheets; review and update before export')
     def export(self):
         self.export_current();path,_=QFileDialog.getSaveFileName(self,'Stair detail PDF','Thai-BIM-Stair.pdf','PDF (*.pdf)')
-        if path:self.note.setText('ส่งออก '+str(export_pdf(self.panel,self.uid,path)))
+        if path:self.note.setText('ส่งออก '+str(export_pdf(self.panel,self.uid,path,self.backend)))
     def bbs(self):
         self.export_current();path,_=QFileDialog.getSaveFileName(self,'Actual stair BBS','Thai-BIM-Stair-BBS.xlsx','Excel (*.xlsx)')
-        if path:export_bbs(self.scene,self.uid,path);self.note.setText('ส่งออก BBS '+path)
+        if path:export_bbs(self.scene,self.uid,path,self.backend);self.note.setText('ส่งออก BBS '+path)
 
 def open_dialog(panel):
     old=getattr(panel,'stair_drawing_dialog',None)

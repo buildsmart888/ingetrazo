@@ -124,7 +124,7 @@ def grouped_bars(bars):
         mark=b['bbs']['mark'];row=out.setdefault(mark,dict(mark=mark,bbs=copy.deepcopy(b['bbs']),path=copy.deepcopy(b['path']),uids=[],roles=[]))
         # Same mark must not silently hide a different fabrication descriptor.
         if not same_descriptor(row['bbs'],b['bbs']):raise ValueError('Conflicting BBS descriptors share one Bar Mark')
-        row['uids'].append(b['uid']);role=b['bbs'].get('stair_role','')
+        row['uids'].append(b['uid']);role=b.get('role',b['bbs'].get('stair_role',b['bbs'].get('slab_role','')))
         if role not in row['roles']:row['roles'].append(role)
     if len(out)>120:raise ValueError('More than 120 Bar Marks; split stair detailing scope')
     return sorted(out.values(),key=lambda r:r['mark'])
