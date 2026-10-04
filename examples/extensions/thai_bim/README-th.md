@@ -1,13 +1,13 @@
-# Thai BIM Toolkit 0.18.0
+# Thai BIM Toolkit 0.19.0
 
 Extension สำหรับ IngeTrazo Extension API 2 พัฒนาจากงาน Family10
 ใช้ Python/PySide6 และไลบรารีของ IngeTrazo ไม่มี API key และไม่มีการเรียก AI ในคำสั่งรุ่นนี้
 
 ## ติดตั้งและเปิด
 
-นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py`, `stair_library_ui.py`, `stair_placement.py`, `stair_place_ui.py`, `stair_connections.py`, `stair_connection_ui.py` ไปไว้ใน
+นำโฟลเดอร์ `thai_bim` ซึ่งมี `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py`, `workflow.py`, `steel.py`, `management.py`, `audit.py`, `drawing_layout.py`, `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py`, `multi_place.py`, `identity_data.py`, `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py`, `stair_library_ui.py`, `stair_placement.py`, `stair_place_ui.py`, `stair_connections.py`, `stair_connection_ui.py`, `stair_drawing_geometry.py`, `stair_drawings.py` ไปไว้ใน
 `%APPDATA%\ingetrazo\plugins\thai_bim` แล้วเปิด IngeTrazo ใหม่
-เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.18
+เปิดเครื่องมือจากแถบไอคอน Thai BIM หรือ Extensions → Thai BIM Toolkit… หรือแท็บ Thai BIM 0.19
 การติดตั้งในครั้งนี้จะเปิดแผงให้ใน session ปัจจุบันด้วย จึงไม่จำเป็นต้องปิดไฟล์ที่ยังไม่บันทึก
 
 API ของ IngeTrazo ช่วง 0.x ยังเปลี่ยนได้ โดยเฉพาะการเชื่อมแผง Render ซึ่งใช้รายละเอียดภายใน
@@ -800,3 +800,59 @@ bond/กำลัง รอยต่อคอนกรีตทั้งอา�
 การย้าย/หมุนจริง เหล็กถูกแก้ ผลเก่า การเปลี่ยนเอกสาร และเอกสารเดิมไม่ถูกเปลี่ยน
 
 ![หน้าตรวจรอยต่อบันไดและรองรับจริง](docs/images/stair-connection-dialog.png)
+
+
+## 0.19.0 — แบบบันไดครบแปลน รูปตัด เหล็ก BBS และวงจรอัปเดต
+
+เลือกบันได schema 2 ที่สร้างแล้ว → ไอคอน **Sheet** เดิมจะเปิดหน้าต่างแบบบันได
+หรือไอคอนบันได → **แบบบันได / เหล็ก / Sheet…** → **อ่าน Stair ที่เลือก**
+เลือกกระดาษ A3/A2/A1/A0 แนวนอน และ 1:20/1:25/1:50 → **ตรวจพรีวิวทุกหน้า**
+→ **สร้าง/อัปเดต Sheet** → **เปิดแบบใน Composer** หรือส่งออก PDF / BBS XLSX
+แก้กระดาษ/มาตราส่วน/Revision แล้วต้องตรวจและอัปเดตก่อนส่งออก
+ถ้าแบบใหญ่เกินกระดาษจะปฏิเสธการตัดขอบ ต้องเลือกกระดาษใหญ่ขึ้นเอง ไม่ปรับมาตราส่วนเงียบๆ
+
+รองรับ Straight, L, U, Spiral, Circular, Floating และ Left/Right
+แปลนแสดงผิวบนบันไดทุกระดับ เลขขั้น ทิศขึ้น รอยรูปตัด และมิติความกว้าง/ช่วงเดิน/ชานพัก
+L/U มีรูปตัดตามช่วง A-A และ B-B; วน/โค้งมีรูปตัดระนาบรัศมีตามมุมที่กรอก
+รูปตัดคำนวณจากสามเหลี่ยมคอนกรีตจริง เส้นหนักคือรอยตัด เส้นเทาคือรูปฉายประกอบ
+ลูกตั้ง ลูกนอน และระดับใช้ข้อมูลบันไดที่ตรวจเทียบรูปทรงแล้ว
+ระดับรวมตำแหน่ง Z จริงของ Host และ Datum ที่กรอก; บันไดเอียงออกจากแนวดิ่งจะปฏิเสธ
+เป็นวิวตามแกนท้องถิ่นของบันได ไม่ใช่แปลนตามแกนโลกหรือแปลนตัดแยกทุกชั้น
+
+ค่าเริ่มต้นรวม **เหล็กจริง** ซึ่งต้องสร้างและยังตรง Host ก่อน
+รูปแปลน/รูปตัดแสดงเหล็กตัวแทนตามบทบาทและชี้ Bar Mark เดียวกับ BBS
+รายละเอียดสร้างทุก Bar Mark พร้อมจำนวน เบอร์/เกรดที่บันทึก เส้นผ่านศูนย์กลาง
+ความยาวตัด รัศมีดัด ความยาวส่วนตรง และมุมดัด
+เหล็ก 3 มิติแสดงรูปฉายแปลน/รูปด้านแยกหน้า พร้อมรัศมี helix มุมกวาดและ rise/radian
+รูปฉายไม่ได้ใช้แทนความยาวตัดโค้ง; ความยาวตัดและน้ำหนักใช้ BBS เชิงวิเคราะห์เดิม
+ตาราง BBS บน Sheet เป็น NTS ไม่ใช้มาตราส่วนรูปทรง; XLSX ใช้ Bar Mark และจำนวนชุดเดียวกัน
+ถ้าไม่รวมเหล็ก จะสร้างเฉพาะคอนกรีตและไม่อนุญาตส่งออก BBS ที่ไม่มีเหล็กจริง
+
+Sheet เป็นเส้นเวกเตอร์และ item ของ Composer ที่แก้ไขได้ ไม่ใช่ภาพ raster
+ส่วนอัตโนมัติมี group tag และล็อกไว้; ผู้ใช้เพิ่มเส้น ข้อความ มิติ ภาพ และ title block แยกเองได้
+ระบบตรวจสถานะเมื่อ scene version เปลี่ยน และมีปุ่ม **ตรวจสถานะแบบ** สำหรับทบทวน
+ย้าย/แก้คอนกรีต เปลี่ยนหรือแก้เหล็ก ลบแหล่งข้อมูลหรือหน้าแบบ จะป้องกันส่งออกแบบเก่า
+ข้อมูลอ่านจาก Host ที่ผูกไว้ ไม่เปลี่ยนตามการเลือกชิ้นงานอื่นจนกดอ่าน Stair ใหม่
+
+อัปเดตจะคง item ที่ผู้ใช้เพิ่มและ guides ไว้ในพิกัดกระดาษเดิม
+ถ้าโมเดล/มาตราส่วนเปลี่ยนและมีรายละเอียดเพิ่ม จะเก็บหน้าเดิมทั้งหน้าเป็น MANUAL copy ด้วย
+ถ้าแก้ส่วนอัตโนมัติ จะเก็บสำเนาเต็มก่อนสร้างใหม่; หน้า Bar Mark ที่เลิกใช้เก็บเป็น RETIRED copy
+สำเนาเหล่านี้ไม่ถูกลบหรือรวมส่งออกในชุดที่จัดการอยู่ สามารถเปิด/ส่งออกเองใน Composer ได้
+หลังอัปเดตตรวจตำแหน่งและความหมายรายละเอียดที่คงไว้ แล้วกด **ตรวจรายละเอียดที่คงไว้แล้ว**
+ระบบไม่ย้ายข้อความเพิ่มเองตาม geometry เพราะอาจทำให้ชี้ผิดชิ้น
+Undo/Redo ครอบคลุม Sheet, สำเนา, สถานะทบทวน และข้อมูลผูก Host; ทั้งหมดเก็บใน IGZ
+
+จำกัด 12000 สามเหลี่ยมคอนกรีต, 150000 จุดแนวเหล็ก, 120 Bar Marks และ 200 ชุดบันไดต่อเอกสาร
+ป้ายตัวแทนบนแปลนจำกัดตามพื้นที่ sidebar; บทบาท/Bar Marks ที่เหลืออยู่ในรายละเอียดและ BBS ครบ
+แปลนวนหลายรอบอาจซ้อนกัน ต้องเขียนแปลนแยกระดับเพิ่มตามงานจริง
+ไม่รวมการออกแบบกำลัง ระยะฝัง/ทาบตามมาตรฐาน headroom ราวบันได support suitability
+หรือแบบใบอนุญาต/รายละเอียดรอยต่อทุกระบบอัตโนมัติ ค่ากำหนดและรอยต่อยังต้องตรวจโดยผู้ออกแบบ
+
+ผ่าน 206 pure tests และ 198 native checks ที่รันใน 0.19 (127 regression ที่เกี่ยวข้อง + 71 ใหม่)
+PDF อิสระตรวจ 122 หน้าเวกเตอร์ของ 6 รูปแบบและสเกลทั้งสาม; Bar Mark ทุกชุดตรงกับ XLSX
+ทดสอบ Qt จริง รูปตัด มิติ ระดับ World Z, Right-hand L, สำเนา/รายละเอียดเพิ่มเอง,
+แจ้งข้อมูลเก่าอัตโนมัติ Undo/Redo เปิด IGZ กลับ และเอกสารของผู้ใช้ไม่มีการเปลี่ยน geometry
+
+![หน้าต่างแบบบันไดและสถานะ](docs/images/stair-drawing-dialog.png)
+![แปลนบันได U](docs/images/stair-u-plan.png)
+![รูปตัดบันไดและเหล็ก](docs/images/stair-straight-section.png)

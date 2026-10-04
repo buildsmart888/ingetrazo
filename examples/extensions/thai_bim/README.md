@@ -1,4 +1,4 @@
-# Thai BIM Toolkit 0.18.0
+# Thai BIM Toolkit 0.19.0
 
 An optional Thai-language extension for IngeTrazo Extension API 2. It adds a
 21-button toolbar and illustrated, modeless dialogs for concrete members,
@@ -16,7 +16,7 @@ It runs locally without an AI service or API key.
    Alternatively, copy this directory from the repository and name it `thai_bim`.
 3. Restart IngeTrazo. Open **Extensions → Thai BIM Toolkit…** or use the new toolbar.
 
-Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py`, `stair_library_ui.py`, `stair_placement.py`, `stair_place_ui.py`, `stair_connections.py` and `stair_connection_ui.py`
+Keep `__init__.py`, `engine.py`, `visuals.py`, `structures.py`, `builders.py`, `detailing.py`, `placement.py` `workflow.py`, `steel.py` `management.py` `audit.py`, `drawing_layout.py` `drawings.py`, `catalogue.py`, `path_geometry.py`, `type_ui.py` `multi_place.py`, `identity_data.py` `copy_identity.py`, `rebar_recipe.py`, `analytical.py`, `analytical_ui.py`, `selected_edit.py`, `selected_geometry.py`, `slab_rebar.py`, `slab_ui.py`, `stairs.py`, `stairs_ui.py`, `stair_catalogue.py`, `stair_library_ui.py`, `stair_placement.py`, `stair_place_ui.py`, `stair_connections.py`, `stair_connection_ui.py`, `stair_drawing_geometry.py` and `stair_drawings.py`
 together. PySide6 and NumPy are provided by the host application. The plugin
 does not require `openpyxl`; that library is used only by the tests.
 
@@ -619,3 +619,61 @@ open shells/gaps, stale and edited sources, Undo/Redo, native IGZ and Unicode
 JSON export. Existing technical vector drawing PDF scale remains verified.
 
 ![Native support and bar connection inspection](docs/images/stair-connection-dialog.png)
+
+
+## 0.19.0 — Stair plans, true sections, reinforcement details, sheets and safe updates
+
+Select one advanced schema-2 RC Stair and click the existing Sheet toolbar icon,
+or open the Stair editor → **แบบบันได / เหล็ก / Sheet…**. Read Stair, choose
+A3/A2/A1/A0 landscape and 1:20/1:25/1:50, review every page, then create/update.
+Open in native Composer, export the managed PDF set or actual-cage BBS XLSX.
+Changed dialog fields require explicit review/update before exporting.
+Oversized layouts are rejected; scale is never silently fitted to paper.
+
+Supports Straight, L, U, Spiral, Circular, Floating and both turning hands.
+Plan shows upper surfaces at all levels, step numbering/ascent, linked section
+traces, widths, flight runs and landing dimensions. L/U have A-A and B-B
+sections; curved stairs use an explicit radial vertical cutting-plane angle.
+Heavy cut geometry comes from actual concrete triangles; grey geometry is
+projected context. Dimensions follow validated schema-2 concrete. World Z and
+explicit datum determine levels. Only upright yaw/translation Stair poses are
+accepted. Plans use local stair axes, not world-axis or per-storey plan cuts.
+
+Reinforcement requires a valid actual cage. Plan/section role representatives
+carry the same Bar Marks as existing BBS. Every actual mark has shape detail
+pages with quantity, recorded steel catalogue/size/grade, diameter, analytic
+cut length, bend radius, tangent straights and bend angles. Spatial bars have
+separate plan/elevation projections plus helix parameters; projected length
+is never substituted for analytic BBS length. PDF BBS is NTS; XLSX uses the
+same actual-cage marks/counts. Concrete-only mode does not invent a cage/BBS.
+
+Sheets contain native editable vector items rather than raster model images.
+Generated items are tagged/locked; added texts, dimensions, shapes, images,
+title blocks and guides are independent. Scene-version events refresh source
+status. Changed concrete/pose/levels/cage, deleted sources/pages and generated
+item edits block stale export. Sets bind to Host UID, not ongoing selection.
+
+Regeneration retains added items and guides at their original paper positions.
+If sources/options change with manual details, a full detached MANUAL snapshot
+is also saved. Edited generated items are archived before replacement; removed
+Bar Mark pages become RETIRED snapshots. Archives are neither deleted nor
+included in managed PDF exports. Review retained details explicitly before
+exporting after changes: their meaning/placement cannot safely be inferred.
+Undo/Redo and native IGZ preserve sheets, archives and review associations.
+
+Limits: 12000 concrete triangles, 150000 bar-path points, 120 marks and 200
+stair sets. Sidebar representative callouts are limited by available space;
+all marks/roles remain in detail pages/BBS. Multi-turn plans can overlap and
+need additional level-specific drawings. No strength, development/splice,
+headroom, railing, support suitability or complete permit-document validation.
+
+Validated in 0.19: 206 pure tests and 198 live native checks (127 affected
+regressions repeated plus 71 new drawing checks). Independent PDF validation:
+122 vector pages, six forms, all three physical scales, every PDF Bar Mark set
+matching XLSX. Native Qt/Composer, world levels, right-hand L, manual/copy
+preservation, stale events, Undo/Redo and IGZ reopening were verified; user
+geometry remained unchanged. Examples are synthetic, not Family10 approval.
+
+![Stair sheets dialog and linked status](docs/images/stair-drawing-dialog.png)
+![U-stair plan with dimensions and Bar Marks](docs/images/stair-u-plan.png)
+![Straight stair section and role reinforcement](docs/images/stair-straight-section.png)

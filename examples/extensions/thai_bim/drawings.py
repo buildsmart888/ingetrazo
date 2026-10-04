@@ -320,6 +320,10 @@ class DrawingDialog(QDialog):
         if path:self.report.setText('ส่งออกแล้ว: '+str(export_set(self.panel,path)))
 
 def open_dialog(panel):
+    selected=panel.app.scene.selection
+    if len(selected)==1 and next(iter(selected)).ext.get('thai_bim',{}).get('stair_params',{}).get('stair_schema')==2:
+        from .stair_drawings import open_dialog as stair_dialog
+        return stair_dialog(panel)
     old=getattr(panel,'drawing_dialog',None)
     if old:old.close();old.deleteLater()
     d=DrawingDialog(panel);panel.drawing_dialog=d;d.show();return d
