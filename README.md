@@ -35,6 +35,16 @@ minor versions, and rough edges exist — please
 
 ## Install
 
+### GO Structural Analysis extension
+
+The optional [GO Structural Analysis v0.1.3 extension](extensions/go-structural-analysis/README.md)
+provides 2D beam, frame and truss analysis with 21 engineering examples, result
+diagrams and an interactive inspector. Its [Windows trial installer sources](extensions/go-structural-analysis/packaging/README.md)
+bundle an offline Python/PyNite worker. See the [extension test report](extensions/go-structural-analysis/TEST_RESULTS_v0.1.3.md)
+and [installer checks and limitations](extensions/go-structural-analysis/INSTALLER_TEST_RESULTS.md).
+
+### IngeTrazo application
+
 Grab the [latest release](https://github.com/ingelibre/ingetrazo/releases/latest):
 
 - **Windows**: the `-setup-` installer (or the portable `.zip`).
