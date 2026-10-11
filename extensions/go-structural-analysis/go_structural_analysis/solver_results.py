@@ -61,6 +61,18 @@ def extract_member(m,case):
     return member
 
 def equilibrium(model,nodes,case):
+    import copy
+    factors=model.get('combinations',{}).get(case,{case:1.})
+    model=copy.deepcopy(model)
+    for field,keys in [('point_loads',('value',)),('distributed_loads',('w1','w2'))]:
+        rows=[]
+        for p in model.get(field,[]):
+            if p['case'] not in factors: continue
+            p=copy.deepcopy(p)
+            for key in keys: p[key]*=factors[p['case']]
+            p['case']=case; rows.append(p)
+        model[field]=rows
+    sw_factor=factors.get(model['self_weight_case'],0) if model.get('self_weight_case') else sum(factors.values())
     ns={n['id']:n for n in model['nodes']}; ms={m['id']:m for m in model['members']}
     load=[0.,0.,0.]
     def add(x,z,fx=0.,fz=0.,moment=0.):
@@ -74,7 +86,7 @@ def equilibrium(model,nodes,case):
     loads=[p for p in model.get('distributed_loads',[]) if p['case']==case]
     if model.get('self_weight',False):
         materials={v['id']:v for v in model['materials']}; sections={v['id']:v for v in model['sections']}
-        loads+= [{'member':m['id'],'direction':'FZ','w1':-materials[m['material']].get('rho',0)*sections[m['section']]['A'],'w2':-materials[m['material']].get('rho',0)*sections[m['section']]['A']} for m in model['members']]
+        loads+= [{'member':m['id'],'direction':'FZ','w1':-materials[m['material']].get('rho',0)*sections[m['section']]['A']*sw_factor,'w2':-materials[m['material']].get('rho',0)*sections[m['section']]['A']*sw_factor} for m in model['members']]
     for p in loads:
         m=ms[p['member']]; a,b=ns[m['i']],ns[m['j']]; L=math.hypot(b['x']-a['x'],b['z']-a['z']); x1=p.get('x1',0.); h=p.get('x2',L)-x1
         resultant=h*(p['w1']+p['w2'])/2; first_moment=x1*resultant+h*h*(p['w1']+2*p['w2'])/6

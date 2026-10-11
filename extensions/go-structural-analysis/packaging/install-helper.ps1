@@ -61,7 +61,7 @@ try {
         $files = Get-ChildItem -LiteralPath $package -Filter '*.py' -File
         $files | Copy-Item -Destination $PluginRoot -Force
         @{ python=$python; protocol=1 } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $PluginRoot 'worker_config.json') -Encoding utf8
-        @{ version='0.1.3'; plugin_root=$PluginRoot; plugin_files=@($files.Name); runtime=$python } | ConvertTo-Json | Set-Content -LiteralPath $manifestPath -Encoding utf8
+        @{ version='0.2.4'; plugin_root=$PluginRoot; plugin_files=@($files.Name); runtime=$python } | ConvertTo-Json | Set-Content -LiteralPath $manifestPath -Encoding utf8
     } elseif (Test-Path -LiteralPath $manifestPath) {
         $PluginRoot = (Get-Content -Raw -Encoding utf8 -LiteralPath $manifestPath | ConvertFrom-Json).plugin_root
     }

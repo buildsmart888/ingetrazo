@@ -4,6 +4,10 @@ from PySide6.QtWidgets import QLabel, QAbstractButton
 from .icons import icon, pixmap
 
 STYLE='''
+QWidget#goRibbon { background: palette(window); color: palette(window-text); border: 1px solid palette(mid); border-radius: 7px; font-family: "Segoe UI"; font-size: 12px; }
+QWidget#goRibbon QToolButton { color: palette(button-text); background: palette(button); border: 1px solid palette(mid); border-radius: 5px; padding: 5px; }
+QWidget#goRibbon QToolButton:hover { border-color: palette(highlight); }
+QWidget#goRibbon QToolButton:disabled { color: palette(mid); }
 QWidget#goPanel, QDialog#goEditor { background: palette(window); color: palette(window-text); font-family: "Segoe UI"; font-size: 13px; }
 QLabel { color: palette(window-text); background: transparent; }
 QLabel#goTitle { font-size: 16px; font-weight: 700; }

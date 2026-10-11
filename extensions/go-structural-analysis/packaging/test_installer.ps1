@@ -1,4 +1,4 @@
-param([string]$SetupExe = (Join-Path $PSScriptRoot '..\dist\GO-Structural-Analysis-v0.1.3-Windows-x64-Setup.exe'))
+param([string]$SetupExe = (Join-Path $PSScriptRoot '..\dist\GO-Structural-Analysis-v0.2.4-Windows-x64-Setup.exe'))
 $ErrorActionPreference='Stop'
 $projectRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $testRoot=Join-Path $projectRoot ('artifacts\installer\test-'+(Get-Date -Format 'yyyyMMdd-HHmmss'))
@@ -59,6 +59,6 @@ Record 'runtime_removed' (-not (Test-Path -LiteralPath $python))
 Record 'unrelated_file_preserved' (Test-Path -LiteralPath $unrelated)
 Record 'model_preserved' ((Get-FileHash -LiteralPath $modelPath).Hash -eq $modelHash)
 Record 'original_live_plugin_unchanged' ((HashPlugin) -eq $originalHash)
-$summary=@{date=(Get-Date -Format o);test_root=$testRoot;passed=@($checks|Where-Object status -eq 'Passed').Count;failed=@($checks|Where-Object status -eq 'Failed').Count;checks=$checks;not_tested=@('Clean Windows VM with no Python installed','Interactive wizard clicks','Cold IngeTrazo restart after installing Setup','Windows code signing/SmartScreen reputation')}
+$summary=@{date=(Get-Date -Format o);setup_file=[IO.Path]::GetFullPath($SetupExe);setup_sha256=(Get-FileHash -LiteralPath $SetupExe -Algorithm SHA256).Hash;test_root=$testRoot;passed=@($checks|Where-Object status -eq 'Passed').Count;failed=@($checks|Where-Object status -eq 'Failed').Count;checks=$checks;not_tested=@('Clean Windows VM with no Python installed','Interactive wizard clicks','Cold IngeTrazo restart after installing Setup','Windows code signing/SmartScreen reputation')}
 $summary | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $projectRoot 'artifacts\installer\test-results.json') -Encoding utf8
 Write-Output ([PSCustomObject]$summary | Select-Object passed,failed,test_root | ConvertTo-Json)

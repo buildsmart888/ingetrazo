@@ -23,3 +23,10 @@ def test_malformed_response(monkeypatch,stdout,message):
 def test_worker_nonzero_exit(monkeypatch):
     monkeypatch.setattr(client.subprocess,'run',lambda *a,**k:SimpleNamespace(stdout=json.dumps({'protocol':1,'ok':True,'result':{'cases':{}}}),stderr='worker crashed',returncode=1))
     with pytest.raises(RuntimeError,match='exited unexpectedly'): client.analyze(benchmark(),sys.executable)
+
+def test_worker_unicode_stderr(monkeypatch,tmp_path):
+    script=tmp_path/'worker.py'
+    script.write_text("import sys\nsys.stderr.buffer.write(b'\\x81\\xff')\nprint('{\"protocol\":1,\"ok\":false,\"error\":\"unstable\"}')\n",encoding='utf-8')
+    monkeypatch.setattr(client,'__file__',str(tmp_path/'client.py'))
+    with pytest.raises(RuntimeError,match='unstable'):
+        client.analyze(benchmark(),sys.executable)

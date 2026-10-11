@@ -18,7 +18,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File packaging/test_installer.ps1
 
 `--iscc` optionally selects the compiler. The builder does not modify either
 input environment. It vendors installed dependencies rather than downloading at install time.
-Output: `dist/GO-Structural-Analysis-v0.1.3-Windows-x64-Setup.exe` plus SHA256/manifest.
+Output: `dist/GO-Structural-Analysis-v0.2.4-Windows-x64-Setup.exe` plus SHA256/manifest.
+The payload keeps all 21 2D examples and adds 12 3D examples. Solver healthcheck
+executes both schemas. See `TEST_RESULTS_v0.2.md` for current extension QA;
+`INSTALLER_TEST_RESULTS.md` records the original v0.1.3 installer checks.
 
 Default install: `%LOCALAPPDATA%/GO Structural Analysis/installed`.
 Plugin: `%APPDATA%/ingetrazo/plugins/go_structural_analysis`.

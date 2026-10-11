@@ -40,4 +40,22 @@ def signed_cells(samples,key):
             yield (1 if y0>0 else -1),[(x0,0.),(x0,y0),(zero,0.)]
             yield (1 if y1>0 else -1),[(zero,0.),(x1,y1),(x1,0.)]
         else:
-            yield (1 if (y0 or y1)>0 else -1),[(x0,0.),(x0,y0),(x1,y1),(x1,0.)]
+              yield (1 if (y0 or y1)>0 else -1),[(x0,0.),(x0,y0),(x1,y1),(x1,0.)]
+
+def signed_regions(samples,key):
+    """Merge adjacent strips with identical sign; retain zero/jump boundaries.
+
+    The plotted curve and enclosed area are identical to signed_cells, while a
+    constant-sign member needs one filled polygon rather than 60 painter calls.
+    """
+    sign=None; start=None; end=None; top=[]
+    for s,cell in signed_cells(samples,key):
+        if len(cell)==4: curve=cell[1:3]
+        elif cell[0][0]==cell[1][0]: curve=cell[1:]
+        else: curve=cell[:2]
+        if sign==s and end==cell[0] and top[-1]==curve[0]:
+            top.extend(curve[1:]); end=cell[-1]
+        else:
+            if top: yield sign,[start,*top,end]
+            sign=s; start=cell[0]; end=cell[-1]; top=list(curve)
+    if top: yield sign,[start,*top,end]

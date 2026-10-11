@@ -16,8 +16,13 @@ else:
     from solver_results import extract_member,equilibrium,check_stiffness
 
 def solve(data):
+    if isinstance(data,dict) and data.get('schema')==2:
+        if __package__: from .solver3d import solve3d
+        else: from solver3d import solve3d
+        return solve3d(data)
     from Pynite import FEModel3D
     from importlib.metadata import version
+    if version('PyNiteFEA')!='3.2.0': raise RuntimeError('Solver must be PyNiteFEA 3.2.0')
     import numpy as np
     d=validate(data); f=FEModel3D()
     # host X,Z -> solver X,Y; solver Z is out of plane. Iz governs 2D bending.
@@ -33,6 +38,7 @@ def solve(data):
         f.add_member(m['id'],m['i'],m['j'],m['material'],m['section'])
         f.def_releases(m['id'],Rzi=m['type']=='Truss' or m.get('release_i',False),Rzj=m['type']=='Truss' or m.get('release_j',False))
     for c in d['cases']: f.add_load_combo(c,{c:1.0})
+    for c,factors in d.get('combinations',{}).items(): f.add_load_combo(c,factors)
     for p in d.get('point_loads',[]):
         if 'node' in p: f.add_node_load(p['node'],directions[p['direction']],p['value'],p['case'])
         else: f.add_member_pt_load(p['member'],directions[p['direction']],p['value'],p['x'],p['case'])
@@ -41,7 +47,7 @@ def solve(data):
     if d.get('self_weight',False):
         materials={m['id']:m for m in d['materials']}; sections={s['id']:s for s in d['sections']}
         nodes={n['id']:n for n in d['nodes']}
-        for c in d['cases']:
+        for c in ([d['self_weight_case']] if d.get('self_weight_case') else d['cases']):
             for m in d['members']:
                 if m['type']=='Truss':
                     a,b=nodes[m['i']],nodes[m['j']]
@@ -52,8 +58,8 @@ def solve(data):
                     f.add_member_dist_load(m['id'],'FY',-weight,-weight,case=c)
     f.analyze_linear(check_stability=True,check_statics=True)
     check_stiffness(f,d['cases'][0])
-    result={'solver':'PyNiteFEA','version':version('PyNiteFEA'),'extension_version':'0.1.3','result_schema':2,'model_hash':model_hash(d),'units':'m,kN','cases':{}}
-    for c in d['cases']:
+    result={'solver':'PyNiteFEA','version':version('PyNiteFEA'),'extension_version':'0.2.4','result_schema':2,'model_hash':model_hash(d),'units':'m,kN','cases':{}}
+    for c in list(d['cases'])+list(d.get('combinations',{})):
         nodes={n:{'ux':float(v.DX[c]),'uz':float(v.DY[c]),'rotation':float(v.RZ[c]),'Rx':float(v.RxnFX[c]),'Rz':float(v.RxnFY[c]),'My':float(v.RxnMZ[c])} for n,v in f.nodes.items()}
         members={}
         for mid,m in f.members.items():
@@ -68,7 +74,9 @@ def solve(data):
         if not balance['passed']: raise RuntimeError(f'Equilibrium verification failed in {c}: residual {balance["residual"]}; structure may be unstable or numerically ill-conditioned')
         result['cases'][c]={'nodes':nodes,'members':members,'equilibrium':balance}
     json.dumps(result,allow_nan=False)
-    return result
+    if __package__: from .safety import seal,envelope_groups
+    else: from safety import seal,envelope_groups
+    return seal(d,envelope_groups(result,d))
 
 def main():
     try:

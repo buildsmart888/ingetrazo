@@ -18,6 +18,6 @@ if (-not (Test-Path -LiteralPath $venvPython)) { throw 'Solver runtime missing' 
 New-Item -ItemType Directory -Path $pluginRoot -Force | Out-Null
 Get-ChildItem -LiteralPath (Join-Path $projectRoot 'go_structural_analysis') -File -Filter '*.py' | Copy-Item -Destination $pluginRoot -Force
 @{python=$venvPython; protocol=1} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $pluginRoot 'worker_config.json') -Encoding utf8
-Write-Output "Installed GO Structural Analysis v0.1.3: $pluginRoot"
+Write-Output "Installed GO Structural Analysis v0.2.4: $pluginRoot"
 Write-Output "Solver runtime: $venvPython"
-Write-Output 'Restart IngeTrazo to auto-load, then Extensions > GO Structural Analysis v0.1.3.'
+Write-Output 'Restart IngeTrazo to auto-load, then Extensions > GO Structural Analysis v0.2.4.'

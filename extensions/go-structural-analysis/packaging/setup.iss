@@ -7,7 +7,7 @@
 [Setup]
 AppId={{449E71A8-A0E2-40BA-941F-36FD565F9387}
 AppName=GO Structural Analysis for IngeTrazo
-AppVersion=0.1.3
+AppVersion=0.2.4
 AppPublisher=GO Structural
 DefaultDirName={localappdata}\GO Structural Analysis\installed
 DefaultGroupName=GO Structural Analysis
@@ -18,7 +18,7 @@ MinVersion=10.0
 DisableDirPage=yes
 DisableProgramGroupPage=yes
 OutputDir={#OutputDir}
-OutputBaseFilename=GO-Structural-Analysis-v0.1.3-Windows-x64-Setup
+OutputBaseFilename=GO-Structural-Analysis-v0.2.4-Windows-x64-Setup
 Compression=lzma2/fast
 SolidCompression=yes
 WizardStyle=modern

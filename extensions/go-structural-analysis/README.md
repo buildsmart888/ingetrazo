@@ -1,10 +1,45 @@
-# GO Structural Analysis v0.1.3
+# GO Structural Analysis v0.2.4
+
+New [Combination overview / Loading Generator](COMBINATION_OVERVIEW.md): edit
+multiple Custom rows, clone originals and review Thai presets before applying.
+[Guide/task records](docs/PROTA_REFERENCE.md) make future Prota-referenced work
+repeatable. [LC-001 actual QA](TEST_RESULTS_COMBINATION_OVERVIEW.md).
+
+New [command search and context menus](COMMAND_UI.md): Ctrl+K, searchable Model
+Tree, Node/Member actions and shared Ribbon safety rules. [Actual command QA](TEST_RESULTS_COMMAND_UI.md)
+includes installed-host component checks; cold restart remains pending.
+
+New compact [workspace Ribbon](RIBBON_UI.md): Model / Loads / Analysis / Results /
+Display, collapsible groups and quick Save/Run. [Ribbon QA](TEST_RESULTS_RIBBON.md)
+records automated checks and pending installed-host verification.
+
+New [Load Case / Combination forms](LOAD_FORMS.md): named cases, numeric factors,
+live formula preview and checkbox action bindings. [Actual patch QA](TEST_RESULTS_LOAD_FORMS.md)
+separates automated success from incomplete installed-host verification.
+
+New editable [Phetnaray house example](HOUSE_EXAMPLE.md): concrete beams/columns,
+steel hip roof, independent analysis checks and a portable `.igz` model.
+
+Current release adds a [Thailand 2566 Code Pack](THAI_CODE_PACK_v0.2.4.md),
+reviewed Combination Manager, engineering result safety and professional display
+controls. Read [v0.2.4 update instructions](UPDATE_v0.2.4.md),
+[actual QA](TEST_RESULTS_v0.2.4.md) and [changelog](CHANGELOG_v0.2.4.md).
+Capacity, full code compliance and complete serviceability checks are Not Available.
+
+The existing 2D/3D feature set described below is preserved. This release extends the existing v0.1.3 source with **3D beam/column/frame/truss**
+analysis, six DOFs, section rotation, DOF supports/springs/releases, load combinations,
+exact result envelopes, XYZ overlays and a 3D inspector. The complete 2D workflow
+remains supported. Global Z is up; PyNiteFEA stays pinned to 3.2.0 in a separate worker.
+
+Start with [update instructions](UPDATE_v0.2.md), [12 editable 3D examples](EXAMPLES_v0.2.md)
+[v0.2 QA evidence](TEST_RESULTS_v0.2.md), and [installer QA](INSTALLER_TEST_RESULTS_v0.2.md). Legacy documentation below describes
+the retained 2D workflow and its earlier verification.
 
 Python extension for IngeTrazo Plugin API v2. Source lives outside Program Files.
 
 ## Install and run
 
-For trial users, run **GO-Structural-Analysis-v0.1.3-Windows-x64-Setup.exe**.
+For trial users, run the matching **GO-Structural-Analysis-v0.2.4-Windows-x64-Setup.exe**.
 It includes the offline Python/PyNite solver; save your work and close IngeTrazo
 before Setup. Then open Extensions → GO Structural Analysis and choose an example.
 Start menu provides Quick Start, Example Gallery, Check Solver and Uninstall.
@@ -168,6 +203,16 @@ See [TEST_RESULTS_v0.1.3.md](TEST_RESULTS_v0.1.3.md) and `artifacts/v0.1.3/`
 for current pytest XML, JSON checks, real screenshots, CSV and the benchmark `.igz`.
 `TEST_RESULTS.md` preserves the original v0.1 evidence. Before-upgrade source and
 installed-plugin backups are under `backups/before-v0.1.3-20261008-191932/`.
+
+## Viewport performance and model checks
+
+The v0.2.4 viewport patch batches 2D/3D projection, avoids idle overlay repainting,
+and displays self-weight as blue members. Open **Model → Check Model / Stability…**
+to review duplicate/near nodes, overlapping members, connectivity and rigid-body
+restraints; **Run Analysis + stiffness check** performs the solver check.
+See [VIEWPORT_DIAGNOSTICS.md](VIEWPORT_DIAGNOSTICS.md) for update/use instructions
+and [TEST_RESULTS_VIEWPORT.md](TEST_RESULTS_VIEWPORT.md) for measured performance,
+executed tests and remaining limitations.
 
 ## Uninstall
 

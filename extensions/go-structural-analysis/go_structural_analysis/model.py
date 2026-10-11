@@ -13,6 +13,14 @@ def benchmark():
             'cases':['LC1'],'point_loads':[], 'distributed_loads':[{'member':'B1','direction':'FZ','w1':-10.,'w2':-10.,'case':'LC1'}]}
 
 def validate(data):
+    if __package__: from .thai_code import validate_combinations
+    else: from thai_code import validate_combinations
+    try: validate_combinations(data)
+    except (ValueError,KeyError,TypeError) as exc: raise ModelError(str(exc)) from exc
+    if isinstance(data,dict) and data.get('schema')==2:
+        if __package__: from .model3d import validate3d
+        else: from model3d import validate3d
+        return validate3d(data)
     try:
         d=json.loads(json.dumps(data,allow_nan=False))
         if d.get('schema')!=1: raise ModelError('Unsupported schema; expected 1')
