@@ -3706,18 +3706,26 @@ class Viewport(QOpenGLWidget):
     def _rebar_solid_groups(self, groups):
         if not self._rebar_lod_active():
             return groups
-        return [g for g in groups if self._rebar_proxy(g) is None]
+        solid = [g for g in groups if self._rebar_proxy(g) is None]
+        # Preserve v0.5.9's _InstanceBatch and its prepacked matrix pool when
+        # this prototype contains no eligible rebar. Only a filtered prototype
+        # falls back to a plain list.
+        return groups if len(solid) == len(groups) else solid
 
     def _rebar_solid_proto(self, by_proto):
         """Filter line-LOD bars before both normal and lean instanced passes."""
         if not self._rebar_lod_active():
             return by_proto
         out = {}
+        changed = False
         for key, (mesh, paint, groups, mirrored) in by_proto.items():
             solid = self._rebar_solid_groups(groups)
+            changed = changed or solid is not groups
             if solid:
                 out[key] = (mesh, paint, solid, mirrored)
-        return out
+        # Keep dict identity too when no prototype changed, so v0.5.9's
+        # recorded lean/native passes remain reusable during interaction.
+        return out if changed else by_proto
 
     def _ensure_rebar_draw(self, mesh, proxy):
         """One static line VBO and instanced matrix buffer per local proxy."""
