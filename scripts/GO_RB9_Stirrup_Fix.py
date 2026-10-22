@@ -8,8 +8,9 @@ No box()/prism() helper or external Python package is needed.
 All 19 RB9 placements share ONE local-coordinate mesh. The five straight
 DB12 bars use two more prototypes (one per colour); each placement has its
 own transform, identity and BIM tag. The patched host's rebar display helper
-attaches a verified centreline for interactive line rendering. Older hosts
-can still build the components, but ignore that optional display metadata.
+attaches a verified centreline for interactive line rendering. A console run
+checks the running host first. Older hosts need an explicit opt-in to the
+solid-only fallback by setting REQUIRE_INTERACTIVE_LINES to False.
 
 This fixes geometry, not reinforcement design. Bend radius, hook tails and
 the small out-of-plane hook offset below are illustrative, editable values.
@@ -24,9 +25,10 @@ Re-running replaces ONLY groups whose names start with PREFIX. It never
 clears the whole document. Open a new document to avoid seeing the old,
 broken example behind this one. Console execution supplies one undo step.
 
-API inspected: buildsmart888/ingetrazo commit
-2daee48d4760cb4b6cbc406d11e8fbf0b9c07d1d, core/mesh.py,
-core/group.py and plugins/python_console.py (2026-10-22).
+API ported against the exact IngeTrazo v0.5.9 release commit
+24e7ada6df9f0b4f5f761f287aaade9e40e6728c, including its lean/native
+instancing renderer, core/mesh.py, core/group.py and Python Console API
+(2026-10-22).
 The tuple geometry can be imported and checked without IngeTrazo / Qt.
 """
 
@@ -36,6 +38,7 @@ from collections import Counter
 
 # ---- Parameters: ALL lengths in metres -----------------------------------
 PREFIX = "GO_RB9FIX_"
+REQUIRE_INTERACTIVE_LINES = True  # Fail before replacing geometry on an old host.
 BEAM_LENGTH, BEAM_WIDTH, BEAM_HEIGHT = 3.0, 0.20, 0.40
 STIRRUP_DIAMETER = 0.009
 LONGITUDINAL_DIAMETER = 0.012
@@ -380,6 +383,75 @@ def _rebar_instance(definition, offset, name, diameter):
     return group
 
 
+def _host_has_line_renderer(viewport):
+    """Check the loaded viewport class, not merely an importable helper file."""
+    return viewport is not None and all(
+        callable(getattr(type(viewport), method, None))
+        and callable(getattr(viewport, method, None))
+        for method in ("_draw_rebar_centerlines", "_rebar_proxy", "_rebar_lod_active",
+                       "_instanced_eligible"))
+
+
+def _check_running_host(viewport):
+    if viewport is None:
+        return
+    import importlib
+    import sys
+
+    problem = None
+    if not _host_has_line_renderer(viewport):
+        problem = "This running IngeTrazo has no interactive rebar line renderer."
+    else:
+        try:
+            helper = importlib.import_module("core.rebar_display")
+        except ModuleNotFoundError as error:
+            if error.name != "core.rebar_display":
+                raise
+            problem = "This running IngeTrazo has no rebar centreline helper."
+        else:
+            if not callable(getattr(helper, "attach_centerline", None)):
+                problem = "This running IngeTrazo has an incomplete rebar centreline helper."
+    if problem is None:
+        return
+    message = (
+        problem + " The Python script alone cannot install the viewport changes.\n"
+        "Start IngeTrazo from the v0.5.9 rebar branch "
+        "fix/rebar-lod-v0.5.9, then run this script again.\n"
+        "Running application: " + sys.executable)
+    if REQUIRE_INTERACTIVE_LINES:
+        raise RuntimeError(message)
+    print("SOLID-ONLY MODE: " + message)
+
+
+def _display_report(groups, viewport):
+    bars = [g for g in groups if g.ifc["class"] == "IfcReinforcingBar"]
+    paths = sum(bool(g.ext.get("go_rebar", {}).get("centerline")) for g in bars)
+    signed = sum(bool(g.ext.get("go_rebar", {}).get("mesh_signature")) for g in bars)
+    supported = _host_has_line_renderer(viewport)
+    eligible = (sum(viewport._rebar_proxy(g) is not None for g in bars)
+                if supported else 0)
+    print("Centreline data: {}/{} bars; signed paths: {}/{}.".format(
+        paths, len(bars), signed, len(bars)))
+    if viewport is None:
+        status = "NOT CHECKED (no viewport supplied)"
+    elif not supported:
+        status = "UNAVAILABLE in this running application"
+    elif eligible != len(bars):
+        status = "NOT READY ({}/{} compatible bars); run GO_RB9_LOD_Check.py".format(
+            eligible, len(bars))
+    elif viewport.scene.edit_group is not None:
+        status = "PAUSED: finish group editing, then navigate in the viewport"
+    elif (getattr(viewport.scene, "show_section_cuts", True)
+          and viewport.scene.active_section() is not None):
+        status = "PAUSED: disable the active section cut to use interactive lines"
+    else:
+        status = "READY ({}/{} bars); lines during navigation, solid when idle".format(
+            eligible, len(bars))
+    print("Interactive line display: " + status + ".")
+    return {"centerline_bars": paths, "signed_centerlines": signed,
+            "line_renderer_available": supported, "line_eligible_bars": eligible}
+
+
 def build_beam(scene, viewport=None):
     """Build and check all objects before replacing this example's groups.
 
@@ -389,6 +461,7 @@ def build_beam(scene, viewport=None):
     from PySide6.QtGui import QVector3D
     from core.layers import Layer
 
+    _check_running_host(viewport)
     pending, reports = [], []
 
     def add(data, short_name, color, ifc_class):
@@ -450,6 +523,7 @@ def build_beam(scene, viewport=None):
         result["groups_created"], result["triangles"], result["boundary_edges"]))
     print("Stored geometry: {} unique meshes, {} triangle faces; RB9 uses 1 mesh.".format(
         result["unique_meshes"], result["unique_mesh_faces"]))
+    result.update(_display_report(pending, viewport))
     print("Bend/hook/jog dimensions are example parameters, not a design-code check.")
     return result
 
