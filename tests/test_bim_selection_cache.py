@@ -212,7 +212,8 @@ def test_selection_does_not_schedule_document_wide_tray_scans():
     def panel(name):
         def refresh():
             calls[name] += 1
-        return SimpleNamespace(refresh=refresh, refresh_in_model=refresh)
+        return SimpleNamespace(
+            refresh=refresh, refresh_in_model=refresh, on_scene_changed=refresh)
 
     def schedule(_delay):
         calls["materials"] += 1
