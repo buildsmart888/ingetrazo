@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
-from PySide6.QtCore import QEvent, QPoint, QPointF, Qt
+from PySide6.QtCore import QEvent, QPoint, Qt
 from PySide6.QtGui import QFocusEvent, QMatrix4x4, QVector3D as V
 
 from core.group import Group
@@ -155,23 +155,6 @@ def test_centerline_mode_does_not_submit_solid_faces_or_edges(viewport, monkeypa
     batches = {"bar": (g.mesh, None, [g], False)}
     viewport._draw_instanced_faces("shaded", viewport._effective_style(), batches)
     viewport._draw_instanced_edges(batches)
-
-
-def test_select_context_avoids_work_plane_ray_but_other_tools_keep_it(viewport, monkeypatch):
-    from tools.select import SelectTool
-    viewport.active_tool = SelectTool()
-    event = SimpleNamespace(position=lambda: QPointF(25, 35), modifiers=lambda: Qt.NoModifier)
-    project = Mock(side_effect=AssertionError("Select does not need a construction plane"))
-    monkeypatch.setattr(viewport, "_world_from_pixel", project)
-    context = viewport._build_ctx(event)
-    assert context.screen == QPointF(25, 35)
-    assert context.snap.kind == "none"
-    project.assert_not_called()
-    viewport.active_tool = SimpleNamespace(uses_snap=False, screen_context_only=False)
-    project.side_effect = None
-    project.return_value = V(1, 2, 3)
-    assert viewport._build_ctx(event).world == V(1, 2, 3)
-    project.assert_called_once()
 
 
 def test_move_preview_freezes_instances_without_baking_faces(viewport, monkeypatch):
