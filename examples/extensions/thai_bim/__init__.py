@@ -16,6 +16,10 @@ from core.group import Group, iter_placements, world_mesh
 from core.history import Command
 from core.layers import Layer
 from core import bim
+try:
+    from core.rebar_display import attach_centerline as _attach_rebar_centerline
+except ImportError:  # Keep the extension usable on older hosts, without LOD.
+    _attach_rebar_centerline = None
 from . import engine as E
 from .visuals import launcher, decorate_multi, decorate_cut
 from .builders import add_tools
@@ -150,6 +154,17 @@ def make_group(spec, assembly='', previous=None):
     if previous is not None and rec.get('member_type'):
         from .type_ui import tag
         tag(g,rec['member_type'])
+    # Full/Lightweight reinforcement keeps its solid mesh as the model truth,
+    # while v0.5.9+ may draw this verified local centreline during interaction.
+    # reconcile_specs applies the Host pose afterwards; bar_path is in the
+    # same local frame as the mesh, so the proxy follows that pose exactly.
+    if (spec.get('kind')=='Rebar' and not wire
+            and spec.get('bar_path') and spec.get('bar_diameter')
+            and _attach_rebar_centerline is not None):
+        definition=(spec.get('bbs') or {}).get('mark') or (
+            str(spec.get('slot','Rebar'))+':D'+str(spec['bar_diameter']))
+        _attach_rebar_centerline(
+            g,spec['bar_path'],float(spec['bar_diameter']),definition)
     rec['native_uid']=g.uid
     return g
 
