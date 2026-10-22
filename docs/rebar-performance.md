@@ -52,7 +52,7 @@ python benchmarks/rebar_interaction.py \
   --counts 100 1000 10000 \
   --repeats 3 \
   --selection-samples 50 \
-  --baseline-ref 2daee48d4760cb4b6cbc406d11e8fbf0b9c07d1d \
+  --baseline-ref 24e7ada6df9f0b4f5f761f287aaade9e40e6728c \
   --output /tmp/rebar-interaction-results.json
 ```
 
@@ -72,11 +72,16 @@ Function-call wrappers count quantity calculations and mesh copies.
 notifications. These measurements do not include picking, OpenGL rendering,
 event-loop painting, visible-highlight latency or FPS.**
 
-### Recorded environment
+### Historical proof-of-concept measurements
 
-The following results were measured on 22 October 2026 from the patched
-working tree based on commit
-`2daee48d4760cb4b6cbc406d11e8fbf0b9c07d1d`:
+The following numbers were measured on 22 October 2026 on the earlier
+0.5.7-derived proof-of-concept branch. They show the structural benefit of
+prototype quantity caching, but **they have not been re-measured on the
+v0.5.9 port and must not be presented as v0.5.9 benchmark results**.
+
+The current port starts from exact v0.5.9 release commit
+`24e7ada6df9f0b4f5f761f287aaade9e40e6728c`. Re-run the command above on
+the target Windows workstation for v0.5.9 numbers.
 
 - Linux 6.18.55, x86_64, glibc 2.39.
 - Runner exposed 9 logical CPUs; no physical CPU-model or GPU performance
@@ -137,10 +142,10 @@ change does not add native IFC reinforcement entities or a bending schedule.
 The exporter uses each component's world placement, while viewport LOD never
 substitutes centreline geometry into an export.
 
-## Validation of this change
+## Validation history and v0.5.9 status
 
-The final focused regression run passed **49 tests**, including six tests
-using an actual OpenGL context under Xvfb/Mesa. It covered component sharing,
+The earlier proof-of-concept focused run passed **49 tests**, including six
+tests using an actual OpenGL context under Xvfb/Mesa. It covered component sharing,
 native persistence, BIM quantities, cache invalidation, picking, navigation,
 transform previews, image export and shadow reuse. Pixel checks also verified
 that the first centreline frame removes the old solid silhouette, the complete
@@ -158,8 +163,14 @@ xvfb-run -a python -m pytest -q \
 Use `QT_QPA_PLATFORM=xcb` for that Linux virtual-display run. An offscreen
 platform cannot replace the actual graphics checks.
 
-The broader checks have environment limits and are not reported as a clean
-single-invocation full-suite pass:
+Those results belong to the earlier proof-of-concept. For this v0.5.9 port,
+the public-fork GitHub Actions run created a job but failed before the first
+workflow step was scheduled (no pytest steps/logs were produced), so it is
+**not counted as a code-test failure or a passing CI run**. Windows source-host
+graphics testing is required before merging this draft branch.
+
+The earlier broader checks also had environment limits and were not reported as
+a clean single-invocation full-suite pass:
 
 - The repository-wide `python -m pytest -m "not slow"` command stopped at
   collection with seven errors in the extension/example tests: missing
