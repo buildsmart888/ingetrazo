@@ -1,5 +1,10 @@
 # Interactive reinforcement display
 
+This implementation is ported onto the exact upstream IngeTrazo **v0.5.9**
+release commit `24e7ada6df9f0b4f5f761f287aaade9e40e6728c`. It keeps v0.5.9's
+lean/native instancing and inference/snap pipeline; the older 0.5.7
+screen-context Select patch is intentionally not part of this port.
+
 The viewport can display a verified centreline for reinforcement components
 while navigating or transforming the model. The full solid remains the scene
 geometry: selection, snapping, undo, quantities and file exports continue to
@@ -95,7 +100,7 @@ Document reset/context teardown release all remaining line buffers.
 `tests/test_rebar_interaction_lod.py` covers verification/cache reuse, changed
 geometry falling back to solids, malformed metadata, interaction transitions,
 solid-pass suppression, instance batching, preview transforms, cache cleanup,
-and the Select tool's screen-only context.
+and the interaction/display cache transitions.
 
 For an actual graphics run, check:
 
