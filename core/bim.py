@@ -23,7 +23,7 @@ exists to provide.
 """
 from __future__ import annotations
 
-from PySide6.QtGui import QVector3D
+from PySide6.QtGui import QMatrix4x4, QVector3D
 
 #: Curated civil/architecture classes (IFC4 names).
 IFC_CLASSES = [
@@ -113,11 +113,93 @@ def face_set_volume(faces):
     return abs(total)
 
 
+class QuantityCache:
+    """Measurements shared by equivalent placements during one content revision.
+
+    Translation does not change any takeoff quantity. Leaf placements with
+    the same prototype and linear transform therefore use one measurement
+    mesh, even when thousands of objects have different positions and BIM
+    names. Rotations and scales remain part of the key: several class
+    quantities depend on world-axis extents or upward-facing surfaces.
+
+    Keep this cache only while document content is unchanged. Mesh edits,
+    metadata edits, undo/redo and document replacement must start a new
+    cache; selection changes may reuse it. ``collect_objects`` creates a
+    fresh cache on every call, so direct callers cannot observe stale data.
+    """
+
+    def __init__(self):
+        self._meshes = {}
+        self._measurements = {}
+        self._quantities = {}
+        self._solids = {}
+
+    def _geometry(self, group):
+        from core.group import transformed_mesh, world_mesh
+
+        matrix = getattr(group, "xform", None)
+        if (getattr(group, "children", None)
+                or (matrix is not None and not matrix.isAffine())):
+            # Nested placements have relative offsets that affect the
+            # object's extents; measure their complete world-space mesh.
+            key = group
+            if key not in self._meshes:
+                self._meshes[key] = world_mesh(group)
+            return key, self._meshes[key]
+
+        linear = None
+        if matrix is not None:
+            linear = tuple(matrix(row, col) for row in range(3) for col in range(3))
+            if linear == (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0):
+                linear = None
+        key = (group.mesh, linear)
+        if key not in self._meshes:
+            if linear is None:
+                mesh = group.mesh
+            else:
+                a, b, c, d, e, f, g, h, i = linear
+                transform = QMatrix4x4(a, b, c, 0.0,
+                                      d, e, f, 0.0,
+                                      g, h, i, 0.0,
+                                      0.0, 0.0, 0.0, 1.0)
+                mesh = transformed_mesh(group.mesh, transform)
+            self._meshes[key] = mesh
+        return key, self._meshes[key]
+
+    def group_quantities(self, group, ifc_class):
+        """Return area, volume and class quantities for a placed group."""
+        key, mesh = self._geometry(group)
+        if key not in self._measurements:
+            faces = list(mesh.faces)
+            self._measurements[key] = (faces, face_set_area(faces), face_set_volume(faces))
+        faces, area, volume = self._measurements[key]
+        qkey = (key, ifc_class)
+        if qkey not in self._quantities:
+            self._quantities[qkey] = class_quantities(
+                ifc_class, faces, _measured=(area, volume))
+        return area, volume, self._quantities[qkey]
+
+    def solid_volume(self, group):
+        """Entity Info's stricter solid check, shared by equal prototypes."""
+        from core.solids import solid_report
+
+        if getattr(group, "children", None):
+            return None  # Preserve Solid Tools' no-nested-groups rule.
+        key, mesh = self._geometry(group)
+        if key not in self._solids:
+            ok, volume = solid_report(mesh)
+            self._solids[key] = volume if ok else None
+        return self._solids[key]
+
+
 def collect_objects(scene) -> list[dict]:
     """Every tagged BIM object in the document, with live quantities:
     ``{"key", "class", "name", "area", "volume" (or None), "faces" | "group"}``.
-    Loose-face objects group by tag id; each tagged group is one object."""
+    Loose-face objects group by tag id; each tagged group is one object.
+    ``quantities`` contains the already-measured class quantity tuple; use it
+    instead of measuring a component's untransformed prototype again."""
     out: list[dict] = []
+    cache = QuantityCache()
     by_id: dict = {}
     for f in scene.loose_mesh.faces:
         tag = f.attrs.get("ifc")
@@ -125,32 +207,30 @@ def collect_objects(scene) -> list[dict]:
             by_id.setdefault(tag.get("id"), (tag, []))[1].append(f)
     for obj_id, (tag, faces) in sorted(by_id.items(),
                                        key=lambda kv: kv[0] or 0):
+        area, volume = face_set_area(faces), face_set_volume(faces)
+        ifc_class = tag.get("class", "")
         out.append({
             "key": ("faces", obj_id),
-            "class": tag.get("class", ""),
+            "class": ifc_class,
             "name": tag.get("name", ""),
-            "area": face_set_area(faces),
-            "volume": face_set_volume(faces),
+            "area": area,
+            "volume": volume,
+            "quantities": class_quantities(ifc_class, faces, _measured=(area, volume)),
             "faces": faces,
         })
     for g in scene.groups:
         tag = getattr(g, "ifc", None)
         if not tag:
             continue
-        # Quantities are world-space, and a component's nested placements
-        # are part of the object being measured.
-        if getattr(g, "xform", None) is not None or getattr(g, "children",
-                                                            None):
-            from core.group import world_mesh
-            faces = list(world_mesh(g).faces)
-        else:
-            faces = list(g.mesh.faces)
+        ifc_class = tag.get("class", "")
+        area, volume, quantities = cache.group_quantities(g, ifc_class)
         out.append({
             "key": ("group", id(g)),
-            "class": tag.get("class", ""),
+            "class": ifc_class,
             "name": tag.get("name", ""),
-            "area": face_set_area(faces),
-            "volume": face_set_volume(faces),
+            "area": area,
+            "volume": volume,
+            "quantities": quantities,
             "group": g,
         })
     return out
@@ -227,7 +307,7 @@ def _face_width_height(f):
     return max(us) - min(us), max(zs) - min(zs)
 
 
-def class_quantities(ifc_class: str, faces):
+def class_quantities(ifc_class: str, faces, *, _measured=None):
     """Standard per-class BaseQuantities from freeform geometry, honestly:
     every value is measured off the tagged faces (volume only when the set
     is watertight on its own), named as the IFC4 ``Qto_*`` sets so any
@@ -242,9 +322,11 @@ def class_quantities(ifc_class: str, faces):
     unit = METRADO_UNIT.get(ifc_class, "m2")
     if not faces:
         return QSET_NAMES.get(ifc_class, "BaseQuantities"), [], (None, unit)
-    volume = face_set_volume(faces)
+    if _measured is None:
+        total, volume = face_set_area(faces), face_set_volume(faces)
+    else:
+        total, volume = _measured
     closed = volume is not None
-    total = face_set_area(faces)
     dx, dy, dz = _extents(faces)
     big = max(faces, key=lambda f: f.area())
     entries: list[tuple[str, str, float]] = []
@@ -346,10 +428,7 @@ def quantities_csv(scene) -> str:
     door und); area/volume stay as the raw shell numbers."""
     lines = ["class,name,metrado,unit,area_m2,volume_m3"]
     for obj in collect_objects(scene):
-        faces = obj.get("faces")
-        if faces is None:
-            faces = list(obj["group"].mesh.faces)
-        _, _, (metrado, unit) = class_quantities(obj["class"], faces)
+        _, _, (metrado, unit) = obj["quantities"]
         met = "" if metrado is None else f"{metrado:.4f}"
         vol = "" if obj["volume"] is None else f"{obj['volume']:.4f}"
         name = (obj["name"] or "").replace('"', "'")

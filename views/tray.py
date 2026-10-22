@@ -3161,16 +3161,14 @@ class EntityInfoPanel(QWidget):
         return f"<b>{tr('Selection')}</b><br>" + ", ".join(parts)
 
     def _solid_volume(self, group):
-        """Cached per scene version: the panel refreshes on every change and
-        the check walks the whole mesh."""
-        from core.solids import solid_volume
-        version = self._window.viewport.scene.version
+        """Selection reuses the current content's prototype measurements."""
+        from core.bim import QuantityCache
+        scene = self._window.viewport.scene
+        revision = (scene.content_version, scene.loose_mesh)
         cache = getattr(self, "_solid_cache", None)
-        if cache is None or cache[0] != version:
-            cache = self._solid_cache = (version, {})
-        if id(group) not in cache[1]:
-            cache[1][id(group)] = solid_volume(group)
-        return cache[1][id(group)]
+        if cache is None or cache[0] is not scene or cache[1] != revision:
+            cache = self._solid_cache = (scene, revision, QuantityCache())
+        return cache[2].solid_volume(group)
 
     @staticmethod
     def _describe_geopath(path) -> str:
@@ -3687,6 +3685,9 @@ class BimPanel(QWidget):
         exp.clicked.connect(self._on_export_csv)
         lay.addWidget(exp)
         self._objects: list = []
+        self._quantity_revision = None
+        self._row_by_entity = {}
+        self._selected_rows = set()
         self.refresh()
 
     def _scene(self):
@@ -3775,25 +3776,36 @@ class BimPanel(QWidget):
             tr("Quantities exported to {path}", path=path), 4000)
 
     # ---- Model → view ----------------------------------------------------------
-    def refresh(self) -> None:
+    def refresh(self, *, force: bool = True) -> None:
+        """Refresh quantities after content changes; selection only marks rows.
+
+        Explicit refreshes remain unconditional for callers that directly
+        edited metadata. The scene-change signal uses ``force=False`` so
+        a view-only selection bump cannot trigger full-model takeoff work.
+        """
         from PySide6.QtWidgets import QTreeWidgetItem
         from core.bim import collect_objects
-        from core.bim import class_quantities
+        scene = self._scene()
         # File ▸ New (scene.clear) drops the active class — mirror it in the UI.
-        if self.active_check.isChecked() and not self._scene().active_ifc:
+        if self.active_check.isChecked() and not scene.active_ifc:
             self.active_check.blockSignals(True)
             self.active_check.setChecked(False)
             self.active_check.blockSignals(False)
-        self._objects = collect_objects(self._scene())
+        revision = (scene.content_version, scene.loose_mesh)
+        cached = self._quantity_revision
+        if (not force and cached is not None
+                and cached[0] is scene and cached[1] == revision):
+            self._sync_selection()
+            return
+        self._objects = collect_objects(scene)
+        self._row_by_entity.clear()
+        self._selected_rows.clear()
         self.tree.clear()
         for obj in self._objects:
-            faces = obj.get("faces")
-            if faces is None:
-                faces = list(obj["group"].mesh.faces)
             # The takeoff column shows the class's budget measure (wall face
             # m², column m³, pile m, door und) — the number the IFC/CSV
             # export carries to IngePresupuestos, not the shell area.
-            _, _, (metrado, unit) = class_quantities(obj["class"], faces)
+            _, _, (metrado, unit) = obj["quantities"]
             pretty = {"m2": "m²", "m3": "m³"}.get(unit, unit)
             if metrado is None:
                 met = "—"
@@ -3809,7 +3821,24 @@ class BimPanel(QWidget):
                 item.setToolTip(3, tr(
                     "Not watertight on its own — no volume"))
             self.tree.addTopLevelItem(item)
+            if "group" in obj:
+                self._row_by_entity[obj["group"]] = item
+            else:
+                for face in obj["faces"]:
+                    self._row_by_entity[face] = item
         fit_rows(self.tree)
+        self._quantity_revision = (scene, revision)
+        self._sync_selection()
+
+    def _sync_selection(self) -> None:
+        """Update only affected BIM rows; preserve the table and scroll state."""
+        rows = {self._row_by_entity[entity] for entity in self._scene().selection
+                if entity in self._row_by_entity}
+        for item in self._selected_rows - rows:
+            item.setSelected(False)
+        for item in rows - self._selected_rows:
+            item.setSelected(True)
+        self._selected_rows = rows
 
 
 class Tray(QDockWidget):
@@ -3818,6 +3847,7 @@ class Tray(QDockWidget):
 
     def __init__(self, window) -> None:
         super().__init__(tr("Properties"), window)
+        self._window = window
         self.setObjectName("tray_properties")
         self.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         # Closable: without it Qt greys out the Window-menu entry, and a
@@ -3844,9 +3874,17 @@ class Tray(QDockWidget):
             (tr("Components"), self.components),
             (tr("Parts"), self.parts),
         ]))
+        scene = window.viewport.scene
+        self._document_revision = (scene, (scene.content_version, scene.loose_mesh))
 
     def on_scene_changed(self) -> None:
         self.entity_info.refresh()
+        self.parts.refresh()  # Its container follows the current selection.
+        scene = self._window.viewport.scene
+        revision = (scene.content_version, scene.loose_mesh)
+        cached = getattr(self, "_document_revision", None)
+        if cached is not None and cached[0] is scene and cached[1] == revision:
+            return
         # The materials panel scans every render face for its swatches —
         # ~0.5 s on an exploded 28k-face mesh, paid per EDIT when run
         # inline. Debounced: one refresh 300 ms after the last edit.
@@ -3860,7 +3898,7 @@ class Tray(QDockWidget):
         self.layers.refresh()
         self.scenes.refresh()
         self.components.refresh_in_model()
-        self.parts.refresh()
+        self._document_revision = (scene, revision)
 
 
 class BimTray(QDockWidget):
@@ -3882,7 +3920,7 @@ class BimTray(QDockWidget):
         self.setWidget(_scrolled([(tr("BIM tagging"), self.bim)]))
 
     def on_scene_changed(self) -> None:
-        self.bim.refresh()
+        self.bim.refresh(force=False)
 
 
 class SurveyPointsPanel(QWidget):

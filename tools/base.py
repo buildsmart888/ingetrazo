@@ -404,6 +404,10 @@ class Tool(ABC):
     # (Endpoint, On Edge, On Face, ...). Tools that only pick existing
     # geometry (Select, Push/Pull) set this False: no snap engine, no markers.
     uses_snap: bool = True
+    #: Opt in only when hover/click use screen coordinates and do not consume
+    #: ToolContext.world. Unlike uses_snap=False this skips work-plane picking;
+    #: other no-snap tools (e.g. Push/Pull) still need their world point.
+    screen_context_only: bool = False
     # Tools that support a click-drag rubber-band box (Select). For these the
     # viewport defers the click to release: a tiny drag is a click (on_click),
     # a real drag is a box (on_box_select).

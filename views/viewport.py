@@ -327,6 +327,23 @@ def _cache_ver(vp):
     return frozen if frozen is not None else vp.scene.version
 
 
+def _pick_cache_ver(vp):
+    """Revision of pick geometry, separate from selection/highlight state.
+
+    The pick index stores visibility and *selectability*, not the current
+    selection. A view-only bump can therefore reuse all its triangle arrays.
+    Transform previews keep their own frozen revision; do not subtract a
+    changing view counter from that frozen value. Other draw caches continue
+    using _cache_ver because they contain highlight colours.
+    """
+    frozen = getattr(vp, "_frozen_cache_version", None)
+    if frozen is not None:
+        return "frozen", frozen
+    scene = vp.scene
+    return "content", getattr(
+        scene, "content_version", scene.version - getattr(scene, "view_version", 0))
+
+
 #: How the rest of the model reads while a group is open for editing.
 #: ``normal`` draws it as always, ``fade`` washes it out behind the group
 #: being edited (the default), ``hide`` leaves it out of the frame.
@@ -1464,6 +1481,7 @@ class Viewport(QOpenGLWidget):
 
         # Persistent edges + faces
         self._sync_edges()
+        self._prune_rebar_draw()
         _fmark("sync")
 
         # Sun shadow map — AFTER the sync, so the consolidated VBOs hold
@@ -2057,6 +2075,10 @@ class Viewport(QOpenGLWidget):
         if len(_jit_e) > 1:
             self._program.setUniformValue(self._loc_mvp, mvp)
 
+        # A real centreline proxy, not the thousands of triangulation edges.
+        # Draw even when ordinary model edges are disabled by the style.
+        self._draw_rebar_centerlines()
+
         # Profile (silhouette) edges: soft seams of a curved surface are hidden,
         # except where the surface turns away from the viewer — the cylinder's
         # outline. View-dependent, so rebuilt every frame.
@@ -2513,6 +2535,7 @@ class Viewport(QOpenGLWidget):
                 # hidden child stays hidden inside a visible parent.
                 proxy.hidden = hidden or bool(child.hidden)
                 proxy.material = getattr(child, "material", None)
+                proxy.ext = getattr(child, "ext", None)
                 if child is ctx:
                     # The group being edited, reached as a nested placement:
                     # it is the SUBJECT, not surroundings. Comparing by
@@ -2852,8 +2875,9 @@ class Viewport(QOpenGLWidget):
             return [(groups, 0.0)]
         return [(fuera, EDIT_REST_FADE), (dentro, 0.0)]
 
-    def _draw_instanced_faces(self, mode, style) -> None:
-        by_proto = self._gather_instanced()
+    def _draw_instanced_faces(self, mode, style, by_proto=None) -> None:
+        if by_proto is None:
+            by_proto = self._gather_instanced()
         if not by_proto or mode == "wireframe":
             return
         extra = self.context().extraFunctions()
@@ -2864,6 +2888,9 @@ class Viewport(QOpenGLWidget):
                                             XRAY_FACE_OPACITY)
             self._gl.glDepthMask(GL_FALSE)
         for mesh, paint, groups, mirrored in by_proto.values():
+            groups = self._rebar_solid_groups(groups)
+            if not groups:
+                continue
             entry = self._ensure_proto_draw(mesh, paint)
             self._front_face(mirrored)
             for lote, fade in self._instanced_batches(groups):
@@ -2952,6 +2979,9 @@ class Viewport(QOpenGLWidget):
             return
         extra = self.context().extraFunctions()
         for mesh, paint, groups, _mirrored in by_proto.values():
+            groups = self._rebar_solid_groups(groups)
+            if not groups:
+                continue
             entry = self._ensure_proto_draw(mesh, paint)
             n = self._update_inst_matrices(entry, groups)
             if entry["vcol_count"]:
@@ -3010,12 +3040,16 @@ class Viewport(QOpenGLWidget):
         self._gl.glDisable(GL_POLYGON_OFFSET_FILL)
         self._gl.glColorMask(True, True, True, True)
 
-    def _draw_instanced_edges(self) -> None:
-        by_proto = getattr(self, "_frame_instanced", None)
+    def _draw_instanced_edges(self, by_proto=None) -> None:
+        if by_proto is None:
+            by_proto = getattr(self, "_frame_instanced", None)
         if not by_proto:
             return
         extra = self.context().extraFunctions()
         for mesh, paint, groups, _mirrored in by_proto.values():
+            groups = self._rebar_solid_groups(groups)
+            if not groups:
+                continue
             entry = self._ensure_proto_draw(mesh, paint)
             if not entry["edge_count"]:
                 continue
@@ -3029,6 +3063,150 @@ class Viewport(QOpenGLWidget):
                                             entry["edge_count"], n)
                 entry["edges_vao"].release()
         self._program.setUniformValue1f(self._loc_fade, 0.0)
+
+    def _rebar_lod_active(self) -> bool:
+        """A view-only representation switch; never change document geometry."""
+        if (getattr(self, "_export_size", None) is not None
+                or getattr(self, "_rebar_lod_suspended", False)
+                or self.scene.edit_group is not None
+                or (getattr(self.scene, "show_section_cuts", True)
+                    and self.scene.active_section() is not None)):
+            return False
+        return bool(getattr(self, "_last_pos", None) is not None
+                    or getattr(self, "_look_drag", None) is not None
+                    or getattr(self, "_rebar_wheel_active", False)
+                    or getattr(self, "_preview_groups", None))
+
+    def _rebar_proxy(self, group):
+        """Only verified, opaque component geometry may leave the solid pass."""
+        ext = getattr(group, "ext", None)
+        if not isinstance(ext, dict) or "go_rebar" not in ext:
+            return None
+        if not self._instanced_eligible(group):
+            return None
+        cache = getattr(self, "_rebar_centerlines", None)
+        if cache is None:
+            from core.rebar_display import CenterlineCache
+            cache = self._rebar_centerlines = CenterlineCache()
+        return cache.get(group, getattr(self.scene, "content_version", self.scene.version))
+
+    def _rebar_solid_groups(self, groups):
+        if not self._rebar_lod_active():
+            return groups
+        return [g for g in groups if self._rebar_proxy(g) is None]
+
+    def _ensure_rebar_draw(self, mesh, proxy):
+        """One static line VBO and instanced matrix buffer per local proxy."""
+        cache = getattr(self, "_rebar_draw", None)
+        if cache is None:
+            cache = self._rebar_draw = {}
+        proxy_key, raw = proxy
+        key = (id(mesh), proxy_key)
+        hit = cache.get(key)
+        if hit is not None and hit["mesh"] is mesh:
+            return hit
+        if hit is not None:
+            self._destroy_proto_draw_entry(hit)
+        vao = QOpenGLVertexArrayObject(self)
+        vao.create()
+        vao.bind()
+        vbo = QOpenGLBuffer(QOpenGLBuffer.VertexBuffer)
+        vbo.setUsagePattern(QOpenGLBuffer.StaticDraw)
+        vbo.create()
+        vbo.bind()
+        vbo.allocate(raw, len(raw))
+        self._program.enableAttributeArray(self._loc_pos)
+        self._program.setAttributeBuffer(self._loc_pos, GL_FLOAT, 0, 3, 12)
+        vbo.release()
+        matrices = QOpenGLBuffer(QOpenGLBuffer.VertexBuffer)
+        matrices.setUsagePattern(QOpenGLBuffer.DynamicDraw)
+        matrices.create()
+        matrices.bind()
+        matrices.allocate(64)
+        extra = self.context().extraFunctions()
+        for i, loc in enumerate(self._loc_inst):
+            self._program.enableAttributeArray(loc)
+            self._program.setAttributeBuffer(loc, GL_FLOAT, i * 16, 4, 64)
+            extra.glVertexAttribDivisor(loc, 1)
+        matrices.release()
+        vao.release()
+        entry = {"mesh": mesh, "lines_vao": vao, "lines_vbo": vbo,
+                 "mat_vbo": matrices, "mat_sig": None,
+                 "count": len(raw) // 12}
+        cache[key] = entry
+        return entry
+
+    def _prune_rebar_draw(self) -> None:
+        """Release obsolete line buffers at real edits, with GL current."""
+        cache = getattr(self, "_rebar_draw", None)
+        if not cache:
+            return
+        key = (id(self.scene), self.scene.content_version, id(self.scene.mesh),
+               getattr(self, "_preview_epoch", 0))
+        if getattr(self, "_rebar_draw_epoch", None) == key:
+            return
+        live = set()
+        groups = list(self._placements())
+        for _mesh, _paint, previews, _mirror in (
+                getattr(self, "_pv_rebar_proto", None) or {}).values():
+            groups.extend(previews)
+        for group in groups:
+            proxy = self._rebar_proxy(group)
+            if proxy is not None:
+                live.add((id(group.mesh), proxy[0]))
+        for old in list(cache):
+            if old not in live:
+                self._destroy_proto_draw_entry(cache.pop(old))
+        self._rebar_draw_epoch = key
+
+    def _draw_rebar_centerlines(self, by_proto=None) -> None:
+        """Batch centreline draws without materialising or modifying a bar."""
+        if not self._rebar_lod_active():
+            return
+        if by_proto is None:
+            by_proto = getattr(self, "_frame_instanced", None) or {}
+        extra = self.context().extraFunctions()
+        self._program.setUniformValue(self._loc_use_tex, 0)
+        self._program.setUniformValue(self._loc_use_vcolor, 0)
+        self._program.setUniformValue1f(self._loc_opacity, 1.0)
+        self._program.setUniformValue1f(self._loc_shade, 1.0)
+        for mesh, paint, groups, _mirror in by_proto.values():
+            batches = {}
+            for group in groups:
+                proxy = self._rebar_proxy(group)
+                if proxy is not None:
+                    batches.setdefault(proxy[0], (proxy, []))[1].append(group)
+            color = (paint or {}).get("color")
+            if color is None and mesh.faces:
+                color = mesh.faces[0].attrs.get("color")
+            color = color or (0.1, 0.3, 0.9)
+            self._set_color(float(color[0]), float(color[1]), float(color[2]), 1.0)
+            for proxy, placements in batches.values():
+                entry = self._ensure_rebar_draw(mesh, proxy)
+                for batch, fade in self._instanced_batches(placements):
+                    if not batch:
+                        continue
+                    n = self._update_inst_matrices(entry, batch)
+                    self._program.setUniformValue1f(self._loc_fade, fade)
+                    entry["lines_vao"].bind()
+                    extra.glDrawArraysInstanced(GL_LINES, 0, entry["count"], n)
+                    entry["lines_vao"].release()
+        self._program.setUniformValue1f(self._loc_fade, 0.0)
+
+    def _rebar_wheel_idle(self) -> None:
+        self._rebar_wheel_active = False
+        self.update()
+
+    def _rebar_wheel_started(self) -> None:
+        from PySide6.QtCore import QTimer
+        self._rebar_lod_suspended = False
+        self._rebar_wheel_active = True
+        timer = getattr(self, "_rebar_wheel_timer", None)
+        if timer is None:
+            timer = self._rebar_wheel_timer = QTimer(self)
+            timer.setSingleShot(True)
+            timer.timeout.connect(self._rebar_wheel_idle)
+        timer.start(180)
 
     def _draw_image_planes(self) -> None:
         """Reference images, as textured quads under the model.
@@ -3411,7 +3589,7 @@ class Viewport(QOpenGLWidget):
                         # one's address met its entry — the scale figure
                         # «transported» into an opened file (issue #75).
                         "_billboard_world", "_placement_proxies",
-                        "_arc_mid_by_mesh")
+                        "_arc_mid_by_mesh", "_rebar_draw")
 
     def reset_document_caches(self) -> None:
         """Forget the previous document's chunks at the document boundary.
@@ -3426,6 +3604,10 @@ class Viewport(QOpenGLWidget):
         walking the dead ones). And a CPython id() reused by a new group
         could meet an old entry — the composer's lesson with frames."""
         draws = getattr(self, "_proto_draw", None)
+        rebar_draws = getattr(self, "_rebar_draw", None)
+        if rebar_draws:
+            draws = dict(draws or {})
+            draws.update({("rebar", k): v for k, v in rebar_draws.items()})
         if draws and self.context() is not None:
             self.makeCurrent()                # GPU objects need the context
             try:
@@ -3447,6 +3629,12 @@ class Viewport(QOpenGLWidget):
         self._pick_lazy_memo = None
         self._pick_near_memo = None
         self._proto_draw_fast = None
+        lines = getattr(self, "_rebar_centerlines", None)
+        if lines is not None:
+            lines.clear()
+        self._pv_rebar_proto = {}
+        self._rebar_wheel_active = False
+        self._rebar_draw_epoch = None
 
     def reset_texture_cache(self) -> None:
         """Return the document's cached GL textures to the driver.
@@ -3484,6 +3672,11 @@ class Viewport(QOpenGLWidget):
         mid-session, e.g. on reparenting)."""
         self.makeCurrent()
         try:
+            rebar_draws = getattr(self, "_rebar_draw", None)
+            if rebar_draws:
+                for entry in rebar_draws.values():
+                    self._destroy_proto_draw_entry(entry)
+                rebar_draws.clear()
             cache = getattr(self, "_tex_cache", None)
             if cache:
                 for tex in cache.values():
@@ -3954,8 +4147,8 @@ class Viewport(QOpenGLWidget):
 
     def _ensure_shadow_map(self):
         """Build or reuse the packed-depth shadow map. Camera-independent:
-        keyed by geometry version + sun + cut + bounds, so orbit and zoom
-        REUSE it — only an edit, the clock or the section rebuilds."""
+        keyed by content version + sun + cut + bounds, so orbit, zoom and
+        selection REUSE it — only an edit, the clock or the section rebuilds."""
         d = self._sun_dir_now()
         self._frame_sun = d
         if d is None:
@@ -3966,7 +4159,7 @@ class Viewport(QOpenGLWidget):
             self._shadow_vp = None
             return None
         clip = getattr(self, "_clip_vec", None)
-        key = (self.scene.version, id(self.scene.mesh),
+        key = (self.scene.content_version, id(self.scene.mesh),
                getattr(self, "_preview_epoch", 0),
                tuple(round(v, 4) for v in d),
                None if clip is None else (round(clip.x(), 4),
@@ -4252,6 +4445,8 @@ class Viewport(QOpenGLWidget):
         for g in groups:
             self._expand_placements(g, movers)
         groups = movers
+        self._rebar_lod_suspended = False
+        self._pv_rebar_proto = {}
         self._preview_external = external
         if not external:
             self._frozen_cache_version = self.scene.version
@@ -4276,6 +4471,19 @@ class Viewport(QOpenGLWidget):
                     # Face-me figures preview through their OWN pass (the
                     # anchor rides the preview transform): their raw mesh
                     # quad in the scratch VBOs showed a swimming texture.
+                    continue
+                if self._rebar_proxy(g) is not None:
+                    # Freeze the placement, as the old scratch world arrays
+                    # did. The preview's extra transform is applied to MVP.
+                    import copy
+                    from core.group import effective_material
+                    frozen = copy.copy(g)
+                    frozen.xform = QMatrix4x4(g.xform)
+                    paint = effective_material(g)
+                    mirrored = g.xform.determinant() < 0.0
+                    key = (id(g.mesh), _material_sig(paint), mirrored)
+                    self._pv_rebar_proto.setdefault(
+                        key, (g.mesh, paint, [], mirrored))[2].append(frozen)
                     continue
                 ch = self._group_chunk(g)
                 if ch["edges"]:
@@ -4307,6 +4515,9 @@ class Viewport(QOpenGLWidget):
             self._pv_tex_vbo.allocate(raw or b"\0" * 24, max(len(raw), 24))
             self._pv_tex_vbo.release()
             self._pv_tex_runs = runs
+        except Exception:
+            self.end_groups_preview()
+            raise
         finally:
             self.doneCurrent()
 
@@ -4332,6 +4543,8 @@ class Viewport(QOpenGLWidget):
         self._pv_edges_count = 0
         self._pv_vcol_count = 0
         self._pv_tex_runs = []
+        self._pv_rebar_proto = {}
+        self.update()
 
     def set_groups_preview_offset(self, delta: QVector3D) -> None:
         self._preview_offset = QVector3D(delta)
@@ -4356,6 +4569,17 @@ class Viewport(QOpenGLWidget):
             if off is not None:
                 m.translate(off)
         self._program.setUniformValue(self._loc_mvp, mvp * m)
+        rebar = getattr(self, "_pv_rebar_proto", None)
+        if rebar:
+            # Each pass filters its own representation. A mesh edited during
+            # a preview invalidates its proxy and immediately falls back to
+            # the solid, rather than vanishing. Focus loss, sectioning and
+            # exports restore all solids at the SAME preview pose.
+            style = self._effective_style()
+            self._draw_instanced_faces(style.face_mode, style, rebar)
+            self._set_color(1.0, 0.45, 0.0, 1.0)
+            self._draw_instanced_edges(rebar)
+            self._draw_rebar_centerlines(rebar)
         n = getattr(self, "_pv_vcol_count", 0)
         if n:
             self._program.setUniformValue(self._loc_use_vcolor, 1)
@@ -5548,7 +5772,12 @@ class Viewport(QOpenGLWidget):
         # they stay on the geometry, only WHICH edges outline lags.
         import time as _time
         now = _time.monotonic()
-        key = (_cache_ver(self), id(self.scene.mesh))
+        geometry_key = (_cache_ver(self), id(self.scene.mesh))
+        # Entering/leaving line LOD changes the set of solid outlines even
+        # without a model edit or camera movement. Never reuse a silhouette
+        # upload from the other display state, including transform previews.
+        key = (geometry_key, self._rebar_lod_active(),
+               getattr(self, "_preview_epoch", 0))
         last = getattr(self, "_sil_last", None)
         wait = 0.08
         # While the camera is moving (it moved since the last frame) and
@@ -5587,7 +5816,7 @@ class Viewport(QOpenGLWidget):
         # one einsum.
         import numpy as np
         cached = getattr(self, "_soft_edges_cache", None)
-        if cached is None or cached[0] != key:
+        if cached is None or cached[0] != geometry_key:
             softs = [e for e in self.scene.loose_mesh.edges
                      if getattr(e, "soft", False)
                      and not getattr(e, "hidden", False)
@@ -5624,7 +5853,7 @@ class Viewport(QOpenGLWidget):
                 arrays = (pts.astype(np.float32), n0, c0, n1, c1, single)
             else:
                 arrays = None
-            cached = (key, arrays)
+            cached = (geometry_key, arrays)
             self._soft_edges_cache = cached
         eye = self.camera.eye()
         chunks: list = []
@@ -5657,6 +5886,8 @@ class Viewport(QOpenGLWidget):
                       and not getattr(g, "billboard", False)
                       and not (skip_context and self._draws_in_edit_context(g))]
             self._sil_groups = (gkey, groups)
+        if groups:
+            groups = self._rebar_solid_groups(groups)
         if groups:
             import numpy as np
             e_np = np.array([eye.x(), eye.y(), eye.z()])
@@ -8968,7 +9199,7 @@ class Viewport(QOpenGLWidget):
         # plaza its children are the objects, not the plaza): a stale index
         # kept answering "the plaza" after a double-click opened it, so the
         # arch inside never opened (Marco, 2026-09-14).
-        key = (_cache_ver(self), id(self.scene.mesh), oculto,
+        key = (_pick_cache_ver(self), id(self.scene.mesh), oculto,
                id(self.scene.edit_group), getattr(self, "_pick_gen", 0))
         cached = getattr(self, "_pick_index_cache", None)
         if cached is not None and cached[0] == key:
@@ -11382,6 +11613,7 @@ class Viewport(QOpenGLWidget):
             self._apply_nav_cursor()
         else:
             self._apply_tool_cursor()
+        self.update()       # leave the centreline LOD even without a mouse move
 
     def set_nav_mode(self, mode: Optional[str]) -> None:
         """Enter a camera navigation mode ("orbit" / "pan").
@@ -11448,6 +11680,7 @@ class Viewport(QOpenGLWidget):
             ev.globalPos(), locked_image=under if under is not picked else None)
 
     def mousePressEvent(self, ev) -> None:
+        self._rebar_lod_suspended = False
         # A new gesture starts with the inferences back on: the Alt
         # toggle lasts ONE operation. Mid-operation (the
         # second click of a line) the tool is still busy and nothing moves.
@@ -11654,6 +11887,7 @@ class Viewport(QOpenGLWidget):
     def _end_look(self) -> None:
         self._look_drag = None
         self._apply_tool_cursor()
+        self.update()
 
     def mouseMoveEvent(self, ev) -> None:
         self._input_t = _time_mod.monotonic()   # P0: input→paint latency
@@ -11876,13 +12110,7 @@ class Viewport(QOpenGLWidget):
             self._end_look()
             return
         if ev.button() == Qt.MiddleButton:
-            self._last_pos = None
-            self._orbit_pivot = None
-            self._pan_mode = False
-            if self.nav_mode is not None:
-                self._apply_nav_cursor()
-            else:
-                self._apply_tool_cursor()
+            self._end_camera_drag()
             return
 
         if ev.button() == Qt.LeftButton and self._zoom_box_active:
@@ -11896,10 +12124,7 @@ class Viewport(QOpenGLWidget):
             return
 
         if ev.button() == Qt.LeftButton and self.nav_mode is not None:
-            self._last_pos = None
-            self._orbit_pivot = None
-            self._pan_mode = False
-            self._apply_nav_cursor()
+            self._end_camera_drag()
             return
 
         # Stroke tools (the Eraser): notify the release so a press-drag-release
@@ -12029,6 +12254,7 @@ class Viewport(QOpenGLWidget):
         return None
 
     def wheelEvent(self, ev) -> None:
+        self._rebar_wheel_started()
         self._input_t = _time_mod.monotonic()   # P0: input→paint latency
         # Zoom toward the cursor: keep the point under the
         # pointer fixed on screen, not the origin. During a wheel burst the
@@ -12152,6 +12378,9 @@ class Viewport(QOpenGLWidget):
         return callable(claims) and bool(claims(ev.key(), ev.modifiers()))
 
     def keyPressEvent(self, ev) -> None:
+        if ev.key() == Qt.Key_Escape:
+            self._rebar_wheel_idle()
+            self._rebar_lod_suspended = True
         if ev.key() == Qt.Key_Control and not ev.isAutoRepeat():
             self._ctrl_alone = True       # until another key says otherwise
         # Held keys (First Person): the press and the release are the
@@ -12567,6 +12796,12 @@ class Viewport(QOpenGLWidget):
         self._alt_tap = False
         self._alt_down = False        # its release will not reach us either
         self._ctrl_alone = False      # nor will Ctrl's
+        self._rebar_lod_suspended = True
+        self._rebar_wheel_idle()
+        if self._last_pos is not None:
+            self._end_camera_drag()
+        if self._look_drag is not None:
+            self._end_look()
         # Nor will the release of a held walking key (First Person).
         lost = getattr(self.active_tool, "on_focus_out", None)
         if callable(lost):
@@ -12889,6 +13124,19 @@ class Viewport(QOpenGLWidget):
         self._sync_axes()
         p = ev.position().toPoint()
         px_x, px_y = p.x(), p.y()
+        if getattr(self.active_tool, "screen_context_only", False):
+            # Select picks in screen coordinates. Building a construction
+            # plane here used to cast a second face ray and, over empty sky,
+            # ask for whole-model bounds before doing the actual pick.
+            # A camera-plane position keeps the context finite without that
+            # work; the independent georeferenced status readout is unchanged.
+            world = self._ray_hit_plane(
+                (px_x, px_y), (self.camera.target,
+                              self.camera.target - self.camera.eye()))
+            if world is None:
+                world = QVector3D(self.camera.target)
+            return ToolContext(viewport=self, world=world, screen=ev.position(),
+                               modifiers=ev.modifiers(), snap=SnapResult(world, "none"))
         world_raw = self._world_from_pixel(px_x, px_y)
         if world_raw is None:
             return None

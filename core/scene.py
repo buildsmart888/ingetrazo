@@ -649,21 +649,24 @@ class Scene:
     def bounds(self) -> tuple[QVector3D, QVector3D] | tuple[None, None]:
         """Axis-aligned bounding box of all geometry. ``(None, None)`` if empty.
 
-        CACHED per ``version`` — hovering over empty space derives the work
+        CACHED per document-content revision — hovering over empty space derives the work
         plane (and the status-bar coordinate) from the model centre, so this
         runs on EVERY mouse move across sky or base map. The old per-corner
         Python walk cost ~1.7 s per call against piscina's 230k-face merged
         group, twice per hover: the event loop starved and GNOME declared
         the app dead (the paste "no responde" hang). Every mutation —
-        commands, layer toggles — bumps ``version``, the same invariant the
-        viewport's chunk caches key on.
+        commands, layer toggles — bumps ``content_version``. Selection-only
+        ``bump_view`` changes cannot move the model and must keep this cache:
+        otherwise every click is followed by a full model walk on empty-space
+        hover. Context/mesh identity also separates document and edit contexts.
 
         Group bounds are vectorized over each mesh's welded vertex list
         (as the instance branch always was), so an orphaned vertex left by
         a deletion may pad them slightly until the weld reuses it; loose
         entities keep the exact per-entity visibility walk."""
+        bounds_key = (self.content_version, self.loose_mesh, self.edit_group)
         cached = getattr(self, "_bounds_cache", None)
-        if cached is not None and cached[0] == self.version:
+        if cached is not None and cached[0] == bounds_key:
             lo, hi = cached[1]
             if lo is None:
                 return None, None
@@ -720,8 +723,8 @@ class Scene:
             maxx = max(maxx, ghi[0]); maxy = max(maxy, ghi[1])
             maxz = max(maxz, ghi[2])
         if not seen:
-            self._bounds_cache = (self.version, (None, None))
+            self._bounds_cache = (bounds_key, (None, None))
             return None, None
-        self._bounds_cache = (self.version, ((minx, miny, minz),
-                                             (maxx, maxy, maxz)))
+        self._bounds_cache = (bounds_key, ((minx, miny, minz),
+                                          (maxx, maxy, maxz)))
         return QVector3D(minx, miny, minz), QVector3D(maxx, maxy, maxz)

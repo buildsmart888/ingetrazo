@@ -20,7 +20,7 @@ import datetime
 import uuid
 from pathlib import Path
 
-from core.bim import class_quantities, collect_objects, face_set_volume
+from core.bim import collect_objects, face_set_volume
 
 _GUID_CHARS = ("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                "abcdefghijklmnopqrstuvwxyz_$")
@@ -156,7 +156,13 @@ def save_ifc(scene, path, project_name: str = "IngeTrazo project") -> int:
 
     element_ids = []
     for obj in objects:
-        faces = obj.get("faces") or list(obj["group"].mesh.faces)
+        if "group" in obj:
+            # Components retain local prototype geometry. Export every
+            # placement in world coordinates, including nested children.
+            from core.group import world_mesh
+            faces = list(world_mesh(obj["group"]).faces)
+        else:
+            faces = obj["faces"]
         if not faces:
             continue
         rep = _brep(w, faces, context)
@@ -164,7 +170,7 @@ def save_ifc(scene, path, project_name: str = "IngeTrazo project") -> int:
         from core.bim import IFC_CLASSES
         cls = obj["class"] if obj["class"] in IFC_CLASSES \
             else "IfcBuildingElementProxy"
-        qset_name, qentries, _metrado = class_quantities(obj["class"], faces)
+        qset_name, qentries, _metrado = obj["quantities"]
         total = _ATTR_COUNT.get(cls, _DEFAULT_ATTRS)
         attrs = [_s(ifc_guid()), "$", _s(obj["name"] or cls), "$", "$",
                  f"#{placement}", f"#{pds}", "'IngeTrazo'"]

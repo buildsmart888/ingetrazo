@@ -215,6 +215,7 @@ class SelectTool(Tool):
         "Ctrl+click adds, Shift+Ctrl+click takes away; the same with a "
         "box.")
     uses_snap = False  # selecting picks geometry; no snap markers
+    screen_context_only = True  # picks use pixels; no work-plane raycast is needed
     box_select = True   # supports the rubber-band window / crossing box
 
     def on_activate(self, viewport) -> None:
