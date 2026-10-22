@@ -2630,7 +2630,7 @@ class Viewport(QOpenGLWidget):
         sc = self.scene
         tick = getattr(self, "_tick", 0)
         memo = getattr(self, "_epoch_memo", None)
-        if memo is not None and memo[0] == (tick, _cache_ver(self)):
+        if memo is not None and memo[0] == (tick, _pick_cache_ver(self)):
             return memo[1]
         # Across ticks: while the version is live (not frozen by a groups
         # preview, whose matrices move without a version bump) and none of
@@ -2638,7 +2638,7 @@ class Viewport(QOpenGLWidget):
         # — every edit of a group goes through a command that bumps the
         # version. Orbiting a model of 21 406 placements walked them all on
         # every frame, ~55 ms (issue #158).
-        cheap = (sc.version, id(sc.edit_group), id(sc.mesh),
+        cheap = (sc.content_version, id(sc.edit_group), id(sc.mesh),
                  getattr(self, "_preview_epoch", 0),
                  bool(getattr(self, "_preview_groups", None)),
                  getattr(self, "_edit_rest_mode", None),
@@ -2649,7 +2649,7 @@ class Viewport(QOpenGLWidget):
         live = getattr(self, "_frozen_cache_version", None) is None
         same = getattr(self, "_epoch_same", None)
         if live and same is not None and same[0] == cheap:
-            self._epoch_memo = ((tick, _cache_ver(self)), same[1])
+            self._epoch_memo = ((tick, _pick_cache_ver(self)), same[1])
             return same[1]
         parts: list = [id(sc.edit_group), id(sc.mesh),
                        getattr(self, "_preview_epoch", 0),
@@ -2701,7 +2701,7 @@ class Viewport(QOpenGLWidget):
             for i, g in base[3]:
                 whole[i] = part(g)
             epoch = hash(tuple(whole))
-            self._epoch_memo = ((tick, _cache_ver(self)), epoch)
+            self._epoch_memo = ((tick, _pick_cache_ver(self)), epoch)
             self._epoch_same = None
             return epoch
         movers: list = []
@@ -2720,7 +2720,7 @@ class Viewport(QOpenGLWidget):
         # slots) — what the next frozen frame starts from.
         self._epoch_frozen_base = ((cheap, parts[:head], list(parts), movers)
                                    if not live and pv else None)
-        self._epoch_memo = ((tick, _cache_ver(self)), epoch)
+        self._epoch_memo = ((tick, _pick_cache_ver(self)), epoch)
         self._epoch_same = (cheap, epoch) if live else None
         return epoch
 
@@ -10618,7 +10618,7 @@ class Viewport(QOpenGLWidget):
             # through here: the same cursor query in the same tick has
             # nothing new to bake (#158).
             pos = getattr(self, "_last_mouse_pos", None)
-            qkey = (getattr(self, "_tick", 0), _cache_ver(self),
+            qkey = (getattr(self, "_tick", 0), _pick_cache_ver(self),
                     (pos.x(), pos.y()) if near is None and pos is not None
                     else repr(near) if not isinstance(near, tuple) or
                     near[0] != "ray" else None)
