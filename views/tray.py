@@ -3396,29 +3396,58 @@ class EntityInfoPanel(QWidget):
         lay.addLayout(row)
         # A steady height. Selecting something used to resize this panel —
         # one line for nothing, two for an edge, four and a layer row for a
-        # face — and everything below it (layers, scenes, the materials
-        # library) slid up and down with every click (Marco, 23-09, four
-        # screenshots). The layer row keeps its place when hidden, and the
-        # text keeps room for the four lines a face or a solid shows.
+        # face — and everything below it slid up/down with every click.
+        # Keep room for normal facts and the rebar diagnostics below.
         for w in (self._layer_caption, self._layer_box,
                   self._name_caption, self._name_edit):
             pol = w.sizePolicy()
             pol.setRetainSizeWhenHidden(True)
             w.setSizePolicy(pol)
-        from PySide6.QtGui import QFont, QFontMetrics
-        font = QFont(self._label.font())
-        font.setPixelSize(12)
-        self._label.setMinimumHeight(QFontMetrics(font).lineSpacing() * 4 + 4)
         self._layer_caption.hide()
         self._layer_box.hide()
         self._name_caption.hide()
         self._name_edit.hide()
+        self._reserve_description_height()
 
     def refresh(self) -> None:
         sel = list(self._window.viewport.scene.selection)
+        self._reserve_description_height()
         self._label.setText(self._describe(sel))
         self._refresh_name(sel)
         self._refresh_layer(sel)
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._reserve_description_height()
+
+    def _reserve_description_height(self) -> None:
+        """Reserve wrapped rebar diagnostics once per pane width/language."""
+        from PySide6.QtGui import QFont, QTextDocument
+        from core.i18n import current_language
+        margins = self.layout().contentsMargins()
+        width = max(80, self.width() - margins.left() - margins.right())
+        key = (width, current_language())
+        if getattr(self, "_description_reserve", None) == key:
+            return
+        self._description_reserve = key
+        font = QFont(self._label.font())
+        font.setPixelSize(12)
+        doc = QTextDocument()
+        doc.setDefaultFont(font)
+        doc.setDocumentMargin(0)
+        prefix = (f"<b>{tr('Solid Component')}</b><br>"
+                  f"{tr('Faces')}: 999999<br>{tr('In model')}: 999999<br>"
+                  f"{tr('Volume')}: 999.999 m³<br>"
+                  f"{tr('Centerline')}: {tr('{n} points', n=999999)}<br>"
+                  f"{tr('Bar diameter')}: {tr('Not available')}<br>"
+                  f"{tr('Line display')}: ")
+        messages = self._rebar_messages()
+        height = 0.0
+        for message in messages.values():
+            doc.setHtml(prefix + message + ". " + messages["host"])
+            doc.setTextWidth(width)
+            height = max(height, doc.size().height())
+        self._label.setMinimumHeight(int(height + 1) + 4)
 
     # ---- Name field ---------------------------------------------------------
     def _refresh_name(self, sel: list) -> None:
@@ -3519,6 +3548,7 @@ class EntityInfoPanel(QWidget):
                 vol = self._solid_volume(e)
                 solid = (f"<br>{tr('Volume')}: {fmt_volume(vol)}"
                          if vol is not None else "")
+                rebar = self._describe_rebar(e)
                 if e.is_component():
                     # Entity Info usually tells a component from a group and
                     # says how many copies share the definition. Without it the
@@ -3530,10 +3560,10 @@ class EntityInfoPanel(QWidget):
                              else tr("Component"))
                     return (f"<b>{title}</b><br>"
                             f"{tr('Faces')}: {len(e.mesh.faces)}<br>"
-                            f"{tr('In model')}: {kin}{solid}")
+                            f"{tr('In model')}: {kin}{solid}{rebar}")
                 title = tr("Solid Group") if vol is not None else tr("Group")
                 return (f"<b>{title}</b><br>"
-                        f"{tr('Faces')}: {len(e.mesh.faces)}{solid}")
+                        f"{tr('Faces')}: {len(e.mesh.faces)}{solid}{rebar}")
             return f"<b>{tr('1 entity')}</b>"
         counts = {"faces": 0, "edges": 0, "dimensions": 0, "groups": 0}
         for e in sel:
@@ -3561,16 +3591,57 @@ class EntityInfoPanel(QWidget):
         return text
 
     def _solid_volume(self, group):
-        """Cached per scene version: the panel refreshes on every change and
-        the check walks the whole mesh."""
-        from core.solids import solid_volume
-        version = self._window.viewport.scene.version
+        """Selection reuses the current content's prototype measurements."""
+        from core.bim import QuantityCache
+        scene = self._window.viewport.scene
+        revision = (scene.content_version, scene.loose_mesh)
         cache = getattr(self, "_solid_cache", None)
-        if cache is None or cache[0] != version:
-            cache = self._solid_cache = (version, {})
-        if id(group) not in cache[1]:
-            cache[1][id(group)] = solid_volume(group)
-        return cache[1][id(group)]
+        if cache is None or cache[0] is not scene or cache[1] != revision:
+            cache = self._solid_cache = (scene, revision, QuantityCache())
+        return cache[2].solid_volume(group)
+
+    def _describe_rebar(self, group) -> str:
+        """Show stored centreline data and eligibility, never force line mode."""
+        from core.layers import layer_of
+        ext = getattr(group, "ext", None)
+        tag = getattr(group, "ifc", None)
+        if not ((isinstance(ext, dict) and "go_rebar" in ext)
+                or (isinstance(tag, dict) and tag.get("class") == "IfcReinforcingBar")
+                or layer_of(group) == "IfcReinforcingBar"):
+            return ""
+        from core.rebar_display import describe_centerline
+        info = describe_centerline(group, self._window.viewport)
+        points = (tr("No data") if info["status"] == "missing"
+                  else tr("{n} points", n=info["points"]))
+        diameter = info["diameter_m"]
+        size = (tr("{diameter:g} mm", diameter=diameter * 1000.0)
+                if diameter is not None else tr("Not available"))
+        messages = self._rebar_messages()
+        message = messages.get(
+            info["reason"], messages.get(info["status"], messages["unsupported"]))
+        if info["host_renderer_available"] is False:
+            host = messages["host"]
+            message = host if info["status"] == "ready" else f"{message}. {host}"
+        return (f"<br>{tr('Centerline')}: {points}"
+                f"<br>{tr('Bar diameter')}: {size}"
+                f"<br>{tr('Line display')}: {message}")
+
+    @staticmethod
+    def _rebar_messages() -> dict:
+        return {
+            "ready": tr("Ready for interaction"),
+            "missing": tr("Missing data — rebuild this rebar"),
+            "unsigned": tr("Incomplete data — rebuild this rebar"),
+            "stale": tr("Out of date — rebuild this rebar"),
+            "invalid": tr("Invalid data — rebuild this rebar"),
+            "classic_group": tr("Unsupported — make this rebar a component"),
+            "nested_children": tr("Unsupported — use a component without nested parts"),
+            "billboard": tr("Unsupported for face-me components"),
+            "unsupported_material": tr("Unsupported material — use opaque rebar"),
+            "instancing_disabled": tr("Unavailable with the current display settings"),
+            "unsupported": tr("Not supported for this object"),
+            "host": tr("Line display unavailable — update IngeTrazo"),
+        }
 
     @staticmethod
     def _describe_geopath(path) -> str:
@@ -4116,6 +4187,9 @@ class BimPanel(QWidget):
         exp.clicked.connect(self._on_export_csv)
         lay.addWidget(exp)
         self._objects: list = []
+        self._quantity_revision = None
+        self._row_by_entity = {}
+        self._selected_rows = set()
         self.refresh()
 
     def _scene(self):
@@ -4204,25 +4278,28 @@ class BimPanel(QWidget):
             tr("Quantities exported to {path}", path=path), 4000)
 
     # ---- Model → view ----------------------------------------------------------
-    def refresh(self) -> None:
+    def refresh(self, *, force: bool = True) -> None:
+        """Refresh quantities after content changes; selection only marks rows."""
         from PySide6.QtWidgets import QTreeWidgetItem
         from core.bim import collect_objects
-        from core.bim import class_quantities
+        scene = self._scene()
         # File ▸ New (scene.clear) drops the active class — mirror it in the UI.
-        if self.active_check.isChecked() and not self._scene().active_ifc:
+        if self.active_check.isChecked() and not scene.active_ifc:
             self.active_check.blockSignals(True)
             self.active_check.setChecked(False)
             self.active_check.blockSignals(False)
-        self._objects = collect_objects(self._scene())
+        revision = (scene.content_version, scene.loose_mesh)
+        cached = self._quantity_revision
+        if (not force and cached is not None
+                and cached[0] is scene and cached[1] == revision):
+            self._sync_selection()
+            return
+        self._objects = collect_objects(scene)
+        self._row_by_entity.clear()
+        self._selected_rows.clear()
         self.tree.clear()
         for obj in self._objects:
-            faces = obj.get("faces")
-            if faces is None:
-                faces = list(obj["group"].mesh.faces)
-            # The takeoff column shows the class's budget measure (wall face
-            # m², column m³, pile m, door und) — the number the IFC/CSV
-            # export carries to IngePresupuestos, not the shell area.
-            _, _, (metrado, unit) = class_quantities(obj["class"], faces)
+            _, _, (metrado, unit) = obj["quantities"]
             pretty = {"m2": "m²", "m3": "m³"}.get(unit, unit)
             if metrado is None:
                 met = "—"
@@ -4238,7 +4315,24 @@ class BimPanel(QWidget):
                 item.setToolTip(3, tr(
                     "Not watertight on its own — no volume"))
             self.tree.addTopLevelItem(item)
+            if "group" in obj:
+                self._row_by_entity[obj["group"]] = item
+            else:
+                for face in obj["faces"]:
+                    self._row_by_entity[face] = item
         fit_rows(self.tree)
+        self._quantity_revision = (scene, revision)
+        self._sync_selection()
+
+    def _sync_selection(self) -> None:
+        """Update only affected BIM rows; preserve table and scroll state."""
+        rows = {self._row_by_entity[entity] for entity in self._scene().selection
+                if entity in self._row_by_entity}
+        for item in self._selected_rows - rows:
+            item.setSelected(False)
+        for item in rows - self._selected_rows:
+            item.setSelected(True)
+        self._selected_rows = rows
 
 
 class Tray(QDockWidget):
@@ -4247,6 +4341,7 @@ class Tray(QDockWidget):
 
     def __init__(self, window) -> None:
         super().__init__(tr("Properties"), window)
+        self._window = window
         self.setObjectName("tray_properties")
         self.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         # Closable: without it Qt greys out the Window-menu entry, and a
@@ -4273,9 +4368,17 @@ class Tray(QDockWidget):
             (tr("Components"), self.components),
             (tr("Parts"), self.parts),
         ]))
+        scene = window.viewport.scene
+        self._document_revision = (scene, (scene.content_version, scene.loose_mesh))
 
     def on_scene_changed(self) -> None:
         self.entity_info.refresh()
+        self.parts.refresh()  # Its container follows the current selection.
+        scene = self._window.viewport.scene
+        revision = (scene.content_version, scene.loose_mesh)
+        cached = getattr(self, "_document_revision", None)
+        if cached is not None and cached[0] is scene and cached[1] == revision:
+            return
         # The materials panel scans every render face for its swatches —
         # ~0.5 s on an exploded 28k-face mesh, paid per EDIT when run
         # inline. Debounced: one refresh 300 ms after the last edit.
@@ -4289,7 +4392,7 @@ class Tray(QDockWidget):
         self.layers.refresh()
         self.scenes.refresh()
         self.components.on_scene_changed()
-        self.parts.refresh()
+        self._document_revision = (scene, revision)
 
 
 class BimTray(QDockWidget):
@@ -4311,7 +4414,7 @@ class BimTray(QDockWidget):
         self.setWidget(_scrolled([(tr("BIM tagging"), self.bim)]))
 
     def on_scene_changed(self) -> None:
-        self.bim.refresh()
+        self.bim.refresh(force=False)
 
 
 class SurveyPointsPanel(QWidget):
