@@ -1,3 +1,17 @@
+GO Structural Workspace + IngeTrazo v0.5.9 + Rebar LOD integration test
+=========================================================================
+
+This integration branch bundles Thai BIM Toolkit 0.21.0 as
+plugins\thai_bim. IngeTrazo loads bundled plugins before the user plugin
+directory, so this test uses the branch copy without overwriting
+%APPDATA%\ingetrazo\plugins\thai_bim.
+
+Extension API compatibility: Thai BIM uses API 2; IngeTrazo v0.5.9 exposes
+API_VERSION = 2.
+
+Recommended launcher:
+    Start_GO_v059_Rebar_Test.cmd
+
 IngeTrazo v0.5.9 + GO Rebar LOD source test
 ================================================
 
