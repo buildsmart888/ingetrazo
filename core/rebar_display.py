@@ -98,7 +98,10 @@ class CenterlineCache:
                 or getattr(group, "children", None)
                 or getattr(group, "billboard", False)):
             return None
-        mesh = group.mesh
+        return self._get_proxy(group.mesh, block, revision)
+
+    def _get_proxy(self, mesh, block, revision=None):
+        """Validate local metadata independently of placement eligibility."""
         serial = (revision, getattr(mesh, "_mut_serial", None), len(mesh.vertices),
                   len(mesh.edges), len(mesh.faces))
         entry = self._meshes.get(mesh)
@@ -148,3 +151,158 @@ class CenterlineCache:
             return None
         cache[key] = (block, result)
         return result
+
+    def _unsigned_path_valid(self, mesh, block, revision=None):
+        """Check an unsigned path's format, without certifying its geometry."""
+        serial = (revision, getattr(mesh, "_mut_serial", None), len(mesh.vertices),
+                  len(mesh.edges), len(mesh.faces))
+        entry = self._meshes.get(mesh)
+        if entry is None or entry[0] != serial:
+            entry = (serial, {}, {})
+            self._meshes[mesh] = entry
+        points = block["centerline"]
+        key = (id(block), id(points), None)
+        hit = entry[1].get(key)
+        if hit is not None and hit[0] is block:
+            return hit[1]
+        # The None signature separates these format checks from verified
+        # proxies. Native reload may duplicate otherwise identical blocks.
+        canonical_key = (None, block["definition_key"], float(block["diameter_m"]))
+        canonical = entry[2].get(canonical_key)
+        if canonical is not None and points == canonical[0]:
+            entry[1][key] = (block, True)
+            return True
+        valid = False
+        try:
+            previous = None
+            for point in points:
+                if len(point) != 3 or not all(math.isfinite(float(c)) for c in point):
+                    valid = False
+                    break
+                packed = _point_bytes(point)
+                if previous is not None and packed != previous:
+                    valid = True
+                previous = packed
+        except (TypeError, ValueError, OverflowError, struct.error):
+            valid = False
+        if valid:
+            entry[2][canonical_key] = (points, True)
+        entry[1][key] = (block, valid)
+        return valid
+
+
+_DIAGNOSTIC_CENTERLINES = CenterlineCache()
+_RENDERER_METHODS = (
+    "_rebar_proxy", "_draw_rebar_centerlines", "_rebar_lod_active", "_instanced_eligible",
+)
+
+
+def host_renderer_available(viewport) -> bool:
+    """Check the loaded viewport, not merely whether this helper is installed.
+
+    A console script can import an updated helper while an older viewport
+    class is still running. Instance-only attributes do not establish that
+    the host's draw passes implement the representation switch.
+    """
+    return viewport is not None and all(
+        callable(getattr(type(viewport), name, None))
+        and callable(getattr(viewport, name, None))
+        for name in _RENDERER_METHODS
+    )
+
+
+def describe_centerline(group, viewport=None) -> dict:
+    """Describe stored rebar data and host support without changing the model.
+
+    ``status`` is missing, unsigned, stale, invalid, ready or unsupported;
+    ``reason`` is a stable code for a translated UI or console diagnosis.
+    ``points`` counts stored points and ``diameter_m`` is positive and finite
+    or None. ``has_signature`` reports a nonempty string signature.
+
+    Host availability is separate: valid data may be ready while an older
+    loaded viewport reports ``host_renderer_available=False``. That field
+    is None when no viewport is supplied. ``render_supported`` is None
+    without a capable host, otherwise a bool. It describes eligibility,
+    never whether lines are currently active during an interaction.
+
+    This may warm the existing CPU signature, proxy and material caches;
+    it does not change metadata, geometry, selection, display mode or GPU
+    resources. Metadata follows the renderer's immutable-block contract:
+    replace the block on rebuild, or bump the scene content revision.
+    """
+    available = None if viewport is None else host_renderer_available(viewport)
+    result = {
+        "status": "missing", "reason": "missing_metadata", "points": 0,
+        "diameter_m": None, "has_signature": False,
+        "host_renderer_available": available,
+        "render_supported": False if available else None,
+    }
+
+    def finish(status, reason):
+        result["status"], result["reason"] = status, reason
+        if available:
+            result["render_supported"] = status == "ready"
+        return result
+
+    ext = getattr(group, "ext", None)
+    if not isinstance(ext, dict) or "go_rebar" not in ext:
+        return result
+    block = ext["go_rebar"]
+    if not isinstance(block, dict):
+        return finish("invalid", "invalid_metadata")
+    points = block.get("centerline")
+    if isinstance(points, (list, tuple)):
+        result["points"] = len(points)
+    signature = block.get("mesh_signature")
+    result["has_signature"] = isinstance(signature, str) and bool(signature)
+    try:
+        diameter = float(block["diameter_m"])
+        if math.isfinite(diameter) and diameter > 0:
+            result["diameter_m"] = diameter
+    except (KeyError, TypeError, ValueError, OverflowError):
+        pass
+    if block.get("version") != 1:
+        return finish("invalid", "unsupported_version")
+    if not isinstance(points, (list, tuple)) or len(points) < 2:
+        return finish("invalid", "invalid_centerline")
+    if result["diameter_m"] is None:
+        return finish("invalid", "invalid_diameter")
+    if not isinstance(block.get("definition_key"), str):
+        return finish("invalid", "invalid_definition_key")
+    if signature is not None and not result["has_signature"]:
+        return finish("invalid", "invalid_signature")
+    mesh = getattr(group, "mesh", None)
+    if mesh is None:
+        return finish("invalid", "missing_mesh")
+
+    cache = getattr(viewport, "_rebar_centerlines", None)
+    if not isinstance(cache, CenterlineCache):
+        cache = _DIAGNOSTIC_CENTERLINES
+    scene = getattr(viewport, "scene", None)
+    revision = getattr(scene, "content_version", getattr(scene, "version", None))
+    if signature is None:
+        if not cache._unsigned_path_valid(mesh, block, revision):
+            return finish("invalid", "invalid_centerline")
+        return finish("unsigned", "missing_signature")
+    if cache._get_proxy(mesh, block, revision) is None:
+        if signature != mesh_signature(mesh):
+            return finish("stale", "mesh_changed")
+        return finish("invalid", "invalid_centerline")
+
+    # These checks are per placement: siblings can share a valid definition
+    # while one is a classic group, billboard or differently painted instance.
+    if getattr(group, "xform", None) is None:
+        return finish("unsupported", "classic_group")
+    if getattr(group, "billboard", False):
+        return finish("unsupported", "billboard")
+    if getattr(group, "children", None):
+        return finish("unsupported", "nested_children")
+    if available:
+        eligible = getattr(type(viewport), "_instanced_eligible")
+        # Read the loaded renderer's switch, not a subsequently changed env
+        # variable or a second module imported from another installation.
+        if getattr(eligible, "__globals__", {}).get("_NO_INSTANCING", False):
+            return finish("unsupported", "instancing_disabled")
+        if not viewport._instanced_eligible(group):
+            return finish("unsupported", "unsupported_material")
+    return finish("ready", "verified")
