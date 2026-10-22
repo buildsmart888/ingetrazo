@@ -82,3 +82,22 @@ def test_a_render_survives_the_same_off_on_sequence():
     finally:
         win._saved_version = vp.scene.version
         win.close()
+
+
+def test_selection_reuses_shadow_map_but_edit_rebuilds_it(monkeypatch):
+    win, vp = _viewport()
+    try:
+        vp.makeCurrent()
+        vp.scene.shadows.enabled = True
+        assert vp._ensure_shadow_map() is not None
+        first = vp._shadow_key
+        vp.scene.select([vp.scene.mesh.faces[0]])
+        assert vp._ensure_shadow_map() is not None
+        assert vp._shadow_key == first
+        vp.scene.add_edge(V(6, 0, 0), V(6, 1, 0))
+        assert vp._ensure_shadow_map() is not None
+        assert vp._shadow_key != first
+    finally:
+        vp.doneCurrent()
+        win._saved_version = vp.scene.version
+        win.close()
