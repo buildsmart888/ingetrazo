@@ -15,7 +15,7 @@ from core.rebar_display import describe_centerline, mesh_signature
 
 @pytest.fixture(scope="module")
 def thai_bim():
-    path = Path(__file__).resolve().parents[1] / "plugins" / "thai_bim" / "__init__.py"
+    path = Path(__file__).resolve().parents[1] / "examples" / "extensions" / "thai_bim" / "__init__.py"
     stem = "thai_bim_rebar_lod_test"
     module = _import_by_path(stem, path)
     yield module
