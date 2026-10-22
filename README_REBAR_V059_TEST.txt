@@ -1,3 +1,18 @@
+GO Structural Workspace + IngeTrazo v0.5.9 + Rebar LOD integration test
+=========================================================================
+
+This integration branch keeps Thai BIM Toolkit 0.21.0 once at
+examples\extensions\thai_bim. The GO launcher creates a temporary local
+APPDATA under this extracted test folder and copies that exact extension into
+its temporary plugins directory before startup. Your real
+%APPDATA%\ingetrazo\plugins\thai_bim is not modified.
+
+Extension API compatibility: Thai BIM uses API 2; IngeTrazo v0.5.9 exposes
+API_VERSION = 2.
+
+Recommended launcher:
+    Start_GO_v059_Rebar_Test.cmd
+
 IngeTrazo v0.5.9 + GO Rebar LOD source test
 ================================================
 
@@ -12,7 +27,9 @@ RUN ON WINDOWS
 --------------
 1. Extract the complete branch ZIP to a writable folder, for example:
    C:\GO-Dev\IngeTrazo-v059-Rebar
-2. Double-click Start_Rebar_v059_Test.cmd.
+2. For the full GO integration test, double-click Start_GO_v059_Rebar_Test.cmd.
+   Start_Rebar_v059_Test.cmd is the host/rebar-only launcher and may load your
+   normal user plugins.
 3. The first run creates .venv-rebar and installs the limited test dependencies.
 4. A separate source window starts with --new-window. It does not replace
    C:\Program Files\IngeTrazo and does not uninstall the packaged v0.5.9.
