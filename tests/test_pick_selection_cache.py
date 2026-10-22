@@ -95,3 +95,15 @@ def test_lazy_membership_still_invalidates_after_a_selection(viewport):
     second = vp._pick_index(near=second_query)
     assert second is not first
     assert any(owner is vp.scene.groups[2] for _, owner in second.entities)
+
+
+def test_selection_keeps_v059_placement_epoch_and_lazy_table(viewport):
+    """Selection highlighting must not re-walk the component placement tree."""
+    vp = viewport
+    vp._PICK_LAZY_MIN_FACES = 1
+    epoch = vp._placements_epoch()
+    table = vp._pick_lazy_table()
+    assert table is not None
+    vp.scene.select([vp.scene.groups[0]])
+    assert vp._placements_epoch() == epoch
+    assert vp._pick_lazy_table() is table
