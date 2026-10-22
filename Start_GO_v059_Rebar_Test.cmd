@@ -43,8 +43,20 @@ echo Installing the limited GO + v0.5.9 rebar-test dependencies...
 if not "%ERRORLEVEL%"=="0" goto failed
 
 :start_application
+rem Isolate the GO test plugin from the user's real %%APPDATA%% plugin.
+set "REBAR_REAL_APPDATA=%APPDATA%"
+set "APPDATA=%~dp0.test-appdata\Roaming"
+set "GO_TEST_PLUGIN=%APPDATA%\ingetrazo\plugins\thai_bim"
+if exist "%GO_TEST_PLUGIN%" rmdir /s /q "%GO_TEST_PLUGIN%"
+mkdir "%GO_TEST_PLUGIN%" >nul 2>&1
+xcopy /e /i /y /q "%~dp0examples\extensions\thai_bim\*" "%GO_TEST_PLUGIN%\" >nul
+if not "%ERRORLEVEL%"=="0" (
+    echo ERROR: Could not prepare the isolated GO plugin copy.
+    goto failed
+)
 echo Starting GO + IngeTrazo v0.5.9 + Rebar LOD in a separate process...
 echo Installed C:\Program Files\IngeTrazo is not replaced.
+echo Real user plugins under %REBAR_REAL_APPDATA%\ingetrazo\plugins are not modified.
 ".venv-rebar\Scripts\python.exe" "%~dp0main.py" --new-window
 if not "%ERRORLEVEL%"=="0" goto failed
 exit /b 0
