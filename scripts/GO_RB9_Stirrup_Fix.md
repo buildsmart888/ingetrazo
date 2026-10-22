@@ -38,9 +38,11 @@ centreline and a mesh signature using `core.rebar_display.attach_centerline`.
 The renderer can use that cached line during interaction without replacing
 the model's full mesh, changing BIM tags, or reducing export geometry.
 
-An older host can run the script and create shared components, but cannot
-provide the new automatic centreline display. After updating the application,
-rerun the script so the new helper records a verified mesh signature.
+By default the script checks the loaded host **before replacing geometry** and
+stops if the interactive line renderer/helper is missing. This prevents a
+successful-looking console run on an older packaged host. For an intentional
+solid-only compatibility run, set `REQUIRE_INTERACTIVE_LINES = False`; such a
+run does not install the renderer and should be regenerated after updating.
 
 If geometry is edited manually, the saved centreline may no longer describe
 it. The renderer validates the signature and falls back to full geometry
