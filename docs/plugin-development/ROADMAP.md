@@ -52,6 +52,10 @@ first-use paths next; do not duplicate the inherited quantity-cache fix.
 
 ## P2: large-model display and picking
 
+2026-10-24: [scale fixtures and source selection fixes](RC_SCALE_SELECTION.md)
+are implemented and covered by targeted tests. Native post-fix scale checks
+are pending machine memory; this milestone is not closed.
+
 Audit inherited LOD and placement/picking caches before adding another path.
 Preserve full engineering data while using shared prototypes, batched drawing,
 spatial filtering and display-only detail levels. Keep selection overlays

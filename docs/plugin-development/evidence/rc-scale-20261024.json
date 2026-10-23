@@ -1,0 +1,94 @@
+{
+    "date":  "2026-10-24",
+    "scope":  "Source-host selection memory fixes; native scale navigation acceptance remains incomplete",
+    "scale_models":  {
+                         "value":  [
+                                       {
+                                           "groups":  1284,
+                                           "bars":  1086,
+                                           "bar_prototypes":  20,
+                                           "unique_meshes":  53,
+                                           "placed_faces":  1095300,
+                                           "placed_edges":  2290500,
+                                           "bars_per_storey":  {
+                                                                   "1":  362,
+                                                                   "2":  362,
+                                                                   "3":  362
+                                                               },
+                                           "mass_kg":  2345.349767625502,
+                                           "unique_uids":  1284,
+                                           "persistence_counts_and_mass":  true,
+                                           "file":  "rc-1086-bars-3-storeys.igz",
+                                           "storeys":  3,
+                                           "modules_per_storey":  2
+                                       },
+                                       {
+                                           "groups":  12840,
+                                           "bars":  10860,
+                                           "bar_prototypes":  20,
+                                           "unique_meshes":  53,
+                                           "placed_faces":  10953000,
+                                           "placed_edges":  22905000,
+                                           "bars_per_storey":  {
+                                                                   "1":  1086,
+                                                                   "2":  1086,
+                                                                   "3":  1086,
+                                                                   "4":  1086,
+                                                                   "5":  1086,
+                                                                   "6":  1086,
+                                                                   "7":  1086,
+                                                                   "8":  1086,
+                                                                   "9":  1086,
+                                                                   "10":  1086
+                                                               },
+                                           "mass_kg":  23453.49767625502,
+                                           "unique_uids":  12840,
+                                           "persistence_counts_and_mass":  true,
+                                           "file":  "rc-10860-bars-10-storeys.igz",
+                                           "storeys":  10,
+                                           "modules_per_storey":  6
+                                       }
+                                   ],
+                         "Count":  2
+                     },
+    "before_fix_1086":  {
+                            "last_stage":  "solid:window_selection",
+                            "guard":  {
+                                          "status":  "AVAILABLE_MEMORY_LIMIT",
+                                          "worker_exit_code":  15,
+                                          "elapsed_s":  13.813,
+                                          "peak_worker_tree_private_mb":  1333.62,
+                                          "peak_worker_tree_rss_mb":  911.0,
+                                          "minimum_machine_available_mb":  347.35,
+                                          "private_limit_mb":  1800,
+                                          "available_floor_mb":  384,
+                                          "timeout_s":  180
+                                      }
+                        },
+    "after_fix_1086":  {
+                           "status":  "INSUFFICIENT_STARTUP_HEADROOM",
+                           "initial_machine_available_mb":  176.78,
+                           "required_startup_available_mb":  512,
+                           "worker_started":  false
+                       },
+    "after_fix_10860":  {
+                            "status":  "INSUFFICIENT_STARTUP_HEADROOM",
+                            "initial_machine_available_mb":  161.3,
+                            "required_startup_available_mb":  512,
+                            "worker_started":  false
+                        },
+    "tests":  {
+                  "passed":  86,
+                  "deselected":  1,
+                  "duration_s":  19.84,
+                  "excluded":  "SKP export requires OpenSKP, absent from limited RC QA environment",
+                  "synthetic_selection_box_count":  10000,
+                  "synthetic_prototypes":  1
+              },
+    "limitations":  [
+                        "No before/after native timing or memory reduction claim",
+                        "Headless synthetic boxes are not a 10000-bar OpenGL performance pass",
+                        "Repeated specimens do not validate an engineered building",
+                        "Installed host and user models unchanged"
+                    ]
+}

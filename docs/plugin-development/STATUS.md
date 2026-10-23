@@ -1,4 +1,4 @@
-# Plugin development status - 2026-10-23
+# Plugin development status - 2026-10-24
 
 ## Completed
 
@@ -35,11 +35,16 @@
 
 ## Next work
 
-Profile remaining first-use Solid selection stalls (~0.43-0.49 s) in picking,
-selection overlays, Properties/solid checks and GPU work. Inherited BIM cache
-reuse now has representative native evidence. Preserve native IDs/BBS and
-the frozen deployed source until a measured fix is ready. Do not compare
-timings directly with the older packaged v0.10.1 fixture as a speedup claim.
+Scale fixtures now contain 1,086 and 10,860 bars with successful native
+save/load. Host box selection and leaf-instance selection outlines avoid
+unnecessary placed geometry; 86 targeted tests passed, one OpenSKP-dependent
+export test deselected. See [scale work and resume commands](RC_SCALE_SELECTION.md).
+
+NEXT: rerun isolated native click/box/orbit/zoom after freeing machine memory.
+The old 1,086-bar run hit a memory-floor stop during window selection; post-fix
+large runs were refused at startup because only 161-177 MB was available.
+Native performance improvement and large-model navigation remain NOT TESTED.
+Keep the installed application unchanged until source-host acceptance passes.
 
 ```powershell
 # From the parent folder of the plugin development checkout:

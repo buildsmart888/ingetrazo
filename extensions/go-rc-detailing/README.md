@@ -60,6 +60,10 @@ See [v0.10.3 evidence](../../docs/plugin-development/RC_V0103_BASELINE.md) for
 tested scope and limitations. The older packaged-host v0.10.1 diagnostic uses
 different runtime/geometry and is not a controlled speedup comparison.
 
+For 1,086/10,860-bar repeated-storey fixtures, the optional QA dependencies,
+memory-bounded native replay and pending acceptance, see
+[scale selection work](../../docs/plugin-development/RC_SCALE_SELECTION.md).
+
 Future source edits must deliberately update the baseline provenance rather
 than silently rewriting the accepted beam implementation. Display meshes and
 wire overlays must preserve native bar identities and centreline/BBS authority.

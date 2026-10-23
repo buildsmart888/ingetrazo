@@ -1,0 +1,7 @@
+# Limited source-host RC QA; does not replace full application requirements.
+PySide6==6.11.2
+numpy>=1.26
+pytest>=8
+ezdxf>=1.4.4
+manifold3d>=3.5.3
+psutil>=6,<8
