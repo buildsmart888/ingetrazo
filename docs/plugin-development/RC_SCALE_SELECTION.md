@@ -67,6 +67,28 @@ terminated. See [recorded evidence](evidence/rc-scale-20261024.json).
 
 ## Resume the native checks
 
+### Requested 10-storey open trial - 2026-10-24
+
+An actual isolated source-host launch was attempted with the 10,860-bar
+document, Solid mode and navigation requested. Initial machine free memory
+was about 142 MB. For this attempt the available-memory floor was disabled;
+the worker-tree private-memory cap remained 1,400 MB with a 90-second timeout.
+
+**NOT PASSED / RESOURCE LIMIT:** the guard stopped the worker after 30.156 s
+at `model_open_and_first_frame`, observing 1,403.96 MB private memory,
+834.50 MB RSS and only 16.38 MB machine memory available. Worker exit 15 was
+the guard's termination; the runner returned 1. No matching worker remained.
+No completed model frame/screenshot or click/box/orbit/zoom result was produced.
+The last-stage marker combines model load and first-frame work, so this run
+does not isolate the exact loading/rendering subroutine that consumed memory.
+
+This is an unsuccessful open attempt under the recorded machine load and
+configured cap, not a universal 10-storey capacity limit. Source allocation
+tests remain valid; native large-model acceptance is still incomplete. The
+next native attempt needs more available memory and/or a view prepared to
+show fewer members before the first frame. Record remains in the
+[scale evidence](evidence/rc-scale-20261024.json).
+
 Use a fresh output directory on each run, with other work saved and sufficient
 available RAM (about 2 GB is a practical starting point, not a capacity promise).
 The optional `psutil` QA dependency monitors only the launched worker tree.

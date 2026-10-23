@@ -46,6 +46,12 @@ large runs were refused at startup because only 161-177 MB was available.
 Native performance improvement and large-model navigation remain NOT TESTED.
 Keep the installed application unchanged until source-host acceptance passes.
 
+Latest requested 10-storey trial: actual launch stopped at
+`model_open_and_first_frame` after 30.156 s by the 1,400 MB private-memory
+guard (observed 1,403.96 MB private / 834.50 MB RSS; machine available 16.38 MB).
+Open acceptance NOT PASSED; selecting/box/orbit/zoom NOT TESTED in this run.
+No test worker remained. See the scale report for the limits and next attempt.
+
 ```powershell
 # From the parent folder of the plugin development checkout:
 cd .\ingetrazo-plugin-development

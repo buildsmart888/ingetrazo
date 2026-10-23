@@ -90,5 +90,28 @@
                         "Headless synthetic boxes are not a 10000-bar OpenGL performance pass",
                         "Repeated specimens do not validate an engineered building",
                         "Installed host and user models unchanged"
-                    ]
+                    ],
+    "requested_10_storey_open_trial":  {
+                                           "model_bars":  10860,
+                                           "storeys":  10,
+                                           "scope":  "Actual isolated source-host Solid open attempt; available-memory floor disabled, private cap and timeout active",
+                                           "initial_machine_free_mb_approx":  142,
+                                           "last_stage":  "model_open_and_first_frame",
+                                           "guard":  {
+                                                         "status":  "PRIVATE_MEMORY_LIMIT",
+                                                         "worker_exit_code":  15,
+                                                         "elapsed_s":  30.156,
+                                                         "peak_worker_tree_private_mb":  1403.96,
+                                                         "peak_worker_tree_rss_mb":  834.5,
+                                                         "minimum_machine_available_mb":  16.38,
+                                                         "private_limit_mb":  1400,
+                                                         "available_floor_mb":  0,
+                                                         "timeout_s":  90
+                                                     },
+                                           "runner_exit":  1,
+                                           "open_acceptance":  "NOT_PASSED_RESOURCE_LIMIT",
+                                           "completed_frame_available":  false,
+                                           "click_box_orbit_zoom":  "NOT_TESTED",
+                                           "matching_worker_remaining":  false
+                                       }
 }
