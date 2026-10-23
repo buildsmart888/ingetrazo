@@ -134,6 +134,60 @@ def _box_loose_fast(viewport, rect, crossing):
     return edges, faces
 
 
+def _box_group_bounds(viewport, places, rect, crossing):
+    """Resolve only proven AABB cases, without baking placed triangles.
+
+    Partial overlap and camera-plane cases retain the exact geometry test.
+    A projected box intersecting the rectangle is not itself a geometry hit.
+    """
+    bbox_of = getattr(viewport, "_placement_bbox", None)
+    project = getattr(viewport, "_project_px", None)
+    if bbox_of is None or project is None:
+        return None
+    import numpy as np
+
+    boxes = []
+    for placement in places:
+        mesh = placement.mesh
+        if not mesh.faces and not mesh.edges:
+            # A container can be empty; loose points need the old fallback.
+            if mesh.vertices:
+                return None
+            continue
+        if getattr(placement, "xform", None) is None:
+            return None
+        try:
+            bounds = bbox_of(placement)
+        except Exception:  # Preserve the existing exact fallback contract.
+            return None
+        if bounds is None:
+            return None
+        lo, hi = bounds
+        boxes.append([(x, y, z) for x in (lo[0], hi[0])
+                      for y in (lo[1], hi[1]) for z in (lo[2], hi[2])])
+    if not boxes:
+        return None
+    xs, ys, front = project(np.asarray(boxes, dtype=float).reshape(-1, 3))
+    if not (np.isfinite(xs).all() and np.isfinite(ys).all() and front.all()):
+        return None
+    xs, ys = xs.reshape(-1, 8), ys.reshape(-1, 8)
+    x0, y0, x1, y1 = rect
+    inside = ((xs >= x0) & (xs <= x1) & (ys >= y0) & (ys <= y1)).all(axis=1)
+    outside = ((xs.max(axis=1) < x0) | (xs.min(axis=1) > x1)
+               | (ys.max(axis=1) < y0) | (ys.min(axis=1) > y1))
+    if crossing:
+        if inside.any():
+            return True
+        if outside.all():
+            return False
+    else:
+        if inside.all():
+            return True
+        if outside.any():
+            return False
+    return None
+
+
 def _box_group_fast(viewport, group, rect, crossing):
     """Vectorized box test for one (non-billboard) group via its chunk
     arrays. True/False, or None to fall back to the per-vertex walk."""
@@ -148,6 +202,9 @@ def _box_group_fast(viewport, group, rect, crossing):
     # walk — 1.15M vertices for the hedge.
     expand = getattr(viewport, "_expand_placements", None)
     places = expand(group) if expand is not None else [group]
+    verdict = _box_group_bounds(viewport, places, rect, crossing)
+    if verdict is not None:
+        return verdict
     corners, edge_parts = [], []
     try:
         for pg in places:

@@ -4272,7 +4272,7 @@ class Viewport(QOpenGLWidget):
     #: them. Nothing but the document boundary makes them all stale at once.
     _DOCUMENT_CACHES = ("_group_chunks", "_inst_chunks", "_fp_memo",
                         "_proto_wrappers", "_proto_draw", "_faceme_cache",
-                        "_proto_pts_store", "_container_obb", "_placement_frames",
+                        "_proto_pts_store", "_container_obb", "_placement_frames", "_placement_obb",
                         "_pick_live",
                         # Also keyed by id(): a face-me's placed sprite, the
                         # nested-placement proxies and the arc midpoints per
@@ -11770,6 +11770,30 @@ class Viewport(QOpenGLWidget):
             if fetch is not None:
                 self._proto_points_store(group, protos)
             if len(cache) > 256:            # ids of groups long gone
+                cache.clear()
+            cache[id(group)] = (key, obb)
+            return obb
+        if getattr(group, "xform", None) is not None:
+            # A selected instance needs its box, not a baked world-space
+            # triangle/edge chunk. Thousands of bars otherwise accumulate
+            # placed copies just to draw twelve selection segments each.
+            mesh = group.mesh
+            axes = getattr(group, "axes", None)
+            key = (getattr(group, "uid", None), id(mesh),
+                   getattr(mesh, "_mut_serial", None), len(mesh.vertices),
+                   tuple(group.xform.data()), tuple(axes.data()) if axes is not None else None)
+            cache = getattr(self, "_placement_obb", None)
+            if cache is None:
+                cache = self._placement_obb = {}
+            hit = cache.get(id(group))
+            if hit is not None and hit[0] == key:
+                return hit[1]
+            fetch = getattr(self, "_proto_points_cache", None)
+            protos = fetch(group) if fetch is not None else None
+            obb = self._compute_obb(group, protos)
+            if fetch is not None:
+                self._proto_points_store(group, protos)
+            if len(cache) >= 65536:
                 cache.clear()
             cache[id(group)] = (key, obb)
             return obb
