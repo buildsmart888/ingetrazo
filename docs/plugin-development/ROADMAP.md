@@ -1,0 +1,80 @@
+# GO plugin development roadmap
+
+Established 2026-10-23 on `codex/plugin-development`.
+See [workspace ownership and setup](../../extensions/README.md).
+
+## Current state
+
+This branch inherits the v0.5.9 integration host and existing rebar LOD work.
+The new increment adds workspace documentation and a sanitized packaged-host
+diagnostic baseline. No RC plugin source, performance fix or design engine has
+been introduced by this increment. Do not infer packaged-host performance from
+the inherited branch history.
+
+## P0: import and reproduce the RC baseline
+
+1. Identify the canonical GO RC Detailing source and import a source-verified
+   v0.10.1 baseline, preserving the locked accepted beam implementation.
+2. Recreate the four native specimens: 4 m single beam; 4/3.5/4.5 m continuous
+   beam; 300 x 400 mm rectangular column; 400 mm circular column, both 3 m high.
+3. Compare installed-host and this branch's behavior before changing code. The
+   installed-host issue and inherited line-LOD/selection work are distinct.
+
+Acceptance: native bar identities, dimensions, BBS and IFC metadata survive
+save/load; existing documents and installations remain intact.
+
+## P1: selection and BIM quantity invalidation
+
+The packaged-host fixture reproduced a full BIM quantity refresh after
+selection-only changes. See [the measured baseline](evidence/rc-selection-baseline.json).
+`BimTray.on_scene_changed -> refresh -> collect_objects` dominated the measured
+frame; world mesh construction and area/volume calculation were repeated.
+
+- Separate selection/detail updates from full geometry/quantity invalidation.
+- Cache quantities against appropriate geometry/mutation, transform and tag
+  inputs. Do not key all expensive calculations on selection/view changes.
+- Reuse shared prototype calculations where mathematically valid; preserve
+  correct quantities for transformations, nested objects and class changes.
+- Keep native groups, bar IDs and editable solids. Do not merge bars merely to
+  hide the refresh cost.
+
+Acceptance: selecting/clearing/box-selecting unchanged geometry does not trigger
+full quantity calculation. Geometry edits, transforms, Undo/Redo, Open and tag
+changes still invalidate correctly. Measure first and repeated interactions
+separately. No numerical speedup target is claimed achieved yet.
+
+## P2: large-model display and picking
+
+Audit inherited LOD and placement/picking caches before adding another path.
+Preserve full engineering data while using shared prototypes, batched drawing,
+spatial filtering and display-only detail levels. Keep selection overlays
+independent of geometry rebuilding. Support storey/member visibility filters.
+
+Acceptance: identical bar identity, centreline/BBS and native persistence across
+display modes; no stale picks after edits. Benchmark progressively larger
+fixtures, then multi-storey assemblies, with time/memory evidence. A successful
+four-specimen test does not establish whole-building capacity.
+
+## P3: engineering model and GO Structural Analysis handoff
+
+Define a versioned contract for source member IDs, units/axes, model and result
+fingerprints, load case/combination provenance, design revision and reinforcement
+ownership. Separate analysis demand, required reinforcement and arranged details.
+Use Draft -> Preview -> Review -> Apply for generating or updating reinforcement,
+including conflicts with manually edited details and stale-source rejection.
+
+Start with one validated beam workflow before columns, slabs and stairs. Existing
+area-load surfaces do not establish plate stiffness or slab reinforcement design.
+Standards/version, applicability, anchorage/laps, cover/spacing, joints and other
+detailing checks need explicit validated scope; geometry generation alone is not
+capacity or code-compliance evidence.
+
+## Release gates
+
+- Plugin unit/regression checks and persistence tests.
+- Isolated source-host tests with matching Qt/runtime.
+- Fresh packaged-host startup and representative interaction checks.
+- Quantity/design validation appropriate to each claimed engineering feature.
+- Explicit handling of experimental features and untested model sizes.
+
+This roadmap does not resume deferred FND-01 or other GO Structural Analysis work.

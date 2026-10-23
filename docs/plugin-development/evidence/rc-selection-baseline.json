@@ -1,0 +1,165 @@
+{
+  "status": "REPRODUCED_IN_PACKAGED_HOST; BRANCH_BASELINE_NOT_TESTED",
+  "date": "2026-10-23",
+  "host": "Installed IngeTrazo 0.5.9, Windows",
+  "plugin": "GO RC Detailing 0.10.1",
+  "fixtures": [
+    "single beam 4 m, 300 x 500 mm",
+    "continuous beam 4 + 3.5 + 4.5 m, 300 x 500 mm",
+    "rectangular column 300 x 400 mm, height 3 m",
+    "circular column diameter 400 mm, height 3 m, continuous spiral"
+  ],
+  "complexity": {
+    "top_level_groups": 211,
+    "placements": 211,
+    "unique_meshes": 50,
+    "faces_per_prototype": 15693,
+    "placed_faces": 182551,
+    "edges_per_prototype": 31608,
+    "placed_edges": 366612,
+    "prototypes_used_more_than_once": 19,
+    "largest_prototypes": [
+      [
+        "QA_CB-Tie-S01-001",
+        1202,
+        88
+      ],
+      [
+        "QA_SB-Tie-S01-001",
+        1202,
+        29
+      ],
+      [
+        "QA_CR-Tie-001",
+        1202,
+        21
+      ],
+      [
+        "QA_CC-Spiral-001",
+        7682,
+        1
+      ],
+      [
+        "QA_SB-Main-bottom-01",
+        278,
+        3
+      ],
+      [
+        "QA_CB-Main-bottom-01",
+        278,
+        3
+      ]
+    ]
+  },
+  "selection_cpu_ms": {
+    "pick_first": 32.09920000153943,
+    "pick_repeat": 2.7182999983779155,
+    "window_select": 71.3489000008849,
+    "crossing_select": 154.54500000123517
+  },
+  "frame_capture_ms": {
+    "normal_clear": [
+      35218.233300001884,
+      31.628899996576365,
+      33.2791000000725
+    ],
+    "normal_selected": [
+      36245.89319999723,
+      46.38189999968745,
+      39.005700000416255
+    ],
+    "fast_shaded_clear": [
+      32503.432599998632,
+      28.892800000903662,
+      19.89559999856283
+    ],
+    "fast_shaded_selected": [
+      32804.67320000025,
+      22.372200000972953,
+      26.16479999778676
+    ]
+  },
+  "instrumented_frame_ms": 66106.47410000092,
+  "instrumented_inclusive_functions": [
+    [
+      "views\\viewport.py:1561:paintGL",
+      {
+        "calls": 1,
+        "inclusive_ms": 66086.78950000103
+      }
+    ],
+    [
+      "views\\viewport.py:5335:_sync_edges",
+      {
+        "calls": 1,
+        "inclusive_ms": 66025.14379999775
+      }
+    ],
+    [
+      "views\\tray.py:4313:on_scene_changed",
+      {
+        "calls": 1,
+        "inclusive_ms": 65940.99859999915
+      }
+    ],
+    [
+      "views\\tray.py:4207:refresh",
+      {
+        "calls": 1,
+        "inclusive_ms": 65940.98249999661
+      }
+    ],
+    [
+      "core\\bim.py:123:collect_objects",
+      {
+        "calls": 1,
+        "inclusive_ms": 42199.89440000063
+      }
+    ],
+    [
+      "core\\bim.py:98:face_set_volume",
+      {
+        "calls": 408,
+        "inclusive_ms": 30252.056299996184
+      }
+    ],
+    [
+      "core\\group.py:314:world_mesh",
+      {
+        "calls": 204,
+        "inclusive_ms": 23018.43269998062
+      }
+    ],
+    [
+      "core\\bim.py:71:face_set_area",
+      {
+        "calls": 408,
+        "inclusive_ms": 6560.341399970639
+      }
+    ],
+    [
+      "views\\viewport.py:9249:_group_chunk",
+      {
+        "calls": 478,
+        "inclusive_ms": 29.047799991531065
+      }
+    ],
+    [
+      "views\\viewport.py:11496:_group_obb",
+      {
+        "calls": 210,
+        "inclusive_ms": 23.878599997260608
+      }
+    ]
+  ],
+  "interpretation": "Full BIM tray quantity refresh dominates selection-triggered frame. Low-poly/edge changes alone did not remove the delay.",
+  "measurement_limits": [
+    "Selection function timings exclude input scheduling and paint",
+    "Framebuffer capture includes synchronous UI/OpenGL/readback, not isolated GPU timing",
+    "Instrumentation adds overhead; inclusive timings overlap and must not be summed",
+    "Generated four-specimen fixture only; no multi-storey performance acceptance",
+    "These measurements are not a benchmark of codex/plugin-development or inherited integration changes"
+  ],
+  "production_source_modified": false,
+  "rebar_geometry_simplified": false
+}
