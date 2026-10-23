@@ -1,0 +1,329 @@
+{
+  "scope": "source-host native Windows/OpenGL, synthetic Qt events, vsync disabled",
+  "model": "four-rc-specimens.igz",
+  "renderer": {
+    "vendor": "ATI Technologies Inc.",
+    "renderer": "AMD Radeon(TM) Graphics",
+    "version": "3.3.13596 Core Profile Forward-Compatible Context 20.10.28.05 27.20.11028.5001"
+  },
+  "host": "0.5.9",
+  "pyside6": "6.11.2",
+  "plugin_discovery": "PASS",
+  "open_s": 2.261237999999139,
+  "first_open_frame_ms": 32.31629999936558,
+  "modes": [
+    {
+      "mode": "solid",
+      "clicks": {
+        "timing_per_press_or_release": {
+          "n": 12,
+          "median_ms": 47.7,
+          "p95_ms": 237.42,
+          "max_ms": 426.61,
+          "over_16ms_pct": 91.67,
+          "over_33ms_pct": 58.33,
+          "median_handler_ms": 3.69,
+          "median_paint_ms": 21.47,
+          "median_other_ms": 17.22,
+          "median_gpu_ms": 6.3,
+          "paints_per_event": 0.92,
+          "median_hover_compute_ms": 0.0,
+          "p95_hover_compute_ms": 0.0
+        },
+        "full_click_totals_ms": [
+          427.7,
+          91.99,
+          116.67,
+          94.262,
+          97.416,
+          112.373
+        ],
+        "first_click_ms": 427.7,
+        "repeated_click_median_ms": 97.416,
+        "selected_entities": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "bim_collections": 0
+      },
+      "boxes": [
+        {
+          "crossing": false,
+          "timing": {
+            "n": 6,
+            "median_ms": 26.33,
+            "p95_ms": 375.97,
+            "max_ms": 491.61,
+            "over_16ms_pct": 100.0,
+            "over_33ms_pct": 16.67,
+            "median_handler_ms": 0.62,
+            "median_paint_ms": 5.34,
+            "median_other_ms": 2.32,
+            "median_gpu_ms": 12.67,
+            "paints_per_event": 1.0,
+            "median_hover_compute_ms": 0.0,
+            "p95_hover_compute_ms": 0.0
+          },
+          "release_ms": 491.612,
+          "event_totals_ms": [
+            29.039,
+            29.042,
+            23.624,
+            20.345,
+            20.78,
+            491.612
+          ],
+          "selected_entities": 210,
+          "selected_bars": 181,
+          "bim_collections": 0
+        },
+        {
+          "crossing": true,
+          "timing": {
+            "n": 6,
+            "median_ms": 28.55,
+            "p95_ms": 133.99,
+            "max_ms": 165.69,
+            "over_16ms_pct": 100.0,
+            "over_33ms_pct": 33.33,
+            "median_handler_ms": 0.58,
+            "median_paint_ms": 4.74,
+            "median_other_ms": 14.42,
+            "median_gpu_ms": 8.41,
+            "paints_per_event": 1.0,
+            "median_hover_compute_ms": 0.0,
+            "p95_hover_compute_ms": 0.0
+          },
+          "release_ms": 165.695,
+          "event_totals_ms": [
+            28.585,
+            23.664,
+            28.522,
+            38.885,
+            20.0,
+            165.695
+          ],
+          "selected_entities": 210,
+          "selected_bars": 181,
+          "bim_collections": 0
+        }
+      ]
+    },
+    {
+      "mode": "wire",
+      "clicks": {
+        "timing_per_press_or_release": {
+          "n": 12,
+          "median_ms": 27.91,
+          "p95_ms": 78.17,
+          "max_ms": 83.7,
+          "over_16ms_pct": 100.0,
+          "over_33ms_pct": 25.0,
+          "median_handler_ms": 1.41,
+          "median_paint_ms": 6.75,
+          "median_other_ms": 14.46,
+          "median_gpu_ms": 4.0,
+          "paints_per_event": 1.0,
+          "median_hover_compute_ms": 0.0,
+          "p95_hover_compute_ms": 0.0
+        },
+        "full_click_totals_ms": [
+          157.339,
+          41.221,
+          66.357,
+          55.824,
+          52.273,
+          53.523
+        ],
+        "first_click_ms": 157.339,
+        "repeated_click_median_ms": 53.523,
+        "selected_entities": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "bim_collections": 0
+      },
+      "boxes": [
+        {
+          "crossing": false,
+          "timing": {
+            "n": 6,
+            "median_ms": 18.28,
+            "p95_ms": 102.62,
+            "max_ms": 129.17,
+            "over_16ms_pct": 50.0,
+            "over_33ms_pct": 16.67,
+            "median_handler_ms": 0.49,
+            "median_paint_ms": 4.37,
+            "median_other_ms": 5.3,
+            "median_gpu_ms": 4.14,
+            "paints_per_event": 1.0,
+            "median_hover_compute_ms": 0.0,
+            "p95_hover_compute_ms": 0.0
+          },
+          "release_ms": 129.173,
+          "event_totals_ms": [
+            22.952,
+            22.14,
+            13.308,
+            14.424,
+            12.369,
+            129.173
+          ],
+          "selected_entities": 33,
+          "selected_bars": 0,
+          "bim_collections": 0
+        },
+        {
+          "crossing": true,
+          "timing": {
+            "n": 6,
+            "median_ms": 19.05,
+            "p95_ms": 32.23,
+            "max_ms": 32.49,
+            "over_16ms_pct": 83.33,
+            "over_33ms_pct": 0.0,
+            "median_handler_ms": 0.42,
+            "median_paint_ms": 3.64,
+            "median_other_ms": 10.85,
+            "median_gpu_ms": 3.63,
+            "paints_per_event": 1.0,
+            "median_hover_compute_ms": 0.0,
+            "p95_hover_compute_ms": 0.0
+          },
+          "release_ms": 31.471,
+          "event_totals_ms": [
+            19.17,
+            18.932,
+            18.031,
+            32.489,
+            10.742,
+            31.471
+          ],
+          "selected_entities": 33,
+          "selected_bars": 0,
+          "bim_collections": 0
+        }
+      ]
+    },
+    {
+      "mode": "both",
+      "clicks": {
+        "timing_per_press_or_release": {
+          "n": 12,
+          "median_ms": 51.84,
+          "p95_ms": 101.02,
+          "max_ms": 119.04,
+          "over_16ms_pct": 100.0,
+          "over_33ms_pct": 58.33,
+          "median_handler_ms": 3.52,
+          "median_paint_ms": 14.44,
+          "median_other_ms": 18.12,
+          "median_gpu_ms": 10.16,
+          "paints_per_event": 1.0,
+          "median_hover_compute_ms": 0.0,
+          "p95_hover_compute_ms": 0.0
+        },
+        "full_click_totals_ms": [
+          205.319,
+          77.664,
+          93.764,
+          82.57,
+          77.019,
+          86.351
+        ],
+        "first_click_ms": 205.319,
+        "repeated_click_median_ms": 82.57,
+        "selected_entities": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "bim_collections": 0
+      },
+      "boxes": [
+        {
+          "crossing": false,
+          "timing": {
+            "n": 6,
+            "median_ms": 21.08,
+            "p95_ms": 100.2,
+            "max_ms": 125.18,
+            "over_16ms_pct": 100.0,
+            "over_33ms_pct": 16.67,
+            "median_handler_ms": 0.46,
+            "median_paint_ms": 3.55,
+            "median_other_ms": 2.06,
+            "median_gpu_ms": 11.53,
+            "paints_per_event": 1.0,
+            "median_hover_compute_ms": 0.0,
+            "p95_hover_compute_ms": 0.0
+          },
+          "release_ms": 125.183,
+          "event_totals_ms": [
+            25.233,
+            24.113,
+            17.708,
+            17.482,
+            18.041,
+            125.183
+          ],
+          "selected_entities": 214,
+          "selected_bars": 181,
+          "bim_collections": 0
+        },
+        {
+          "crossing": true,
+          "timing": {
+            "n": 6,
+            "median_ms": 25.62,
+            "p95_ms": 96.01,
+            "max_ms": 116.48,
+            "over_16ms_pct": 100.0,
+            "over_33ms_pct": 33.33,
+            "median_handler_ms": 0.59,
+            "median_paint_ms": 3.15,
+            "median_other_ms": 13.43,
+            "median_gpu_ms": 10.09,
+            "paints_per_event": 1.0,
+            "median_hover_compute_ms": 0.0,
+            "p95_hover_compute_ms": 0.0
+          },
+          "release_ms": 116.479,
+          "event_totals_ms": [
+            25.512,
+            22.513,
+            25.728,
+            34.591,
+            19.672,
+            116.479
+          ],
+          "selected_entities": 214,
+          "selected_bars": 181,
+          "bim_collections": 0
+        }
+      ]
+    }
+  ],
+  "acceptance": {
+    "input_file_unchanged": true,
+    "box_selection_hits_real_bars": true,
+    "selection_does_not_recollect_bim": true
+  },
+  "not_tested": [
+    "packaged host",
+    "physical mouse",
+    "whole-building scale"
+  ]
+}

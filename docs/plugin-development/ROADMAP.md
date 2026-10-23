@@ -15,10 +15,12 @@ import. Do not infer packaged-host performance from inherited branch history.
 
 1. DONE: capture deployed v0.10.3 Python source, preserving the locked accepted
    beam implementation. The original authoring repository is not established.
-2. PENDING on this branch: recreate the four native specimens: 4 m single beam; 4/3.5/4.5 m continuous
+2. DONE on this branch: recreate the four native specimens: 4 m single beam; 4/3.5/4.5 m continuous
    beam; 300 x 400 mm rectangular column; 400 mm circular column, both 3 m high.
-3. Compare installed-host and this branch's behavior before changing code. The
-   installed-host issue and inherited line-LOD/selection work are distinct.
+3. Source-host replay DONE, including native synthetic events and persistence;
+   see [v0.10.3 evidence](RC_V0103_BASELINE.md). A controlled same-version
+   installed/source comparison remains pending. The installed-host issue and
+   inherited line-LOD/selection work are distinct.
 
 Acceptance: native bar identities, dimensions, BBS and IFC metadata survive
 save/load; existing documents and installations remain intact.
@@ -42,6 +44,11 @@ Acceptance: selecting/clearing/box-selecting unchanged geometry does not trigger
 full quantity calculation. Geometry edits, transforms, Undo/Redo, Open and tag
 changes still invalidate correctly. Measure first and repeated interactions
 separately. No numerical speedup target is claimed achieved yet.
+
+Current evidence: the four-specimen native replay triggers zero additional
+collections during clicks/window/crossing selection. Initial Solid selection
+still has roughly 0.43-0.49 s stalls on the measured machine. Profile those
+first-use paths next; do not duplicate the inherited quantity-cache fix.
 
 ## P2: large-model display and picking
 

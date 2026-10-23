@@ -1,0 +1,181 @@
+{
+  "plugin": "GO RC Detailing 0.10.3 deployed snapshot",
+  "host": "IngeTrazo 0.5.9 source",
+  "python": "3.12.14",
+  "pyside6": "6.11.2",
+  "specimens": [
+    {
+      "id": "QA_SB",
+      "kind": "beam",
+      "spans_m": [
+        4.0
+      ],
+      "section_mm": [
+        300,
+        500
+      ],
+      "bars": 40,
+      "ties": 29,
+      "length_m": 72.16545943940582,
+      "mass_kg": 79.3038887118727,
+      "verification_issues": 0,
+      "build_ms": 5551.251
+    },
+    {
+      "id": "QA_CB",
+      "kind": "beam",
+      "spans_m": [
+        4.0,
+        3.5,
+        4.5
+      ],
+      "section_mm": [
+        300,
+        500
+      ],
+      "bars": 107,
+      "ties": 88,
+      "length_m": 215.30474754224997,
+      "mass_kg": 233.48931747623269,
+      "verification_issues": 0,
+      "build_ms": 6701.153
+    },
+    {
+      "id": "QA_CR",
+      "kind": "column",
+      "shape": "rect",
+      "height_mm": 3000.0,
+      "bars": 25,
+      "ties": 21,
+      "spiral_turns": 0,
+      "mass_kg": 31.565099012286193,
+      "build_ms": 1386.504
+    },
+    {
+      "id": "QA_CC",
+      "kind": "column",
+      "shape": "circular",
+      "height_mm": 3000.0,
+      "bars": 9,
+      "ties": 1,
+      "spiral_turns": 20,
+      "mass_kg": 46.53332273719211,
+      "build_ms": 9899.816
+    }
+  ],
+  "complexity": {
+    "top_level_groups": 215,
+    "placements": 215,
+    "unique_meshes": 53,
+    "faces_per_prototype": 15692,
+    "placed_faces": 182550,
+    "edges_per_prototype": 46746,
+    "placed_edges": 381750,
+    "prototypes_used_more_than_once": 19,
+    "largest_prototypes": [
+      [
+        "QA_CB-Tie-S01-001",
+        1202,
+        88
+      ],
+      [
+        "QA_SB-Tie-S01-001",
+        1202,
+        29
+      ],
+      [
+        "QA_CR-Tie-001",
+        1202,
+        21
+      ],
+      [
+        "QA_CC-Spiral-001",
+        7682,
+        1
+      ],
+      [
+        "QA_SB-Main-bottom-01",
+        278,
+        3
+      ],
+      [
+        "QA_CB-Main-bottom-01",
+        278,
+        3
+      ]
+    ]
+  },
+  "wire": {
+    "assemblies": 4,
+    "bars": 181,
+    "edges": 15142,
+    "missing_legacy_bars": 0,
+    "unique_path_definitions": 30
+  },
+  "display_modes": {
+    "solid": {
+      "solid_data_unchanged": true,
+      "actual_mode": "solid",
+      "wire": null
+    },
+    "wire": {
+      "solid_data_unchanged": true,
+      "actual_mode": "wire",
+      "wire": {
+        "assemblies": 4,
+        "bars": 181,
+        "edges": 15142,
+        "missing_legacy_bars": 0,
+        "unique_path_definitions": 30
+      }
+    },
+    "both": {
+      "solid_data_unchanged": true,
+      "actual_mode": "both",
+      "wire": {
+        "assemblies": 4,
+        "bars": 181,
+        "edges": 15142,
+        "missing_legacy_bars": 0,
+        "unique_path_definitions": 30
+      }
+    }
+  },
+  "bar_count": 181,
+  "bar_prototypes": 20,
+  "persistence": {
+    "native_ids_bbs_transforms_and_sharing_preserved": true,
+    "path_definitions_preserved": true,
+    "existing_user_object_preserved": true
+  },
+  "bim_selection": {
+    "scope": "offscreen CPU scene selection plus native BIM notification; no picking/paint/GPU",
+    "initial_collection_ms": 813.399,
+    "selection_notifications_ms": [
+      0.066,
+      0.022,
+      0.112,
+      2.949,
+      3.634,
+      0.06,
+      0.014
+    ],
+    "collection_calls_including_initial": 1,
+    "rows_reused": true,
+    "bim_rows": 204
+  },
+  "not_tested": [
+    "installed host",
+    "mouse picking/box drag",
+    "OpenGL frame time",
+    "whole-building scale",
+    "engineering code compliance"
+  ],
+  "acceptance": {
+    "specimen_counts": true,
+    "beam_geometry_verification": true,
+    "all_display_modes_preserve_solids": true,
+    "persistence": true,
+    "selection_reuses_bim_quantities": true
+  }
+}

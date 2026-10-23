@@ -26,10 +26,39 @@ own source-host process to close. Save any wanted test model outside that
 temporary directory. The interactive launcher has not been acceptance-tested
 as part of the source import.
 
-The tests establish source integrity, host loader compatibility and the locked
-beam boundary. They do not establish interactive performance, whole-building
-capacity, engineering design compliance or installed-host acceptance. The older
-four-specimen diagnostic used v0.10.1; v0.10.3 needs a fresh native benchmark.
+The package tests establish source integrity, loader compatibility and the
+locked beam boundary. Host integration tests in `tests/test_go_rc_specimens.py`
+also build four real specimens and check dimensions, native IDs, BBS metadata,
+shared tie meshes, save/load, display modes and move/Undo/Redo wire refresh.
+These checks do not establish engineering design compliance or building scale.
+
+## Reproduce the four-specimen baseline
+
+From the repository root, using the matching development environment:
+
+```powershell
+$env:PYTHONUTF8='1'
+python -m pytest tests/test_go_rc_specimens.py -q
+python scripts/rc_specimens.py --output ../rc-specimens-new
+python scripts/rc_native_selection.py ../rc-specimens-new/four-rc-specimens.igz --output ../rc-native-new
+```
+
+Both output directories must be new. The first command-line replay creates an
+editable `.igz`, column BBS/BOQ output, a build log and a JSON acceptance report.
+It exercises accepted beam geometry phases without beam IFC export. The native
+replay opens its own Windows/OpenGL source window, discovers a temporary copy
+of this plugin and drives synthetic click/window/crossing events. It records
+the first and repeated clicks, frame/handler slices, box-release costs, selected
+bar counts and BIM collection calls. Settings/data are isolated. Its parent
+cleans the sandbox after the child releases the GPU driver's cache files.
+
+Wire is an assembly-batched display: selection picks wire groups rather than
+individual authoritative bars. Use Solid or Both for per-bar selection. Wire
+groups have no IFC tag and contribute no reinforcement quantities.
+
+See [v0.10.3 evidence](../../docs/plugin-development/RC_V0103_BASELINE.md) for
+tested scope and limitations. The older packaged-host v0.10.1 diagnostic uses
+different runtime/geometry and is not a controlled speedup comparison.
 
 Future source edits must deliberately update the baseline provenance rather
 than silently rewriting the accepted beam implementation. Display meshes and
