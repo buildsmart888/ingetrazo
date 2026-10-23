@@ -11,15 +11,16 @@ documentation and installers. Follow [the plugin API](../docs/plugins.md) and
 
 ## Source ownership
 
-- GO RC Detailing is the first planned plugin package. Its installed v0.10.1
-  baseline has been investigated, but its source has **not yet been imported
-  into this branch**. Import a verified baseline with provenance and tests
-  before editing it; do not treat a placeholder as an implemented plugin.
+- [GO RC Detailing](go-rc-detailing/README.md) now contains a hash-verified
+  deployed v0.10.3 source snapshot, with its locked accepted beam preserved.
+  The older v0.10.1 diagnostic remains historical performance evidence.
 - Keep the existing Thai BIM source at `examples/extensions/thai_bim` as the
   single copy. The inherited isolated launcher already handles that package.
 - GO Structural Analysis remains a separately maintained project. Integrate
   through a versioned data contract; do not copy an independently edited source
   tree over another checkout or publish private project data here.
+  The historical public `extensions/go-structural-analysis` snapshot was
+  retained when merging old main; it is not the authoritative GO checkout.
 
 Each plugin should keep a clear boundary between engineering data, native
 document adapters and display/UI. Shared infrastructure should be extracted

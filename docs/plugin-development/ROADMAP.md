@@ -6,16 +6,16 @@ See [workspace ownership and setup](../../extensions/README.md).
 ## Current state
 
 This branch inherits the v0.5.9 integration host and existing rebar LOD work.
-The new increment adds workspace documentation and a sanitized packaged-host
-diagnostic baseline. No RC plugin source, performance fix or design engine has
-been introduced by this increment. Do not infer packaged-host performance from
-the inherited branch history.
+The deployed RC v0.10.3 source snapshot is now imported with a 47-file hash
+manifest and locked beam integrity checks. Old main history is retained in the
+0.5.9 base. No new performance fix or design engine is introduced by this
+import. Do not infer packaged-host performance from inherited branch history.
 
 ## P0: import and reproduce the RC baseline
 
-1. Identify the canonical GO RC Detailing source and import a source-verified
-   v0.10.1 baseline, preserving the locked accepted beam implementation.
-2. Recreate the four native specimens: 4 m single beam; 4/3.5/4.5 m continuous
+1. DONE: capture deployed v0.10.3 Python source, preserving the locked accepted
+   beam implementation. The original authoring repository is not established.
+2. PENDING on this branch: recreate the four native specimens: 4 m single beam; 4/3.5/4.5 m continuous
    beam; 300 x 400 mm rectangular column; 400 mm circular column, both 3 m high.
 3. Compare installed-host and this branch's behavior before changing code. The
    installed-host issue and inherited line-LOD/selection work are distinct.
