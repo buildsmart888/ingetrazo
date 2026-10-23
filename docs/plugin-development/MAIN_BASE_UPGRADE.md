@@ -19,7 +19,8 @@ The original dirty checkout is preserved. Continue plugin work in the separate
 
 Validation uses CPython 3.12.14 / PySide6 6.11.2, with offscreen Qt for host
 tests. Focused selection, BIM cache, extension API and rebar LOD tests: 62
-passed. RC migration tests: 2 passed. Full host fast-suite results are recorded
-in the publication status document after completion. Installed-host mouse
+passed. Final combined host/RC/launcher run: 65 passed in 36.79 seconds.
+The broad host fast-suite UTF-8 rerun is
+INCOMPLETE; see the publication status document. Installed-host mouse
 interaction, v0.10.3 four-specimen replay and whole-building performance remain
 NOT TESTED for this imported snapshot.

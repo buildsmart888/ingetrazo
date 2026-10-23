@@ -1,0 +1,5 @@
+# Preserve deployed source bytes and the locked beam hash on every platform.
+go_rc_detailing/** -text
+*.json text eol=lf
+*.md text eol=lf
+tests/*.py text eol=lf
